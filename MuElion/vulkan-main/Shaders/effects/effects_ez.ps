@@ -1,0 +1,37 @@
+Texture2D Texture : register(t0);
+Texture2D DepthBuffer : register(t1);
+SamplerState Clamp : register(s0);
+SamplerState Wrap : register(s1);
+
+struct PixelInput
+{
+	float4 Position : SV_POSITION;
+	float4 Color : COLOR;
+	float2 UV : TEXCOORD0;
+	nointerpolation float2 Tex : TEXCOORD1;
+};
+
+float4 main(PixelInput input) : SV_Target
+{
+	float4 Color;
+
+	if(input.Tex.y == 0.0f)
+	{
+		if(input.Tex.x == 0.0f)
+			Color = Texture.Sample(Clamp, input.UV) * input.Color;
+		else
+			Color = Texture.Sample(Wrap, input.UV) * input.Color;
+	}
+	else
+	{
+		if(input.Tex.x == 0.0f)
+			Color = Texture.Sample(Clamp, input.UV);
+		else
+			Color = Texture.Sample(Wrap, input.UV);
+
+		Color.xyz += input.Color.xyz;
+		Color.w *= input.Color.w;
+	}
+
+	return Color;
+}

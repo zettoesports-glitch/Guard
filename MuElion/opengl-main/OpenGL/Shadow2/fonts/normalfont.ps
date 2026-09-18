@@ -1,0 +1,48 @@
+// Generated from fonts/normalfont.ps. Edit the HLSL source and regenerate this file.
+
+struct PixelInputType
+{
+    highp vec4 Position;
+    highp vec2 UV;
+    uint Texture;
+    highp vec4 Color;
+};
+
+layout(std140) uniform FontsConstants
+{
+    highp mat4 TextMatrix;
+    highp vec4 FontSettings;
+    highp vec4 OutlineColor;
+} FontsConstantsData;
+
+uniform highp sampler2DArray FontsTex1;
+
+layout(location = 0) in highp vec2 input_UV;
+layout(location = 1) flat in uint input_Texture;
+layout(location = 2) in highp vec4 input_Color;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp vec4 _main(PixelInputType _input)
+{
+    if (_input.Texture == 255u)
+    {
+        return _input.Color;
+    }
+    highp vec2 texColor = vec2(texture(FontsTex1, vec3(_input.UV, float(_input.Texture))).xy);
+    highp vec3 color = (_input.Color.xyz * texColor.x) + (FontsConstantsData.OutlineColor.xyz * texColor.y);
+    highp float mainAlpha = texColor.x * _input.Color.w;
+    highp float outlineAlpha = (texColor.y * FontsConstantsData.OutlineColor.w) * _input.Color.w;
+    return vec4(color, mainAlpha + outlineAlpha);
+}
+
+void main()
+{
+    PixelInputType _input;
+    _input.Position = gl_FragCoord;
+    _input.UV = input_UV;
+    _input.Texture = input_Texture;
+    _input.Color = input_Color;
+    PixelInputType param = _input;
+    _entryPointOutput = _main(param);
+}
+

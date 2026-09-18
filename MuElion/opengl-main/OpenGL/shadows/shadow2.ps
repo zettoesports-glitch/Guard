@@ -1,0 +1,42 @@
+// Generated from shadows/shadow2.ps. Edit the HLSL source and regenerate this file.
+
+struct ShadowPixelInput
+{
+    highp vec4 Position;
+    highp vec4 Color;
+    highp vec2 UV;
+    highp float MinAlpha;
+};
+
+uniform highp sampler2D Tex1;
+
+layout(location = 0) in highp vec4 input_Color;
+layout(location = 1) in highp vec2 input_UV;
+layout(location = 2) flat in highp float input_MinAlpha;
+
+highp float _main(ShadowPixelInput _input)
+{
+    if ((0.9900000095367431640625 - _input.MinAlpha) < 0.0)
+    {
+        discard;
+    }
+    highp vec4 Color = texture(Tex1, _input.UV) * _input.Color;
+    if ((clamp(max(Color.x, max(Color.y, Color.z)), 0.0, 1.0) - _input.MinAlpha) < 0.0)
+    {
+        discard;
+    }
+    return _input.Position.z / _input.Position.w;
+}
+
+void main()
+{
+    ShadowPixelInput _input;
+    _input.Position = gl_FragCoord;
+    _input.Color = input_Color;
+    _input.UV = input_UV;
+    _input.MinAlpha = input_MinAlpha;
+    ShadowPixelInput param = _input;
+    highp float _99 = _main(param);
+    gl_FragDepth = _99;
+}
+

@@ -1,0 +1,33 @@
+// Generated from models/color.ps. Edit the HLSL source and regenerate this file.
+
+struct ColorPixelInput
+{
+    highp vec4 Position;
+    highp vec4 Color;
+    highp float MinAlpha;
+};
+
+layout(location = 0) in highp vec4 input_Color;
+layout(location = 1) flat in highp float input_MinAlpha;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp vec4 _main(ColorPixelInput _input)
+{
+    if ((_input.Color.w - _input.MinAlpha) < 0.0)
+    {
+        discard;
+    }
+    return _input.Color;
+}
+
+void main()
+{
+    ColorPixelInput _input;
+    _input.Position = gl_FragCoord;
+    _input.Color = input_Color;
+    _input.MinAlpha = input_MinAlpha;
+    ColorPixelInput param = _input;
+    highp vec4 _53 = _main(param);
+    _entryPointOutput = _53;
+}
+

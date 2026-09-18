@@ -1,0 +1,49 @@
+#if SHADOW_TYPE == 3
+#include "ShadowCHS.inc"
+#endif
+
+Texture2DArray Texture : register(t0);
+SamplerState Sampler : register(s0);
+
+struct PixelInput
+{
+	float4 Position : SV_POSITION;
+	float2 UV : TEXCOORD0;
+	nointerpolation float T : TEXCOORD1;
+#if SHADOW_TYPE >= 3
+	float4 LightPos : TEXCOORD2;
+#endif
+	float4 Color : COLOR;
+};
+
+float4 main(PixelInput input) : SV_Target
+{
+	if(input.T < 0.0f)
+		discard;
+
+	float4 Color = Texture.Sample(Sampler, float3(input.UV, input.T)) * input.Color;
+
+	clip(Color.w - 0.25f);
+			
+#if SHADOW_TYPE >= 3
+	float2 uv = input.LightPos.xy / input.LightPos.w;
+    float z = input.LightPos.z / input.LightPos.w;
+	float3 tc = float3(uv, z - SHADOW_BIAS);
+	
+	float s = 1.0f;
+	if (saturate(uv.x) == uv.x &&
+        saturate(uv.y) == uv.y &&
+        z > 0)
+	{
+#if SHADOW_TYPE == 3
+		s = CHS_Shadow(tc);
+#else
+		s = PCSS_Shadow(tc);
+#endif
+	}
+
+	return Color * float4(s.xxx, 1.0f);
+#else
+	return Color;
+#endif
+}

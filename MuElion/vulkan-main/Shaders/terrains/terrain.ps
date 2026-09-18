@@ -1,0 +1,67 @@
+#if SHADOW_TYPE == 3
+#include "ShadowCHS.inc"
+#endif
+
+Texture2DArray Texture : register(t0);
+Texture2D WaterTexture : register(t1);
+SamplerState Sampler : register(s0);
+
+struct PixelInput
+{
+	float4 Position : SV_POSITION;
+	float2 UV1 : TEXCOORD0;
+	float2 UV2 : TEXCOORD1;
+	nointerpolation float2 W : TEXCOORD2;
+	nointerpolation float Water : TEXCOORD3;
+#if SHADOW_TYPE >= 3
+	float4 LightPos : TEXCOORD4;
+#endif
+	float4 Color : COLOR;
+};
+
+float4 main(PixelInput input) : SV_Target
+{
+	if(input.W.x < 0.0f && input.W.y < 0.0f)
+	{
+		discard;
+	}
+
+	float4 Color = Texture.Sample(Sampler, float3(input.UV1, input.W.x)) * float4(input.Color.xyz, 1.0f);
+
+	if(input.Water == 1.0f)
+	{
+		float4 Color2 = WaterTexture.Sample(Sampler, float2(input.UV2)) * input.Color;
+		if(input.W.y >= 0.0f)
+		{
+			Color.xyz += Color2.xyz * input.Color.www;
+		}
+	}
+	else
+	{
+		float4 Color2 = Texture.Sample(Sampler, float3(input.UV2, input.W.y)) * input.Color;
+		if(input.W.y >= 0.0f && Color2.w > 0.25f)
+		{
+			Color = lerp(Color, Color2, Color2.w);
+		}
+	}
+		
+#if SHADOW_TYPE >= 3
+	float2 uv = input.LightPos.xy / input.LightPos.w;
+    float z = input.LightPos.z / input.LightPos.w;
+	float3 tc = float3(uv, z - SHADOW_BIAS);
+	
+	float s = 1.0f;
+	if (saturate(uv.x) == uv.x &&
+        saturate(uv.y) == uv.y &&
+        z > 0)
+	{
+#if SHADOW_TYPE == 3
+		s = CHS_Shadow(tc);
+#endif
+	}
+
+	return Color * float4(s.xxx, 1.0f);
+#else
+	return Color;
+#endif
+}

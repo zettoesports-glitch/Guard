@@ -1,0 +1,11 @@
+#include "PixelDefinitions.inc"
+
+Texture2D Texture : register(t0);
+SamplerState Sampler : register(s0);
+
+float4 main(ColorPixelInput input) : SV_Target
+{
+	clip(input.Color.w - input.MinAlpha);
+
+	return input.Color;
+}

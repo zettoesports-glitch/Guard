@@ -1,0 +1,23 @@
+#include "PixelDefinitions.inc"
+
+Texture2D Texture : register(t0);
+SamplerState Sampler : register(s0);
+
+#if SHADOW_TYPE >= 3
+float main(ShadowPixelInput input) : SV_Depth
+#else
+float4 main(ShadowPixelInput input) : SV_Target
+#endif
+{
+	clip(0.99f - input.MinAlpha);
+	
+	float4 Color = Texture.Sample(Sampler, input.UV) * input.Color;
+	
+	clip(Color.w - input.MinAlpha);
+
+#if SHADOW_TYPE >= 3
+	return input.Position.z / input.Position.w;
+#else
+	return input.Color2;
+#endif
+}

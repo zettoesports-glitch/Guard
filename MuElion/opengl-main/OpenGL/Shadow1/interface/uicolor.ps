@@ -1,0 +1,25 @@
+// Generated from interface/uicolor.ps. Edit the HLSL source and regenerate this file.
+
+struct PixelInputType
+{
+    highp vec4 Position;
+    highp vec4 Color;
+};
+
+layout(location = 0) in highp vec4 input_Color;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp vec4 _main(PixelInputType _input)
+{
+    return _input.Color;
+}
+
+void main()
+{
+    PixelInputType _input;
+    _input.Position = gl_FragCoord;
+    _input.Color = input_Color;
+    PixelInputType param = _input;
+    _entryPointOutput = _main(param);
+}
+

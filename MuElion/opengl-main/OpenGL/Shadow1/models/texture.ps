@@ -1,0 +1,39 @@
+// Generated from models/texture.ps. Edit the HLSL source and regenerate this file.
+
+struct PixelInput
+{
+    highp vec4 Position;
+    highp vec4 Color;
+    highp vec2 UV;
+    highp float MinAlpha;
+};
+
+uniform highp sampler2D Tex1;
+
+layout(location = 0) in highp vec4 input_Color;
+layout(location = 1) in highp vec2 input_UV;
+layout(location = 2) flat in highp float input_MinAlpha;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp vec4 _main(PixelInput _input)
+{
+    highp vec4 Color = texture(Tex1, _input.UV) * _input.Color;
+    if ((Color.w - _input.MinAlpha) < 0.0)
+    {
+        discard;
+    }
+    return Color;
+}
+
+void main()
+{
+    PixelInput _input;
+    _input.Position = gl_FragCoord;
+    _input.Color = input_Color;
+    _input.UV = input_UV;
+    _input.MinAlpha = input_MinAlpha;
+    PixelInput param = _input;
+    highp vec4 _76 = _main(param);
+    _entryPointOutput = _76;
+}
+

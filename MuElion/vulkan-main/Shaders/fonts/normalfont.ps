@@ -1,0 +1,33 @@
+Texture2DArray<float2> Texture : register(t0);
+SamplerState Sampler : register(s0);
+
+cbuffer LocalConstants : register(b1)
+{
+	matrix TextMatrix;
+	float Is3D;
+	float3 Padding;
+	float4 OutlineColor;
+};
+
+struct PixelInputType
+{
+	float4 Position : SV_POSITION;
+	float2 UV : TEXCOORD0;
+	nointerpolation uint Texture : TEXCOORD1;
+	float4 Color : COLOR0;
+};
+
+float4 main(PixelInputType input) : SV_TARGET
+{
+	if(input.Texture == 255u)
+		return input.Color;
+		
+	float2 texColor = Texture.Sample(Sampler, float3(input.UV, float(input.Texture)));
+	
+	float3 color = (input.Color.rgb * texColor.r) + (OutlineColor.rgb * texColor.g);
+	
+	float mainAlpha = texColor.r * input.Color.a;
+	float outlineAlpha = texColor.g * OutlineColor.a * input.Color.a;
+	
+	return float4(color, mainAlpha + outlineAlpha);
+}

@@ -1,0 +1,31 @@
+// Generated from terrains/kalimawater2.ps. Edit the HLSL source and regenerate this file.
+
+struct PixelInput
+{
+    highp vec4 Position;
+    highp vec4 Color;
+    highp vec2 UV;
+};
+
+uniform highp sampler2D Tex2;
+
+layout(location = 0) in highp vec4 input_Color;
+layout(location = 1) in highp vec2 input_UV;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp vec4 _main(PixelInput _input)
+{
+    highp vec4 Color = texture(Tex2, _input.UV) * _input.Color;
+    return Color;
+}
+
+void main()
+{
+    PixelInput _input;
+    _input.Position = gl_FragCoord;
+    _input.Color = input_Color;
+    _input.UV = input_UV;
+    PixelInput param = _input;
+    _entryPointOutput = _main(param);
+}
+

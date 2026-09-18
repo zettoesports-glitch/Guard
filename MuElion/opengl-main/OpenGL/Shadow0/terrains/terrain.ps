@@ -1,0 +1,66 @@
+// Generated from terrains/terrain.ps. Edit the HLSL source and regenerate this file.
+
+struct PixelInput
+{
+    highp vec4 Position;
+    highp vec2 UV1;
+    highp vec2 UV2;
+    highp vec2 W;
+    highp float Water;
+    highp vec4 Color;
+};
+
+uniform highp sampler2DArray TerrainTexture;
+uniform highp sampler2D WaterTexture;
+
+layout(location = 0) in highp vec2 input_UV1;
+layout(location = 1) in highp vec2 input_UV2;
+layout(location = 2) flat in highp vec2 input_W;
+layout(location = 3) flat in highp float input_Water;
+layout(location = 4) in highp vec4 input_Color;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp vec4 _main(PixelInput _input)
+{
+    if ((_input.W.x < 0.0) && (_input.W.y < 0.0))
+    {
+        discard;
+    }
+    highp vec4 Color = texture(TerrainTexture, vec3(_input.UV1, _input.W.x)) * vec4(_input.Color.xyz, 1.0);
+    if (_input.Water == 1.0)
+    {
+        highp vec4 Color2 = texture(WaterTexture, _input.UV2) * _input.Color;
+        if (_input.W.y >= 0.0)
+        {
+            highp vec4 _98 = Color;
+            highp vec3 _100 = _98.xyz + (Color2.xyz * _input.Color.www);
+            Color.x = _100.x;
+            Color.y = _100.y;
+            Color.z = _100.z;
+        }
+    }
+    else
+    {
+        highp vec4 Color2_1 = texture(TerrainTexture, vec3(_input.UV2, _input.W.y)) * _input.Color;
+        if ((_input.W.y >= 0.0) && (Color2_1.w > 0.25))
+        {
+            Color = mix(Color, Color2_1, vec4(Color2_1.w));
+        }
+    }
+    return Color;
+}
+
+void main()
+{
+    PixelInput _input;
+    _input.Position = gl_FragCoord;
+    _input.UV1 = input_UV1;
+    _input.UV2 = input_UV2;
+    _input.W = input_W;
+    _input.Water = input_Water;
+    _input.Color = input_Color;
+    PixelInput param = _input;
+    highp vec4 _171 = _main(param);
+    _entryPointOutput = _171;
+}
+

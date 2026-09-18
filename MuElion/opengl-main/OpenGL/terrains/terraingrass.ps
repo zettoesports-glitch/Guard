@@ -1,0 +1,203 @@
+// Generated from terrains/terraingrass.ps. Edit the HLSL source and regenerate this file.
+vec4 SampleTextureOffset(sampler2D source, vec2 uv, float lod, ivec2 offset)
+{
+	return textureLod(source, uv + vec2(offset) / vec2(textureSize(source, int(lod))), lod);
+}
+
+float SampleTextureOffset(sampler2DShadow source, vec3 uv, float lod, ivec2 offset)
+{
+	return textureLod(source, vec3(uv.xy + vec2(offset) / vec2(textureSize(source, int(lod))), uv.z), lod);
+}
+#if defined(GL_EXT_control_flow_attributes)
+#extension GL_EXT_control_flow_attributes : require
+#define SPIRV_CROSS_FLATTEN [[flatten]]
+#define SPIRV_CROSS_BRANCH [[dont_flatten]]
+#define SPIRV_CROSS_UNROLL [[unroll]]
+#define SPIRV_CROSS_LOOP [[dont_unroll]]
+#else
+#define SPIRV_CROSS_FLATTEN
+#define SPIRV_CROSS_BRANCH
+#define SPIRV_CROSS_UNROLL
+#define SPIRV_CROSS_LOOP
+#endif
+
+struct PixelInput
+{
+    highp vec4 Position;
+    highp vec2 UV;
+    highp float T;
+    highp vec4 LightPos;
+    highp vec4 Color;
+};
+
+const float _55[13][13] = float[][](float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.800000011920928955078125, 0.800000011920928955078125, 0.800000011920928955078125, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.800000011920928955078125, 1.0, 0.800000011920928955078125, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.800000011920928955078125, 0.800000011920928955078125, 0.800000011920928955078125, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
+const float _75[13][13] = float[][](float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
+const float _92[13][13] = float[][](float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.20000000298023223876953125, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
+const float _106[13][13] = float[][](float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0), float[](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
+
+uniform highp sampler2DArray GrassTexture;
+uniform highp sampler2D ShadowDepth;
+uniform highp sampler2DShadow ShadowComparison;
+
+layout(location = 0) in highp vec2 input_UV;
+layout(location = 1) flat in highp float input_T;
+layout(location = 2) in highp vec4 input_LightPos;
+layout(location = 3) in highp vec4 input_Color;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp float BezierFilter(int row, int col, highp float t)
+{
+    int r = row + 1;
+    int c = col + 1;
+    return ((((((1.0 - t) * (1.0 - t)) * (1.0 - t)) * _55[r][c]) + ((((3.0 * (1.0 - t)) * (1.0 - t)) * t) * _75[r][c])) + ((((3.0 * t) * t) * (1.0 - t)) * _92[r][c])) + (((t * t) * t) * _106[r][c]);
+}
+
+highp float CHS_Shadow(inout highp vec3 tc)
+{
+    highp vec2 rc = (vec2(2048.0) * tc.xy) + vec2(0.5);
+    highp vec2 fc = rc - floor(rc);
+    highp vec3 _135 = tc;
+    highp vec2 _137 = _135.xy - (fc * vec2(0.00048828125));
+    tc.x = _137.x;
+    tc.y = _137.y;
+    highp float avgBlockerDepth = 0.0;
+    highp float numBlockers = 0.0;
+    highp float maxBlockers = 0.0;
+    int row = -5;
+    int col;
+    SPIRV_CROSS_UNROLL
+    for (; row <= 5; row += 2)
+    {
+        col = -5;
+        SPIRV_CROSS_UNROLL
+        for (; col <= 5; col += 2)
+        {
+            highp vec4 d4 = vec4(SampleTextureOffset(ShadowDepth, tc.xy, 0.0, ivec2(col, row)).x);
+            highp vec4 b4 = mix(vec4(1.0), vec4(0.0), lessThanEqual(tc.zzzz, d4));
+            numBlockers += dot(b4, vec4(1.0));
+            avgBlockerDepth += dot(d4, b4);
+            maxBlockers += 4.0;
+        }
+    }
+    highp float t = 0.0;
+    if (numBlockers == 0.0)
+    {
+        return 1.0;
+    }
+    else
+    {
+        if (numBlockers == maxBlockers)
+        {
+            return 0.5;
+        }
+        else
+        {
+            if (numBlockers > 0.0)
+            {
+                avgBlockerDepth /= numBlockers;
+                t = clamp(((tc.z - avgBlockerDepth) * 0.20000000298023223876953125) / avgBlockerDepth, 0.0, 1.0);
+                t *= t;
+            }
+        }
+    }
+    highp float w = 0.0;
+    row = 0;
+    SPIRV_CROSS_UNROLL
+    for (; row < 11; row++)
+    {
+        col = 0;
+        SPIRV_CROSS_UNROLL
+        for (; col < 11; col++)
+        {
+            int param = row;
+            int param_1 = col;
+            highp float param_2 = t;
+            w += BezierFilter(param, param_1, param_2);
+        }
+    }
+    highp float s = 0.0;
+    row = -5;
+    highp vec2 prevRow[6];
+    SPIRV_CROSS_UNROLL
+    for (; row <= 5; row += 2)
+    {
+        col = -5;
+        SPIRV_CROSS_UNROLL
+        for (; col <= 5; col += 2)
+        {
+            highp vec3 _306 = vec3(tc.xy, tc.z);
+            highp vec4 sm4 = vec4(SampleTextureOffset(ShadowComparison, vec3(_306.xy, _306.z), 0.0, ivec2(col, row)));
+            int param_3 = row + 5;
+            int param_4 = (col + 5) - 1;
+            highp float param_5 = t;
+            highp float f10 = BezierFilter(param_3, param_4, param_5);
+            int param_6 = row + 5;
+            int param_7 = col + 5;
+            highp float param_8 = t;
+            highp float f11 = BezierFilter(param_6, param_7, param_8);
+            int param_9 = row + 5;
+            int param_10 = (col + 5) + 1;
+            highp float param_11 = t;
+            highp float f12 = BezierFilter(param_9, param_10, param_11);
+            s += ((1.0 - fc.y) * (((true ? (true ? sm4.w : sm4.z) : (true ? sm4.x : sm4.y)) * ((fc.x * (f10 - f11)) + f11)) + ((true ? (false ? sm4.w : sm4.z) : (false ? sm4.x : sm4.y)) * ((fc.x * (f11 - f12)) + f12))));
+            s += (fc.y * (((false ? (true ? sm4.w : sm4.z) : (true ? sm4.x : sm4.y)) * ((fc.x * (f10 - f11)) + f11)) + ((false ? (false ? sm4.w : sm4.z) : (false ? sm4.x : sm4.y)) * ((fc.x * (f11 - f12)) + f12))));
+            if (row > (-5))
+            {
+                int param_12 = (row + 5) - 1;
+                int param_13 = (col + 5) - 1;
+                highp float param_14 = t;
+                highp float f00 = BezierFilter(param_12, param_13, param_14);
+                int param_15 = (row + 5) - 1;
+                int param_16 = col + 5;
+                highp float param_17 = t;
+                highp float f01 = BezierFilter(param_15, param_16, param_17);
+                int param_18 = (row + 5) - 1;
+                int param_19 = (col + 5) + 1;
+                highp float param_20 = t;
+                highp float f02 = BezierFilter(param_18, param_19, param_20);
+                s += ((1.0 - fc.y) * ((prevRow[(col + 5) / 2].x * ((fc.x * (f00 - f01)) + f01)) + (prevRow[(col + 5) / 2].y * ((fc.x * (f01 - f02)) + f02))));
+                s += (fc.y * (((true ? (true ? sm4.w : sm4.z) : (true ? sm4.x : sm4.y)) * ((fc.x * (f00 - f01)) + f01)) + ((true ? (false ? sm4.w : sm4.z) : (false ? sm4.x : sm4.y)) * ((fc.x * (f01 - f02)) + f02))));
+            }
+            prevRow[(col + 5) / 2] = sm4.xy;
+        }
+    }
+    return max(s / w, 0.5);
+}
+
+highp vec4 _main(PixelInput _input)
+{
+    if (_input.T < 0.0)
+    {
+        discard;
+    }
+    highp vec4 Color = texture(GrassTexture, vec3(_input.UV, _input.T)) * _input.Color;
+    if ((Color.w - 0.25) < 0.0)
+    {
+        discard;
+    }
+    highp vec2 uv = _input.LightPos.xy / vec2(_input.LightPos.w);
+    highp float z = _input.LightPos.z / _input.LightPos.w;
+    highp vec3 tc = vec3(uv, z - 0.004999999888241291046142578125);
+    highp float s = 1.0;
+    if (((clamp(uv.x, 0.0, 1.0) == uv.x) && (clamp(uv.y, 0.0, 1.0) == uv.y)) && (z > 0.0))
+    {
+        highp vec3 param = tc;
+        highp float _660 = CHS_Shadow(param);
+        s = _660;
+    }
+    return Color * vec4(vec3(s), 1.0);
+}
+
+void main()
+{
+    PixelInput _input;
+    _input.Position = gl_FragCoord;
+    _input.UV = input_UV;
+    _input.T = input_T;
+    _input.LightPos = input_LightPos;
+    _input.Color = input_Color;
+    PixelInput param = _input;
+    highp vec4 _694 = _main(param);
+    _entryPointOutput = _694;
+}
+

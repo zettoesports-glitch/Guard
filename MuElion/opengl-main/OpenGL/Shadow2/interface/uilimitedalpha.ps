@@ -1,0 +1,36 @@
+// Generated from interface/uilimitedalpha.ps. Edit the HLSL source and regenerate this file.
+
+struct PixelInputType
+{
+    highp vec4 Position;
+    highp vec2 UV;
+    highp vec4 Color;
+};
+
+uniform highp sampler2D Tex1;
+
+layout(location = 0) in highp vec2 input_UV;
+layout(location = 1) in highp vec4 input_Color;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp vec4 _main(PixelInputType _input)
+{
+    highp vec4 Color = texture(Tex1, _input.UV) * _input.Color;
+    if ((Color.w - 0.25) < 0.0)
+    {
+        discard;
+    }
+    return Color;
+}
+
+void main()
+{
+    PixelInputType _input;
+    _input.Position = gl_FragCoord;
+    _input.UV = input_UV;
+    _input.Color = input_Color;
+    PixelInputType param = _input;
+    highp vec4 _70 = _main(param);
+    _entryPointOutput = _70;
+}
+

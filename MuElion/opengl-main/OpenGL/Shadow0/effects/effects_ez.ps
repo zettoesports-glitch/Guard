@@ -1,0 +1,63 @@
+// Generated from effects/effects_ez.ps. Edit the HLSL source and regenerate this file.
+
+struct PixelInput
+{
+    highp vec4 Position;
+    highp vec4 Color;
+    highp vec2 UV;
+    highp vec2 Tex;
+};
+
+uniform highp sampler2D EffectsSampler0;
+uniform highp sampler2D EffectsSampler1;
+
+layout(location = 0) in highp vec4 input_Color;
+layout(location = 1) in highp vec2 input_UV;
+layout(location = 2) flat in highp vec2 input_Tex;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+highp vec4 _main(PixelInput _input)
+{
+    highp vec4 Color;
+    if (_input.Tex.y == 0.0)
+    {
+        if (_input.Tex.x == 0.0)
+        {
+            Color = texture(EffectsSampler0, _input.UV) * _input.Color;
+        }
+        else
+        {
+            Color = texture(EffectsSampler1, _input.UV) * _input.Color;
+        }
+    }
+    else
+    {
+        if (_input.Tex.x == 0.0)
+        {
+            Color = texture(EffectsSampler0, _input.UV);
+        }
+        else
+        {
+            Color = texture(EffectsSampler1, _input.UV);
+        }
+        highp vec4 _88 = Color;
+        highp vec3 _90 = _88.xyz + _input.Color.xyz;
+        Color.x = _90.x;
+        Color.y = _90.y;
+        Color.z = _90.z;
+        Color.w *= _input.Color.w;
+    }
+    return Color;
+}
+
+void main()
+{
+    PixelInput _input;
+    _input.Position = gl_FragCoord;
+    _input.Color = input_Color;
+    _input.UV = input_UV;
+    _input.Tex = input_Tex;
+    PixelInput param = _input;
+    _entryPointOutput = _main(param);
+}
+
