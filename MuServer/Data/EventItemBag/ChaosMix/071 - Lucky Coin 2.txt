@@ -1,0 +1,8 @@
+0
+//EventName        	 #DropZen    #ItemDropRate #ItemDropCount #SetItemDropRate #ItemDropType #Fireworks
+"Lucky Coin 2" 	 	 1000        100           1              0                0             0         
+end
+
+1
+//Group #Type #MinLevel   #MaxLevel  #Skill      #Luck   #Option #Excellent
+end

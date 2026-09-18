@@ -1,0 +1,32 @@
+18:45:07 [SocketManager] Server started at port [55960]
+18:45:18 [ServerManager][0] AddServer (127.0.0.1)
+18:45:18 [ServerManager][0] ServerInfo (GameServer) (55901) (0)
+18:59:45 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+18:59:45 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:01:04 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+19:01:04 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:06:38 SELECT Data FROM HelperData WHERE Name='Elfinha'
+19:06:38 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:07:06 SELECT Data FROM HelperData WHERE Name='Elfinha'
+19:07:06 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:16:17 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+19:16:17 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:20:46 [SocketManager] Server started at port [55960]
+19:20:51 [ServerManager][0] AddServer (127.0.0.1)
+19:20:51 [ServerManager][0] ServerInfo (GameServer) (55901) (0)
+19:21:20 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+19:21:20 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:29:37 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+19:29:37 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:33:21 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+19:33:21 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:43:28 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+19:43:28 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:50:47 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+19:50:47 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+19:51:17 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+19:51:17 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+20:05:16 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+20:05:16 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
+20:25:37 SELECT Data FROM HelperData WHERE Name='DLDoADM'
+20:25:37 [QueryManager] State (42S02), Diagnostic: [Microsoft][ODBC Driver 11 for SQL Server][SQL Server]Invalid object name 'HelperData'.
