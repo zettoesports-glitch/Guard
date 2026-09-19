@@ -185,3 +185,13 @@ The current MuElion/MuMain-main already has `GLCompatShim` and `IMuRenderer`
 operations corresponding to most of the recovered session calls. The safe port
 strategy is therefore adapter-based: translate the recovered MuTwo facade/tape
 contract onto the existing SDL GPU backend instead of replacing SDL GPU.
+
+
+## Additional Debug-derived reconstruction notes
+
+The x64 Debug executable preserves local-variable names around the array-triangle
+classification path: `triangleIndexCount`, `modelViewProjection`, `indices`,
+`counts`, and `frontFacing`. Based on those names, the reconstructed
+`CountClassifiedArrayTriangles` classifies expanded triangles using the current
+model-view-projection transform and front-face winding. The exact private source
+layout is still not claimed to be byte-for-byte recovered.

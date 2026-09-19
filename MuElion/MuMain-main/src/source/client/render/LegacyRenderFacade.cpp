@@ -608,6 +608,97 @@ bool LegacyRenderFacade::ReadArrayVertices(int first, int count,
     return true;
 }
 
+bool LegacyRenderFacade::CountClassifiedArrayTriangles(
+    LegacyPrimitive primitive, int first, int count,
+    std::uint64_t& frontFacing, std::uint64_t& backFacing) noexcept
+{
+    frontFacing = 0;
+    backFacing = 0;
+
+    if (first < 0 || count < 0)
+        return false;
+
+    std::vector<RenderTapeVertex> vertices(static_cast<std::size_t>(count));
+    if (!ReadArrayVertices(first, count, vertices))
+        return false;
+
+    std::array<float, 16> modelView{};
+    std::array<float, 16> projection{};
+    mu::GetRenderer().GetMatrix(static_cast<int>(LegacyMatrixMode::ModelView), modelView.data());
+    mu::GetRenderer().GetMatrix(static_cast<int>(LegacyMatrixMode::Projection), projection.data());
+
+    const glm::mat4 mvp = glm::make_mat4(projection.data()) * glm::make_mat4(modelView.data());
+
+    const auto classify = [&](const RenderTapeVertex& a,
+                              const RenderTapeVertex& b,
+                              const RenderTapeVertex& cVertex) {
+        const glm::vec4 ca = mvp * glm::vec4(a.position[0], a.position[1], a.position[2], 1.0f);
+        const glm::vec4 cb = mvp * glm::vec4(b.position[0], b.position[1], b.position[2], 1.0f);
+        const glm::vec4 cc = mvp * glm::vec4(cVertex.position[0], cVertex.position[1], cVertex.position[2], 1.0f);
+
+        if (std::abs(ca.w) < 1.0e-7f || std::abs(cb.w) < 1.0e-7f || std::abs(cc.w) < 1.0e-7f)
+        {
+            ++backFacing;
+            return;
+        }
+
+        const glm::vec2 a2(ca.x / ca.w, ca.y / ca.w);
+        const glm::vec2 b2(cb.x / cb.w, cb.y / cb.w);
+        const glm::vec2 c2(cc.x / cc.w, cc.y / cc.w);
+        const float signedArea =
+            (b2.x - a2.x) * (c2.y - a2.y) -
+            (b2.y - a2.y) * (c2.x - a2.x);
+
+        const bool ccw = signedArea > 0.0f;
+        const bool isFront =
+            m_state.frontFace == RenderFrontFace::CounterClockwise ? ccw : !ccw;
+        if (isFront)
+            ++frontFacing;
+        else
+            ++backFacing;
+    };
+
+    switch (primitive)
+    {
+    case LegacyPrimitive::Triangles:
+        for (std::size_t i = 0; i + 2 < vertices.size(); i += 3)
+            classify(vertices[i], vertices[i + 1], vertices[i + 2]);
+        return vertices.size() % 3 == 0;
+
+    case LegacyPrimitive::TriangleFan:
+        if (vertices.size() < 3)
+            return true;
+        for (std::size_t i = 1; i + 1 < vertices.size(); ++i)
+            classify(vertices[0], vertices[i], vertices[i + 1]);
+        return true;
+
+    case LegacyPrimitive::TriangleStrip:
+        if (vertices.size() < 3)
+            return true;
+        for (std::size_t i = 0; i + 2 < vertices.size(); ++i)
+        {
+            if ((i & 1u) == 0u)
+                classify(vertices[i], vertices[i + 1], vertices[i + 2]);
+            else
+                classify(vertices[i + 1], vertices[i], vertices[i + 2]);
+        }
+        return true;
+
+    case LegacyPrimitive::Quads:
+        if (vertices.size() % 4 != 0)
+            return false;
+        for (std::size_t i = 0; i + 3 < vertices.size(); i += 4)
+        {
+            classify(vertices[i], vertices[i + 1], vertices[i + 2]);
+            classify(vertices[i], vertices[i + 2], vertices[i + 3]);
+        }
+        return true;
+
+    default:
+        return false;
+    }
+}
+
 bool LegacyRenderFacade::DrawArrays(LegacyPrimitive primitive, int first, int count) noexcept
 {
     if (first < 0 || count < 0)
@@ -657,7 +748,7 @@ bool LegacyRenderFacade::Sphere(float radius, unsigned int slices, unsigned int 
     triangles.reserve(static_cast<std::size_t>(slices) *
                       static_cast<std::size_t>(stacks) * 6u);
 
-    const auto makeVertex = [radius](float theta, float phi) {
+    const auto makeVertex = [radius, pi](float theta, float phi) {
         RenderTapeVertex vertex{};
         const float sinPhi = std::sin(phi);
         const float nx = std::cos(theta) * sinPhi;

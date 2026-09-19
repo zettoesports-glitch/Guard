@@ -55,6 +55,9 @@ public:
     void DisableClientArray(RenderClientArraySemantic semantic) noexcept;
     [[nodiscard]] bool ReadArrayVertices(int first, int count,
                                          std::span<RenderTapeVertex> out) noexcept;
+    [[nodiscard]] bool CountClassifiedArrayTriangles(
+        LegacyPrimitive primitive, int first, int count,
+        std::uint64_t& frontFacing, std::uint64_t& backFacing) noexcept;
     [[nodiscard]] bool DrawArrays(LegacyPrimitive primitive, int first, int count) noexcept;
 
     [[nodiscard]] bool MatrixMode(LegacyMatrixMode mode) noexcept;
