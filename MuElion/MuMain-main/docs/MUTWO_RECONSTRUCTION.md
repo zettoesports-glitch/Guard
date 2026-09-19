@@ -1,7 +1,7 @@
 # MuTwo / MuClient reconstruction
 
-This branch reconstructs the public VDraven/MuClient runtime changes on top of
-MuElion/MuMain-main. Only this subtree is modified.
+This branch reconstructs the observable VDraven/MuClient runtime architecture
+on top of MuElion/MuMain-main. Only this subtree is modified.
 
 ## Confirmed runtime contract
 
@@ -16,42 +16,131 @@ The public MuClient package exposes these performance keys:
 - RmlScale = 100..200
 - ControlUIScale = 100..200
 
-The debug executable also preserves the private source names
-`client/render/FrameTape.cpp`, `client/render/FrameTape.h`, and
-`client/session/SessionRender.cpp`.
+The Debug executables preserve private source/type information for
+`client/render/FrameTape.*`, `client/session/SessionRender.cpp`,
+`LegacyRenderFacade`, `SessionLegacyCalls`, the RenderTape structures,
+RmlUi integration, target transfers, and several GPU buffer layouts.
 
-## Implemented in this commit
+## Implemented
 
-- Backend selection is wired to SDL GPU through SDL_GPU_DRIVER.
-- FpsLimit=0 maps to the existing uncapped target-FPS path.
-- FrameTape records frame/session timing and render-job counts.
-- SessionRender provides immediate mode and a worker-backed pipeline.
-- The main render loop begins/ends SessionRender frames.
-- Session workers shut down before GPU resources.
-- A config.ini.template contains the reconstructed performance/UI contract.
+### Runtime / configuration
 
-## Reconstruction status
+- SDL GPU backend selection through `SDL_GPU_DRIVER`
+- Vulkan / Direct3D12 public backend contract
+- VSync and FPS limit contract
+- `RenderPipeline=0` immediate fallback
+- worker-backed `RenderPipeline=1`
+- `SessionWorkerCount`
+- `SharedAssetIdleSeconds`
+- independent `RmlScale` and `ControlUIScale`
 
-- [x] Configuration contract
-- [x] Renderer backend selection
-- [x] FPS contract
-- [x] FrameTape base
-- [x] SessionRender worker pipeline base
-- [ ] Feed real scene preparation jobs into SessionRender
-- [ ] Shared asset idle cache integration
-- [~] UI scale integration: ControlUIScale drives legacy scalable panels/HUD;
-      RmlScale is loaded as a separate factor awaiting the RmlUi layer
-- [ ] Binary-differential validation against x86/x64 Debug and Release
-- [ ] Vulkan/D3D12 shader/pipeline parity validation
+### Render tape
 
+- frame/session identity and timing
+- worker job accounting
+- World / UI / Overlay passes
+- ordered draw and clear commands
+- 2D, 3D, text and skinned draws
+- exact Debug-observed rejection reason strings
+- `render-tape-failures.log` line format
+- logical texture assets and lifetime retention
+- logical geometry leases and trusted draw validation
+- indexed-triangle and trail-sample reservations
+- target copy/download commands
+- asynchronous RGBA8 frame readback and sub-rectangle crop
+- completed target download retrieval
 
-### UI scale contract
+### LegacyRenderFacade
 
-`ControlUIScale` is now applied to the existing scalable control/panel/HUD
-transforms and font cache sizing. It intentionally does not multiply the raw
-640x480 screen-overlay transform, so input/world-overlay coordinates remain
-stable.
+Every named `LegacyRenderFacade` method currently recovered from the Debug
+signature inventory has a declaration and implementation. The audit covers
+91 named methods, including:
 
-`RmlScale` is loaded independently through `UI::Scaling::GetRmlUiScale()`.
-It is not applied to legacy controls; it is reserved for the RmlUi document
-layer, matching the separation exposed by the public MuClient config.
+- state / matrix / fixed-function compatibility
+- client arrays and triangle classification
+- `WriteTriangles` / `WriteTriangleFan`
+- geometry / terrain / grass paths
+- trail / particle / quad / sprite instances
+- BMD bone palette, geometry, rigid instances and shadow geometry
+- texture definition / frame-only quad
+- copy target / RGBA target download
+
+Some instance/terrain paths currently use a CPU-expanded compatibility path
+where the exact private structured-buffer submission has not yet been
+reconstructed. Their public behavior is represented, but they are not claimed
+to be instruction-identical to MuTwo.
+
+### Session rendering
+
+- all 36 named `SessionLegacyCalls` methods recovered from the Debug inventory
+- `SessionRenderUnit::BeginRenderTapePass`
+- exact recovered `SessionRenderUnit::RenderPointRotate` signature
+- modern UI preparation hook
+- frame identity propagation
+- tape finalize/replay before renderer presentation
+
+### GPU layouts recovered from Debug/shader evidence
+
+- `RenderTapeBoneMatrix`
+- `RenderTapeTerrainCell`
+- private BMD constants size: 232 bytes
+- private terrain constants size: 36 bytes
+- shader-visible vertex constants: 384 bytes
+- rigid instance: 96 bytes
+- trail instance: 96 bytes
+- quad instance: 96 bytes
+- particle instance: 64 bytes
+- terrain instance: 16 bytes
+
+See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
+
+### RmlUi
+
+- RmlUi 6.3-compatible `TapeRenderInterface`
+- `RmlUiRuntime`
+- `MuSystemInterface`
+- `RmlHudMapViewport`
+- recovered `map-view` and `map-viewport` element aliases
+- modern UI called from the live frame lifecycle
+- immediate-mode fallback when `RenderPipeline=0`
+- deterministic FreeType and LunaSVG build dependencies
+- neutral reconstructed HUD bootstrap:
+  `Data/UI/PC/HUD/main_frame.rml`
+- reconstructed stylesheet bootstrap:
+  `Data/UI/PC/ui_assets.rcss`
+- Debug-derived RML document inventory in `MUTWO_RML_DOCUMENTS.md`
+
+No VDraven RML/RCSS contents are copied. The public repository does not expose
+a license file, so UI documents are reconstructed independently.
+
+## Remaining validation / parity work
+
+- [ ] Full clean Windows x64 compile
+- [ ] Full clean Windows x86 compile
+- [ ] Run-time validation against Main-x64-Debug.exe
+- [ ] Run-time validation against Main-x86-Debug.exe
+- [ ] Vulkan visual/state parity pass
+- [ ] Direct3D12 visual/state parity pass
+- [ ] Feed more real scene-preparation work into SessionRender workers where
+      thread ownership permits
+- [ ] Replace remaining CPU-expanded instance/terrain compatibility paths with
+      the exact private storage-buffer path as more structure offsets are
+      recovered
+- [ ] Reconstruct the actual RML/RCSS screens from observable behavior and the
+      existing MuMain UI, using the Debug-derived document inventory
+
+## Current confidence boundary
+
+The named RenderTape/LegacyRenderFacade/SessionLegacyCalls surface recovered
+from the Debug executables is now represented in source. This does **not** mean
+that the complete private source was recovered byte-for-byte.
+
+The remaining uncertainty is primarily:
+
+1. private field semantics not preserved by compilation,
+2. exact native structured-buffer batching for some instance/terrain modes,
+3. the contents/behavior of individual RmlUi documents,
+4. whole-project compile/link/runtime validation.
+
+Do not mark this reconstruction as fully validated until clean x86/x64 builds
+and differential runtime tests succeed.
