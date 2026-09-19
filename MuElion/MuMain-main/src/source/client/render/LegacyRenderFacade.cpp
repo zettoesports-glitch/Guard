@@ -210,15 +210,19 @@ std::uint32_t LegacyRenderFacade::PackColor(const std::array<float, 4>& color) n
     return (a << 24u) | (b << 16u) | (g << 8u) | r;
 }
 
-bool LegacyRenderFacade::EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<const RenderTapeVertex> vertices) noexcept
+bool LegacyRenderFacade::EmitExpandedTriangles(
+    LegacyPrimitive primitive, std::span<const RenderTapeVertex> vertices) noexcept
 {
     if (vertices.empty())
         return true;
 
+    std::vector<RenderTapeVertex> expanded;
+
     if (primitive == LegacyPrimitive::TriangleFan)
     {
-        if (vertices.size() < 3) return true;
-        std::vector<RenderTapeVertex> expanded;
+        if (vertices.size() < 3)
+            return true;
+
         expanded.reserve((vertices.size() - 2) * 3);
         for (std::size_t i = 1; i + 1 < vertices.size(); ++i)
         {
@@ -231,8 +235,9 @@ bool LegacyRenderFacade::EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<
 
     if (primitive == LegacyPrimitive::TriangleStrip)
     {
-        if (vertices.size() < 3) return true;
-        std::vector<RenderTapeVertex> expanded;
+        if (vertices.size() < 3)
+            return true;
+
         expanded.reserve((vertices.size() - 2) * 3);
         for (std::size_t i = 0; i + 2 < vertices.size(); ++i)
         {
@@ -253,8 +258,9 @@ bool LegacyRenderFacade::EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<
 
     if (primitive == LegacyPrimitive::LineStrip || primitive == LegacyPrimitive::LineLoop)
     {
-        if (vertices.size() < 2) return true;
-        std::vector<RenderTapeVertex> expanded;
+        if (vertices.size() < 2)
+            return true;
+
         const std::size_t pairCount =
             primitive == LegacyPrimitive::LineLoop ? vertices.size() : vertices.size() - 1;
         expanded.reserve(pairCount * 2);
@@ -264,6 +270,22 @@ bool LegacyRenderFacade::EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<
             expanded.push_back(vertices[(i + 1) % vertices.size()]);
         }
         return EmitPrimitiveDraw(LegacyPrimitive::Lines, expanded);
+    }
+
+    return false;
+}
+
+bool LegacyRenderFacade::EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<const RenderTapeVertex> vertices) noexcept
+{
+    if (vertices.empty())
+        return true;
+
+    if (primitive == LegacyPrimitive::TriangleFan ||
+        primitive == LegacyPrimitive::TriangleStrip ||
+        primitive == LegacyPrimitive::LineStrip ||
+        primitive == LegacyPrimitive::LineLoop)
+    {
+        return EmitExpandedTriangles(primitive, vertices);
     }
 
     if (m_recording.IsRecording())
@@ -572,14 +594,28 @@ bool LegacyRenderFacade::ReadArrayVertex(int index, RenderTapeVertex& vertex) co
     return true;
 }
 
+bool LegacyRenderFacade::ReadArrayVertices(int first, int count,
+                                           std::span<RenderTapeVertex> out) noexcept
+{
+    if (first < 0 || count < 0 || out.size() < static_cast<std::size_t>(count))
+        return false;
+
+    for (int i = 0; i < count; ++i)
+    {
+        if (!ReadArrayVertex(first + i, out[static_cast<std::size_t>(i)]))
+            return false;
+    }
+    return true;
+}
+
 bool LegacyRenderFacade::DrawArrays(LegacyPrimitive primitive, int first, int count) noexcept
 {
     if (first < 0 || count < 0)
         return false;
 
     std::vector<RenderTapeVertex> vertices(static_cast<std::size_t>(count));
-    for (int i = 0; i < count; ++i)
-        if (!ReadArrayVertex(first + i, vertices[static_cast<std::size_t>(i)])) return false;
+    if (!ReadArrayVertices(first, count, vertices))
+        return false;
 
     return EmitPrimitiveDraw(primitive, vertices);
 }
@@ -610,6 +646,62 @@ bool LegacyRenderFacade::Perspective(float fovY, float aspect, float nearPlane, 
 
 bool LegacyRenderFacade::PushMatrix() noexcept { mu::GetRenderer().PushMatrix(); return true; }
 bool LegacyRenderFacade::PopMatrix() noexcept { mu::GetRenderer().PopMatrix(); return true; }
+
+bool LegacyRenderFacade::Sphere(float radius, unsigned int slices, unsigned int stacks) noexcept
+{
+    if (!(radius > 0.0f) || slices < 3 || stacks < 2)
+        return false;
+
+    constexpr float pi = 3.14159265358979323846f;
+    std::vector<RenderTapeVertex> triangles;
+    triangles.reserve(static_cast<std::size_t>(slices) *
+                      static_cast<std::size_t>(stacks) * 6u);
+
+    const auto makeVertex = [radius](float theta, float phi) {
+        RenderTapeVertex vertex{};
+        const float sinPhi = std::sin(phi);
+        const float nx = std::cos(theta) * sinPhi;
+        const float ny = std::sin(theta) * sinPhi;
+        const float nz = std::cos(phi);
+        vertex.position = {nx * radius, ny * radius, nz * radius};
+        vertex.normal = {nx, ny, nz};
+        vertex.texCoord = {theta / (2.0f * pi), phi / pi};
+        return vertex;
+    };
+
+    for (unsigned int stack = 0; stack < stacks; ++stack)
+    {
+        const float phi0 = pi * static_cast<float>(stack) / static_cast<float>(stacks);
+        const float phi1 = pi * static_cast<float>(stack + 1u) / static_cast<float>(stacks);
+
+        for (unsigned int slice = 0; slice < slices; ++slice)
+        {
+            const float theta0 = 2.0f * pi * static_cast<float>(slice) / static_cast<float>(slices);
+            const float theta1 = 2.0f * pi * static_cast<float>(slice + 1u) / static_cast<float>(slices);
+
+            const auto a = makeVertex(theta0, phi0);
+            const auto b = makeVertex(theta1, phi0);
+            const auto c = makeVertex(theta1, phi1);
+            const auto d = makeVertex(theta0, phi1);
+
+            if (stack != 0)
+            {
+                triangles.push_back(a);
+                triangles.push_back(b);
+                triangles.push_back(c);
+            }
+            if (stack + 1u != stacks)
+            {
+                triangles.push_back(a);
+                triangles.push_back(c);
+                triangles.push_back(d);
+            }
+        }
+    }
+
+    return EmitPrimitiveDraw(LegacyPrimitive::Triangles, triangles);
+}
+
 bool LegacyRenderFacade::ApplyMatrix(const std::array<float, 16>& matrix) noexcept { return MultMatrix(matrix); }
 
 bool LegacyRenderFacade::PushAttrib() noexcept
@@ -743,6 +835,28 @@ bool LegacyRenderFacade::DefineTexture2D(LogicalRenderAssetRef ref, unsigned int
                                          RenderAssetRetention retention, RenderSamplerIntent sampler) noexcept
 {
     return m_assets.DefineTexture2D(ref, width, height, pixels, format, retention, sampler);
+}
+
+bool LegacyRenderFacade::AppendFrameOnlyTextureQuad(
+    LogicalRenderAssetRef ref, unsigned int width, unsigned int height,
+    std::span<const std::byte> pixels, RenderSamplerIntent sampler,
+    const std::array<std::array<float, 2>, 4>& positions) noexcept
+{
+    if (!DefineTexture2D(ref, width, height, pixels, LegacyPixelFormat::Rgba8,
+                         RenderAssetRetention::FrameOnly, sampler))
+        return false;
+
+    const auto metadata = m_assets.Resolve(ref);
+    if (!metadata || metadata->textureId == 0)
+        return false;
+
+    const mu::Vertex2D vertices[4] = {
+        {positions[0][0], positions[0][1], 0.0f, 0.0f, 0xFFFFFFFFu},
+        {positions[1][0], positions[1][1], 0.0f, 1.0f, 0xFFFFFFFFu},
+        {positions[2][0], positions[2][1], 1.0f, 1.0f, 0xFFFFFFFFu},
+        {positions[3][0], positions[3][1], 1.0f, 0.0f, 0xFFFFFFFFu},
+    };
+    return SubmitQuad2D(vertices, metadata->textureId);
 }
 
 void LegacyRenderFacade::BindTexture(LogicalRenderAssetRef ref) noexcept

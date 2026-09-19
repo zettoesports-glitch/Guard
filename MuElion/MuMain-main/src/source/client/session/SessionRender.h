@@ -10,8 +10,19 @@
 #include <thread>
 #include <vector>
 
+namespace mu::pipeline
+{
+enum class RenderTapePass : std::uint8_t;
+}
+
 namespace mu::session
 {
+
+class SessionRenderUnit
+{
+public:
+    [[nodiscard]] bool BeginRenderTapePass(mu::pipeline::RenderTapePass pass) noexcept;
+};
 
 class SessionRender
 {

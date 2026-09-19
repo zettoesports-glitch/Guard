@@ -30,7 +30,10 @@ public:
     [[nodiscard]] bool Color4(float r, float g, float b, float a) noexcept;
     [[nodiscard]] bool Normal3(float x, float y, float z) noexcept;
     [[nodiscard]] bool TexCoord2(float u, float v) noexcept;
-    [[nodiscard]] bool EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<const RenderTapeVertex> vertices) noexcept;
+    [[nodiscard]] bool EmitExpandedTriangles(LegacyPrimitive primitive,
+                                               std::span<const RenderTapeVertex> vertices) noexcept;
+    [[nodiscard]] bool EmitPrimitiveDraw(LegacyPrimitive primitive,
+                                          std::span<const RenderTapeVertex> vertices) noexcept;
 
     // Integration helpers for already-modernized MuMain paths. These keep direct
     // IMuRenderer submissions tape-compatible while the original MuTwo logical
@@ -50,6 +53,8 @@ public:
                                       int stride, bool normalized) noexcept;
     void EnableClientArray(RenderClientArraySemantic semantic) noexcept;
     void DisableClientArray(RenderClientArraySemantic semantic) noexcept;
+    [[nodiscard]] bool ReadArrayVertices(int first, int count,
+                                         std::span<RenderTapeVertex> out) noexcept;
     [[nodiscard]] bool DrawArrays(LegacyPrimitive primitive, int first, int count) noexcept;
 
     [[nodiscard]] bool MatrixMode(LegacyMatrixMode mode) noexcept;
@@ -63,6 +68,7 @@ public:
     [[nodiscard]] bool Perspective(float fovY, float aspect, float nearPlane, float farPlane) noexcept;
     [[nodiscard]] bool PushMatrix() noexcept;
     [[nodiscard]] bool PopMatrix() noexcept;
+    [[nodiscard]] bool Sphere(float radius, unsigned int slices, unsigned int stacks) noexcept;
     [[nodiscard]] bool ApplyMatrix(const std::array<float, 16>& matrix) noexcept;
     [[nodiscard]] bool PushAttrib() noexcept;
     [[nodiscard]] bool PopAttrib() noexcept;
@@ -110,6 +116,10 @@ public:
     [[nodiscard]] bool DefineTexture2D(LogicalRenderAssetRef ref, unsigned int width, unsigned int height,
                                        std::span<const std::byte> pixels, LegacyPixelFormat format,
                                        RenderAssetRetention retention, RenderSamplerIntent sampler) noexcept;
+    [[nodiscard]] bool AppendFrameOnlyTextureQuad(
+        LogicalRenderAssetRef ref, unsigned int width, unsigned int height,
+        std::span<const std::byte> pixels, RenderSamplerIntent sampler,
+        const std::array<std::array<float, 2>, 4>& positions) noexcept;
     void BindTexture(LogicalRenderAssetRef ref) noexcept;
     void BindTextureId(std::uint32_t textureId) noexcept;
 

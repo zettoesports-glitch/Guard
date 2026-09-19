@@ -10,6 +10,12 @@
 namespace mu::session
 {
 
+bool SessionRenderUnit::BeginRenderTapePass(mu::pipeline::RenderTapePass pass) noexcept
+{
+    mu::pipeline::SessionFogPassConstants fog{};
+    return mu::pipeline::GetLegacyRenderFacade().BeginPass(pass, fog);
+}
+
 SessionRender::~SessionRender()
 {
     Shutdown();

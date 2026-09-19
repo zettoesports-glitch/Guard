@@ -42,13 +42,14 @@ Normal3(float,float,float) noexcept
 TexCoord2(float,float) noexcept
 EmitExpandedTriangles(LegacyPrimitive, span<RenderTapeVertex const>) noexcept
 EmitPrimitiveDraw(LegacyPrimitive, span<RenderTapeVertex const>) noexcept
-ReserveIndexedTriangles(unsigned int,unsigned int)
+ReserveIndexedTriangles(uint64,uint64)
+    -> optional<LegacyRenderFacade::IndexedTriangleReservation>
 SetClientArray(RenderClientArraySemantic, span<byte const>, unsigned int,
                RenderClientArrayScalarType, int, bool) noexcept
 EnableClientArray(RenderClientArraySemantic) noexcept
 DisableClientArray(RenderClientArraySemantic) noexcept
-ReadArrayVertices(int,int,span<RenderTapeVertex>) noexcept
-CountClassifiedArrayTriangles(LegacyPrimitive,int,int,unsigned int&,unsigned int&) noexcept
+ReadArrayVertices(int,int,span<RenderTapeVertex>) -> bool noexcept
+CountClassifiedArrayTriangles(LegacyPrimitive,int,int,uint64&,uint64&) -> bool noexcept
 DrawArrays(LegacyPrimitive,int,int) noexcept
 DrawGeometry(LogicalGeometryAssetLease const&,unsigned int,unsigned int) noexcept
 BuildTrustedGeometryDraw(LogicalGeometryAssetLease const&,unsigned int,unsigned int,
@@ -58,7 +59,8 @@ DrawTerrainInstances(LogicalGeometryAssetLease const&,unsigned int,unsigned int,
                      RenderTapeTerrainConstants const&) noexcept
 DrawGrassGeometry(LogicalGeometryAssetLease const&,unsigned int,unsigned int,uint64) noexcept
 BeginQuadInstanceRun() -> uint64
-ReserveTrailSamples(unsigned int)
+ReserveTrailSamples(uint64)
+    -> optional<SessionRenderTapeRecording::TrailSampleReservation>
 DrawTrailInstance(LogicalGeometryAssetLease const&,RenderTapeTrailInstance const&,uint64,bool) noexcept
 DrawParticleInstance(LogicalGeometryAssetLease const&,RenderTapeParticleInstance const&,uint64) noexcept
 DrawQuadInstance(LogicalGeometryAssetLease const&,RenderTapeQuadInstance const&,uint64) noexcept
@@ -70,7 +72,7 @@ DrawRigidInstances(LogicalGeometryAssetLease const&,uint,uint,uint,uint,
                    span<RenderTapeRigidInstance const>,RenderTapeBmdConstants const&) noexcept
 DrawBmdShadowGeometry(LogicalGeometryAssetLease const&,LogicalGeometryAssetLease const&,
                       uint,uint,uint,uint,RenderTapeBmdConstants const&) noexcept
-Sphere(float,unsigned int,unsigned int) noexcept
+Sphere(float,unsigned int,unsigned int) -> bool noexcept
 ApplyMatrix(array<float,16> const&) noexcept
 MatrixMode(LegacyMatrixMode) noexcept
 LoadIdentity() noexcept
@@ -126,11 +128,12 @@ ClearStencil(unsigned int) noexcept
 DefineTexture2D(LogicalRenderAssetRef,uint,uint,span<byte const>,LegacyPixelFormat,
                 RenderAssetRetention,RenderSamplerIntent) noexcept
 AppendFrameOnlyTextureQuad(LogicalRenderAssetRef,uint,uint,span<byte const>,
-                           RenderSamplerIntent,array<array<float,2>,4> const&) noexcept
+                           RenderSamplerIntent,array<array<float,2>,4> const&) -> bool noexcept
 BindTexture(LogicalRenderAssetRef) noexcept
 CopyTargetToLogicalTexture(SessionId,SessionGeneration,uint64,RenderTapeRect,
-                           LogicalRenderAssetRef) noexcept
-DownloadTargetRgba8(SessionId,SessionGeneration,uint64,uint64,RenderTapeRect,bool,uint64) noexcept
+                           LogicalRenderAssetRef) -> bool noexcept
+DownloadTargetRgba8(SessionId,SessionGeneration,uint64,uint64,RenderTapeRect,bool,uint64)
+                           -> bool noexcept
 ```
 
 ## SessionRender / legacy call signatures recovered
