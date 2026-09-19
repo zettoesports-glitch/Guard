@@ -8,144 +8,27 @@
     <meta name="mu-design-Extension-PitchY" content="26"/>
     <meta name="mu-design-Extension-Reference" content="640 480"/>
     <meta name="mu-design-Extension-InitialPosition" content="21 40"/>
-    <title>Reconstructed Expanded Inventory</title>
+    <title>Reconstructed Inventory Extension</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
     <link type="text/rcss" href="../ui_assets.rcss"/>
     <link type="text/rcss" href="inventory_extension.rcss"/>
 </head>
 <body class="mu-modern-document">
-    <div id="extension">
-        <div class="extension-background"></div>
+    <div id="extension" class="extension-panel">
+        <div class="extension-background"/>
         <div id="tfTitle" class="extension-title">Expanded Inventory</div>
-        <div id="btnDrag" class="extension-drag"></div>
+        <div id="btnDrag" class="extension-drag"/>
         <div id="btnClose" class="mu-button extension-close">X</div>
-        <div id="isSlot0" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot1" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot2" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot3" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot4" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot5" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot6" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot7" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot8" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot9" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot10" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot11" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot12" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot13" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot14" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot15" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot16" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot17" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot18" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot19" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot20" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot21" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot22" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot23" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot24" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot25" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot26" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot27" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot28" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot29" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot30" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot31" class="mu-item-slot extension-slot bag-0"></div>
-        <div id="isSlot32" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot33" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot34" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot35" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot36" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot37" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot38" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot39" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot40" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot41" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot42" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot43" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot44" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot45" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot46" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot47" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot48" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot49" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot50" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot51" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot52" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot53" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot54" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot55" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot56" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot57" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot58" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot59" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot60" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot61" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot62" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot63" class="mu-item-slot extension-slot bag-1"></div>
-        <div id="isSlot64" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot65" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot66" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot67" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot68" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot69" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot70" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot71" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot72" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot73" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot74" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot75" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot76" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot77" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot78" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot79" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot80" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot81" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot82" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot83" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot84" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot85" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot86" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot87" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot88" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot89" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot90" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot91" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot92" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot93" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot94" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot95" class="mu-item-slot extension-slot bag-2"></div>
-        <div id="isSlot96" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot97" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot98" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot99" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot100" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot101" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot102" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot103" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot104" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot105" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot106" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot107" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot108" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot109" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot110" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot111" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot112" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot113" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot114" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot115" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot116" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot117" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot118" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot119" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot120" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot121" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot122" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot123" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot124" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot125" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot126" class="mu-item-slot extension-slot bag-3"></div>
-        <div id="isSlot127" class="mu-item-slot extension-slot bag-3"></div>
+
+        <div id="extension-grid-0" class="extension-grid"/>
+        <div id="extension-grid-1" class="extension-grid"/>
+        <div id="extension-grid-2" class="extension-grid"/>
+        <div id="extension-grid-3" class="extension-grid"/>
+
+        <div id="extension-locked-0" class="extension-locked">Bag 1 locked</div>
+        <div id="extension-locked-1" class="extension-locked">Bag 2 locked</div>
+        <div id="extension-locked-2" class="extension-locked">Bag 3 locked</div>
+        <div id="extension-locked-3" class="extension-locked">Bag 4 locked</div>
     </div>
 </body>
 </rml>

@@ -235,3 +235,7 @@ and differential runtime tests succeed.
 
 - materialized shared `Common/common.rcss` plus common/scrollbar design
   contracts so reconstructed panels no longer depend on a missing shared RCSS
+
+- reconstructed `RmlInventoryExtensionPanel` with four 32-slot bag groups,
+  recovered progressive heights/grid metrics, movable presentation and
+  semantic slot/close actions while preserving legacy extension ownership

@@ -1692,3 +1692,30 @@ The reconstruction materializes an 8x4 (32-slot) grid, seller/buyer mode,
 Debug-matched allowed/banned drop colors. All actions and slot clicks are
 one-shot requests; pricing, item legality, purchase/open requests and network
 ownership remain in the legacy private-store code.
+
+
+## Inventory extension design contract
+
+The Debug executable preserves these authored keys:
+
+```text
+Extension-Width
+Extension-Heights
+Extension-GridX
+Extension-GridY
+Extension-PitchX
+Extension-PitchY
+Extension-Reference
+Extension-InitialPosition
+```
+
+The existing legacy `CNewUIInventoryExtension` confirms the semantic
+organization: four extension inventories are created up front, each is an
+8-column x 4-row `CNewUIInventoryCtrl` (32 cells), and only the first
+`CharacterAttribute->InventoryExtensions` groups participate in update and
+render. The controller therefore represents 4 x 32 = 128 slots and keeps
+unopened groups presentation-disabled.
+
+`RmlInventoryExtensionPanel` reconstructs that presentation boundary while
+leaving item movement, ownership, network requests, and empty-slot searches in
+the legacy extension controls.
