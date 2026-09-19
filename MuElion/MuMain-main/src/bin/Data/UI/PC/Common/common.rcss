@@ -1,0 +1,165 @@
+/* Independently-authored behavior base for reconstructed MU RmlUi panels. */
+
+.mu-hidden { display: none; }
+
+.mu-button {
+    position: absolute;
+    color: #c6c6c6;
+    text-align: center;
+    pointer-events: auto;
+}
+.mu-button.disabled {
+    color: #666666;
+    pointer-events: none;
+}
+.mu-button:hover:not(.disabled) { color: #fff2c8; }
+.mu-button.selected { color: #ffc000; }
+
+.mu-checkbox {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    pointer-events: auto;
+}
+.mu-checkbox-row {
+    position: absolute;
+    height: 20px;
+    cursor: pointer;
+    pointer-events: auto;
+}
+.mu-checkbox-row > .mu-checkbox { left: 3.5px; top: 3.5px; }
+.mu-checkbox-row > span {
+    position: absolute;
+    left: 22px;
+    top: 2.75px;
+    height: 17.4px;
+    line-height: 17.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    pointer-events: none;
+}
+.mu-checkbox-row > .mu-checkbox:checked + span { color: #f7941d; }
+.mu-checkbox-row > .mu-checkbox:disabled + span { color: #666666; }
+
+.mu-meter-cell {
+    width: 11px;
+    height: 16px;
+    border-width: 1px;
+    border-color: #55472f;
+    background-color: #16191f;
+    pointer-events: auto;
+}
+.mu-meter-cell.filled,
+.mu-meter-cell:checked {
+    border-color: #a77b2d;
+    background-color: #d27622;
+}
+
+.mu-scrollbar,
+.mu-scrollbar-track,
+.mu-scrollbar-button,
+.mu-scrollbar-thumb {
+    position: absolute;
+}
+.mu-scrollbar { pointer-events: auto; }
+.mu-scrollbar-track { pointer-events: auto; }
+.mu-scrollbar-button {
+    pointer-events: auto;
+    text-align: center;
+    color: #c6c6c6;
+}
+.mu-scrollbar-thumb {
+    pointer-events: auto;
+    cursor: move;
+    drag: drag;
+    background-color: #747474;
+}
+
+.mu-select {
+    box-sizing: border-box;
+    height: 28px;
+    color: #ddddda;
+    pointer-events: auto;
+}
+.mu-select selectvalue {
+    box-sizing: border-box;
+    height: 28px;
+    margin-right: 26px;
+    padding: 6px 10px;
+    border-width: 1px;
+    border-color: #473423;
+    background-color: #080705ee;
+    white-space: nowrap;
+}
+.mu-select selectarrow {
+    width: 26px;
+    height: 28px;
+    color: #d8c9a5;
+    background-color: #17120ddd;
+}
+.mu-select selectbox {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 2px;
+    border-width: 1px;
+    border-color: #6b4b2b;
+    background-color: #080705f2;
+}
+.mu-select selectbox option {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 5px 8px;
+    white-space: nowrap;
+    color: #ddddda;
+    background-color: #080705f2;
+}
+.mu-select selectbox option:hover { background-color: #5b3214; }
+.mu-select selectbox option:checked { color: #ffc000; }
+
+.mu-text-input {
+    box-sizing: border-box;
+    padding: 3px;
+    border-width: 1px;
+    border-color: #473423;
+    background-color: #080705cc;
+    color: #ddddda;
+    overflow: hidden;
+    cursor: text;
+    tab-index: auto;
+}
+
+.MULabel,
+.mu-overflow-label {
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.mu-option-stepper {
+    pointer-events: auto;
+    tab-index: auto;
+}
+
+.mu-window {
+    border-width: 1px;
+    border-color: #665b3e;
+    background-color: #11151df2;
+}
+.mu-window-s16 {
+    border-width: 1px;
+    border-color: #665b3e;
+    background-color: #11151df2;
+}
+
+.mu-divider-big,
+.mu-divider-small {
+    position: absolute;
+    pointer-events: none;
+    background-color: #665b3e;
+}
+.mu-divider-big { width: 293px; height: 2px; }
+.mu-divider-small { width: 287px; height: 1px; }
+
+.MUTextArea {
+    overflow-x: hidden;
+    overflow-y: auto;
+}

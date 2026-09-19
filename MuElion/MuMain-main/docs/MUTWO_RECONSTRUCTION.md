@@ -223,3 +223,6 @@ and differential runtime tests succeed.
   legacy and modern options, 0..10 volume meters, 0..4 effect level and typed
   immediate-change actions while keeping GameConfig/SDL/audio/font side effects
   outside RmlUi
+
+- materialized shared `Common/common.rcss` plus common/scrollbar design
+  contracts so reconstructed panels no longer depend on a missing shared RCSS

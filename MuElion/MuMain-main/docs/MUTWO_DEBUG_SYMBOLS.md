@@ -1545,3 +1545,18 @@ owning those side effects. Checkbox/radio controls carry boolean or integer
 values; font/language/resolution selects emit their selected index; Escape and
 the Close button emit Close. The game-side owner remains responsible for
 persisting config and applying SDL/audio/localization/font changes.
+
+
+## Shared Common RmlUi contracts
+
+The neutral `Common/common.rml` and `Common/scrollbar.rml` skeletons have
+been replaced with their observable design contracts. The common document
+carries the global overflow-marquee values (0.6 second pause, 30 pixels/sec),
+while the scrollbar document exposes the recovered 22x252.998 reference
+geometry, track/button/thumb dimensions and minimum thumb height.
+
+A local independently-authored `Common/common.rcss` now supplies the common
+behavioral classes used throughout the reconstructed panels: buttons,
+checkbox rows, meter cells, scrollbars, selects, text inputs, overflow labels,
+window/divider bases and text areas. It intentionally does not copy the
+upstream generated skin/decorator catalog.

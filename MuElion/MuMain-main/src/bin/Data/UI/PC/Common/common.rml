@@ -1,9 +1,8 @@
 <rml>
 <head>
-    <title>Reconstructed Common</title>
-    <link type="text/rcss" href="../ui_assets.rcss"/>
+    <meta name="mu-design-OverflowPauseSeconds" content="0.6"/>
+    <meta name="mu-design-OverflowPixelsPerSecond" content="30"/>
+    <title>MU Common Contracts</title>
 </head>
-<body class="mu-modern-document" id="mu-common-common">
-    <div class="mu-document-root"></div>
-</body>
+<body/>
 </rml>
