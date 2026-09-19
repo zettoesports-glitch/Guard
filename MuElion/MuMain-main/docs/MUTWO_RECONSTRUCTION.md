@@ -202,3 +202,6 @@ The remaining uncertainty is primarily:
 
 Do not mark this reconstruction as fully validated until clean x86/x64 builds
 and differential runtime tests succeed.
+
+- reconstructed `RmlSystemMenuPanel` with recovered full/compact geometry,
+  independent action visibility, Escape handling and semantic system actions

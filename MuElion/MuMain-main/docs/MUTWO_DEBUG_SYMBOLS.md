@@ -1430,3 +1430,21 @@ presentation. Each member state supplies normalized HP/MP, leader,
 out-of-sight/selection state, and an explicit `canLeave` flag. Interaction is
 returned as semantic one-shot requests: minimize, select member, or leave
 member. No party packet or global `Party[]` mutation is performed by RmlUi.
+
+
+## RmlSystemMenuPanel reconstruction
+
+The system-menu document exposes width 306, full/login heights, a 47.95-pixel
+compact offset, three authored slot positions, divider/close positions, and
+five semantic controls: exit, server, character, option, and close.
+
+The existing `CNewUIWindowMenu` in MuMain is a separate compact window menu
+and is not treated as the owner of this document. The reconstruction therefore
+does not conflate its indexed menu commands with the RmlUi system menu.
+
+`RmlSystemMenuPanel` treats the first four actions as independently
+visible/enabled. Visible primary controls are packed at the recovered 47.95
+vertical cadence; two-or-fewer primary actions use the recovered compact
+height/offset. All interaction is surfaced as a semantic action enum. Escape
+maps to Close, but logout/server/character/option operations are intentionally
+left to the game-side owner.

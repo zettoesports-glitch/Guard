@@ -1,0 +1,13 @@
+body { margin:0; width:100%; height:100%; overflow:hidden; font-family:Arial; }
+#system-menu, #system-menu div, #system-menu span { position:absolute; box-sizing:border-box; }
+.system-menu { display:none; width:306px; height:290px; pointer-events:auto; }
+.system-frame { left:0; top:0; width:100%; height:100%; border-width:1px; border-color:#665b3e; background-color:#11151df2; pointer-events:none; }
+.system-title { left:48px; top:22px; width:210px; height:24px; line-height:24px; text-align:center; color:#ffc000; pointer-events:none; }
+.system-divider { left:24px; width:258px; height:1px; background-color:#665b3e; pointer-events:none; }
+.title-divider { top:52px; }
+.bottom-divider { top:228px; }
+.system-primary { left:93px; width:120px; height:35px; line-height:35px; text-align:center; border-width:1px; border-color:#665b3e; background-color:#242830; color:#d6d6d6; pointer-events:auto; }
+.system-close { left:113px; top:243px; width:80px; height:30px; line-height:30px; text-align:center; border-width:1px; border-color:#665b3e; background-color:#242830; color:#d6d6d6; pointer-events:auto; }
+.mu-button:hover { color:#fff2c8; border-color:#9a8658; }
+.mu-button.disabled { color:#666; }
+.mu-hidden { display:none; }

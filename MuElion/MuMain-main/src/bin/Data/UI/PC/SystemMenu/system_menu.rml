@@ -1,9 +1,28 @@
 <rml>
 <head>
+    <meta name="mu-design-SystemMenu-Width" content="306"/>
+    <meta name="mu-design-SystemMenu-FullHeight" content="290.000336"/>
+    <meta name="mu-design-SystemMenu-LoginHeight" content="242.050336"/>
+    <meta name="mu-design-SystemMenu-SlotX" content="93 93.05 93.05"/>
+    <meta name="mu-design-SystemMenu-SlotY" content="65 114.95 162.9"/>
+    <meta name="mu-design-SystemMenu-DividerY" content="228"/>
+    <meta name="mu-design-SystemMenu-CloseY" content="243"/>
+    <meta name="mu-design-SystemMenu-CompactOffset" content="47.95"/>
     <title>Reconstructed System Menu</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="system_menu.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-systemmenu-system-menu">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="system-menu" class="system-menu">
+        <div id="system-frame" class="system-frame"/>
+        <div id="title" class="system-title"/>
+        <div id="title-divider" class="system-divider title-divider"/>
+        <div id="exit-button" class="mu-button system-primary"><span id="exit-label"/></div>
+        <div id="server-button" class="mu-button system-primary"><span id="server-label"/></div>
+        <div id="character-button" class="mu-button system-primary"><span id="character-label"/></div>
+        <div id="option-button" class="mu-button system-primary"><span id="option-label"/></div>
+        <div id="bottom-divider" class="system-divider bottom-divider"/>
+        <div id="close-button" class="mu-button system-close"><span id="close-label"/></div>
+    </div>
 </body>
 </rml>
