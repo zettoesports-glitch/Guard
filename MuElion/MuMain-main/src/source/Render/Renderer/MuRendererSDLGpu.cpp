@@ -250,6 +250,7 @@ static Uint32 s_swapW = 0u;
 static Uint32 s_swapH = 0u;
 static std::uint32_t s_pendingFrameCaptureTextureId = 0u;
 static FrameReadbackState s_frameReadbackState;
+static FrameRgbaReadbackState s_frameRgbaReadbackState;
 static SDL_GPUTexture* s_frameReadbackTexture = nullptr;
 
 constexpr Uint32 FrameReadbackBytesPerPixel = 4u;
@@ -275,9 +276,9 @@ static void ReleaseFrameReadbackTexture()
 static void FailPendingFrameReadback()
 {
     if (s_frameReadbackState.IsPending())
-    {
         s_frameReadbackState.Fail();
-    }
+    if (s_frameRgbaReadbackState.IsPending())
+        s_frameRgbaReadbackState.Fail();
     ReleaseFrameReadbackTexture();
 }
 
@@ -403,30 +404,61 @@ static void BlitTextureToSwapchain(SDL_GPUCommandBuffer* commandBuffer, SDL_GPUT
         mu::log::Get("render")->warn("SDL_gpu -- frame readback map failed: {}", SDL_GetError());
     }
 
+    const bool rgbRequested = s_frameReadbackState.IsPending();
+    const bool rgbaRequested = s_frameRgbaReadbackState.IsPending();
+
     FramePixels pixels;
-    bool converted = false;
+    FramePixelsRgba8 rgbaPixels;
+    bool rgbConverted = !rgbRequested;
+    bool rgbaConverted = !rgbaRequested;
     if (mapped)
     {
         const auto* bytes = static_cast<const std::uint8_t*>(mapped);
-        converted = ConvertToTopDownRgb(std::span<const std::uint8_t>(bytes, download->byteCount), s_swapW, s_swapH,
-                                        download->rowPitch, download->channelOrder, false, pixels);
+        const auto source = std::span<const std::uint8_t>(bytes, download->byteCount);
+
+        if (rgbRequested)
+        {
+            rgbConverted = ConvertToTopDownRgb(
+                source, s_swapW, s_swapH, download->rowPitch,
+                download->channelOrder, false, pixels);
+        }
+
+        if (rgbaRequested)
+        {
+            rgbaConverted = ConvertToTopDownRgba8(
+                source, s_swapW, s_swapH, download->rowPitch,
+                download->channelOrder, s_frameRgbaReadbackState.ReverseRows(),
+                rgbaPixels);
+        }
+
         SDL_UnmapGPUTransferBuffer(s_device, download->transferBuffer);
     }
 
     SDL_ReleaseGPUFence(s_device, fence);
     SDL_ReleaseGPUTransferBuffer(s_device, download->transferBuffer);
 
-    if (!converted)
+    if (rgbRequested)
     {
-        if (mapped)
-        {
-            mu::log::Get("render")->warn("SDL_gpu -- frame readback pixel conversion failed");
-        }
-        s_frameReadbackState.Fail();
-        return true;
+        if (rgbConverted)
+            s_frameReadbackState.Complete(std::move(pixels));
+        else
+            s_frameReadbackState.Fail();
     }
 
-    s_frameReadbackState.Complete(std::move(pixels));
+    if (rgbaRequested)
+    {
+        if (rgbaConverted)
+            s_frameRgbaReadbackState.Complete(std::move(rgbaPixels));
+        else
+            s_frameRgbaReadbackState.Fail();
+    }
+
+    if (!rgbConverted || !rgbaConverted)
+    {
+        if (mapped)
+            mu::log::Get("render")->warn("SDL_gpu -- frame readback pixel conversion failed");
+    }
+
     return true;
 }
 
@@ -1911,7 +1943,7 @@ public:
         // The GPU vertex/index buffers now contain current-frame data.
         // ---------------------------------------------------------------
         SDL_GPUTextureFormat frameReadbackFormat = SDL_GPU_TEXTUREFORMAT_INVALID;
-        if (s_frameReadbackState.IsPending())
+        if (s_frameReadbackState.IsPending() || s_frameRgbaReadbackState.IsPending())
         {
             frameReadbackFormat = SDL_GetGPUSwapchainTextureFormat(s_device, s_window);
             if (!CreateFrameReadbackTexture(frameReadbackFormat))
@@ -2139,12 +2171,32 @@ public:
     {
         FramePixels completed = s_frameReadbackState.Consume();
         if (completed.rgb.empty())
-        {
             return false;
-        }
 
         pixels = std::move(completed);
         return true;
+    }
+
+    [[nodiscard]] bool RequestFramePixelsRgba8(bool reverseRows) override
+    {
+        return s_frameRgbaReadbackState.Request(reverseRows);
+    }
+
+    [[nodiscard]] bool ConsumeFramePixelsRgba8(FramePixelsRgba8& pixels) override
+    {
+        FramePixelsRgba8 completed = s_frameRgbaReadbackState.Consume();
+        if (completed.rgba.empty())
+            return false;
+
+        pixels = std::move(completed);
+        return true;
+    }
+
+    [[nodiscard]] bool GetFrameSize(std::uint32_t& width, std::uint32_t& height) const override
+    {
+        width = s_swapW;
+        height = s_swapH;
+        return width != 0u && height != 0u;
     }
 
     // -----------------------------------------------------------------------

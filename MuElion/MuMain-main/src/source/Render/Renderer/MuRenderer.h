@@ -261,6 +261,21 @@ public:
         (void)pixels;
         return false;
     }
+    [[nodiscard]] virtual bool RequestFramePixelsRgba8(bool /*reverseRows*/)
+    {
+        return false;
+    }
+    [[nodiscard]] virtual bool ConsumeFramePixelsRgba8(FramePixelsRgba8& pixels)
+    {
+        (void)pixels;
+        return false;
+    }
+    [[nodiscard]] virtual bool GetFrameSize(std::uint32_t& width, std::uint32_t& height) const
+    {
+        width = 0;
+        height = 0;
+        return false;
+    }
 
     // Story 4.4.1 — Texture System Migration: SDL_gpu device accessor.
     // Returns the SDL_GPUDevice* used by the active backend, or nullptr if not available.
