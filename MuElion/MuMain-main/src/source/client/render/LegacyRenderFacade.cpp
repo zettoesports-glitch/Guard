@@ -711,6 +711,89 @@ bool LegacyRenderFacade::DrawArrays(LegacyPrimitive primitive, int first, int co
     return EmitPrimitiveDraw(primitive, vertices);
 }
 
+
+bool LegacyRenderFacade::BuildTrustedGeometryDraw(
+    const LogicalGeometryAssetLease& geometry, unsigned int first,
+    unsigned int count, TrustedGeometryDraw& out) noexcept
+{
+    if (!geometry.IsValid())
+        return false;
+
+    const auto indices = geometry.Indices();
+    const auto vertices = geometry.Vertices();
+
+    if (!indices.empty())
+    {
+        const std::size_t begin = first;
+        const std::size_t requested = count;
+        if (begin > indices.size() || requested > indices.size() - begin)
+            return false;
+
+        for (std::size_t i = begin; i < begin + requested; ++i)
+        {
+            if (indices[i] >= vertices.size())
+                return false;
+        }
+    }
+    else
+    {
+        const std::size_t begin = first;
+        const std::size_t requested = count;
+        if (begin > vertices.size() || requested > vertices.size() - begin)
+            return false;
+    }
+
+    out.geometry = geometry;
+    out.first = first;
+    out.count = count;
+    return true;
+}
+
+bool LegacyRenderFacade::DrawGeometry(
+    const LogicalGeometryAssetLease& geometry, unsigned int first,
+    unsigned int count) noexcept
+{
+    TrustedGeometryDraw trusted{};
+    if (!BuildTrustedGeometryDraw(geometry, first, count, trusted))
+        return false;
+
+    const auto indices = geometry.Indices();
+    const auto vertices = geometry.Vertices();
+
+    if (!indices.empty())
+    {
+        std::vector<mu::Vertex3D> expanded;
+        expanded.reserve(count);
+        for (std::size_t i = first; i < static_cast<std::size_t>(first) + count; ++i)
+            expanded.push_back(vertices[indices[i]]);
+
+        if (expanded.size() % 3u != 0u)
+            return false;
+        return SubmitTriangles(expanded, geometry.TextureId());
+    }
+
+    const auto subset = vertices.subspan(first, count);
+    if (subset.size() % 3u != 0u)
+        return false;
+    return SubmitTriangles(subset, geometry.TextureId());
+}
+
+bool LegacyRenderFacade::AppendTrustedGeometryDrawBatch(
+    std::span<const TrustedGeometryDraw> draws) noexcept
+{
+    for (const auto& draw : draws)
+    {
+        TrustedGeometryDraw verified{};
+        if (!BuildTrustedGeometryDraw(
+                draw.geometry, draw.first, draw.count, verified))
+            return false;
+
+        if (!DrawGeometry(verified.geometry, verified.first, verified.count))
+            return false;
+    }
+    return true;
+}
+
 bool LegacyRenderFacade::MatrixMode(LegacyMatrixMode mode) noexcept { mu::GetRenderer().SetMatrixMode(static_cast<int>(mode)); return true; }
 bool LegacyRenderFacade::LoadIdentity() noexcept { mu::GetRenderer().LoadIdentity(); return true; }
 bool LegacyRenderFacade::LoadMatrix(const std::array<float, 16>& matrix) noexcept { mu::GetRenderer().LoadMatrix(matrix.data()); return true; }

@@ -195,3 +195,48 @@ classification path: `triangleIndexCount`, `modelViewProjection`, `indices`,
 `CountClassifiedArrayTriangles` classifies expanded triangles using the current
 model-view-projection transform and front-face winding. The exact private source
 layout is still not claimed to be byte-for-byte recovered.
+
+
+## Embedded vertex-shader layouts recovered
+
+The x64 Debug executable contains the generated Metal/SPIR-V shader source. It
+confirms the following GPU buffer layouts and order:
+
+```text
+RenderTapeVertexConstants:
+  float4x4 modelView
+  float4x4 projection
+  float4x4 textureMatrix
+  float4 bmdScale
+  float4 bmdBodyOrigin
+  float4 bmdBodyLight
+  float4 bmdBaseColor
+  float4 bmdLightPosition
+  float4 bmdUvAnimation
+  float4 bmdChromeLight
+  float4 bmdLegacyLight
+  uint4  bmdMode
+  float4 rigidTransform0
+  float4 rigidTransform1
+  float4 rigidTransform2
+
+BmdBoneMatrix:
+  float4 row0
+  float4 row1
+  float4 row2
+
+TerrainCell:
+  float height
+  uint  wall
+  float alpha
+  float padding
+```
+
+The reconstructed C++ now has size assertions of 48 bytes for
+`RenderTapeBoneMatrix`, 16 bytes for `RenderTapeTerrainCell`, 192 bytes for
+the non-matrix `RenderTapeBmdConstants` block, and 384 bytes for the complete
+`RenderTapeVertexConstants` block.
+
+`LogicalGeometryAssetLease` is currently a functional reconstruction around
+owned vertex/index data. Its private original memory-management implementation
+is not claimed to be textually identical.

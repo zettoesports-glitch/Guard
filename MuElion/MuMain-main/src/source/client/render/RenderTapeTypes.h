@@ -171,4 +171,59 @@ struct RenderTapeVertex
     std::array<float, 4> color{1.0f, 1.0f, 1.0f, 1.0f};
 };
 
+// GPU layouts recovered directly from the embedded MuTwo vertex shader.
+// These types deliberately preserve the raw float4/uint4 layout while higher
+// level semantic names continue to be reconstructed from the Debug executable.
+using RenderTapeFloat4 = std::array<float, 4>;
+using RenderTapeUInt4 = std::array<std::uint32_t, 4>;
+using RenderTapeMatrix4 = std::array<float, 16>;
+
+struct alignas(16) RenderTapeBoneMatrix
+{
+    RenderTapeFloat4 row0{};
+    RenderTapeFloat4 row1{};
+    RenderTapeFloat4 row2{};
+};
+
+struct alignas(16) RenderTapeTerrainCell
+{
+    float height = 0.0f;
+    std::uint32_t wall = 0;
+    float alpha = 1.0f;
+    float padding = 0.0f;
+};
+
+// This maps the non-matrix part of the shader's
+// type_RenderTapeVertexConstants block. The grouping under the private
+// RenderTapeBmdConstants C++ type is reconstructed from the recovered facade
+// signature; field order itself is confirmed by the embedded shader.
+struct alignas(16) RenderTapeBmdConstants
+{
+    RenderTapeFloat4 bmdScale{};
+    RenderTapeFloat4 bmdBodyOrigin{};
+    RenderTapeFloat4 bmdBodyLight{};
+    RenderTapeFloat4 bmdBaseColor{};
+    RenderTapeFloat4 bmdLightPosition{};
+    RenderTapeFloat4 bmdUvAnimation{};
+    RenderTapeFloat4 bmdChromeLight{};
+    RenderTapeFloat4 bmdLegacyLight{};
+    RenderTapeUInt4 bmdMode{};
+    RenderTapeFloat4 rigidTransform0{};
+    RenderTapeFloat4 rigidTransform1{};
+    RenderTapeFloat4 rigidTransform2{};
+};
+
+struct alignas(16) RenderTapeVertexConstants
+{
+    RenderTapeMatrix4 modelView{};
+    RenderTapeMatrix4 projection{};
+    RenderTapeMatrix4 textureMatrix{};
+    RenderTapeBmdConstants bmd{};
+};
+
+static_assert(sizeof(RenderTapeBoneMatrix) == 48);
+static_assert(sizeof(RenderTapeTerrainCell) == 16);
+static_assert(sizeof(RenderTapeBmdConstants) == 192);
+static_assert(sizeof(RenderTapeVertexConstants) == 384);
+
 } // namespace mu::pipeline

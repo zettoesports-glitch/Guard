@@ -1,6 +1,7 @@
 #pragma once
 
 #include "client/render/LogicalRenderAssetTable.h"
+#include "client/render/LogicalGeometryAsset.h"
 #include "client/render/RenderTapeTypes.h"
 #include "client/render/SessionRenderTape.h"
 #include "Render/Renderer/MuRenderer.h"
@@ -59,6 +60,14 @@ public:
         LegacyPrimitive primitive, int first, int count,
         std::uint64_t& frontFacing, std::uint64_t& backFacing) noexcept;
     [[nodiscard]] bool DrawArrays(LegacyPrimitive primitive, int first, int count) noexcept;
+
+    [[nodiscard]] bool DrawGeometry(const LogicalGeometryAssetLease& geometry,
+                                    unsigned int first, unsigned int count) noexcept;
+    [[nodiscard]] bool BuildTrustedGeometryDraw(const LogicalGeometryAssetLease& geometry,
+                                                unsigned int first, unsigned int count,
+                                                TrustedGeometryDraw& out) noexcept;
+    [[nodiscard]] bool AppendTrustedGeometryDrawBatch(
+        std::span<const TrustedGeometryDraw> draws) noexcept;
 
     [[nodiscard]] bool MatrixMode(LegacyMatrixMode mode) noexcept;
     [[nodiscard]] bool LoadIdentity() noexcept;
