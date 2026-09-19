@@ -380,3 +380,12 @@ and differential runtime tests succeed.
 - added read-only `CNewUIGensRanking::BuildSnapshot` plus
   `RmlGensRankingLegacyBridge`; `SendGensRankingRequest()`, visibility
   changes and all gameplay/network effects remain legacy-owned
+
+
+- reconstructed Guild creation/info/position presentation across the three
+  public PC Guild documents, including 8x8 mark editing, 16-color palette,
+  retained member/union/rival lists, scrollbars and semantic appointment/
+  relationship actions; legacy Guild windows keep all validation, message-box
+  confirmation and network ownership
+- central `RmlPcUiHost` now owns the three Guild controllers without
+  auto-loading them, preserving the legacy surface by default

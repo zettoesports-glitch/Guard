@@ -2219,3 +2219,51 @@ A read-only `GensRankingSnapshot` now projects:
 independently-authored `RmlGensRankingPanel`. Close clicks remain semantic
 one-shot actions; hiding the NewUI interface is intentionally left to legacy
 ownership.
+
+
+## Guild presentation reconstruction
+
+The public PC MuClient tree exposes three Guild documents:
+`Data/UI/PC/Guild/guild_create.rml`,
+`guild_info.rml`, and `guild_position.rml`. The Debug executable preserves
+these basenames and Guild-facing strings, but no `RmlGuild*` RTTI type names
+were recovered; the local controller names are therefore semantic
+reconstruction names rather than claims about stripped private identifiers.
+
+The observable authored metadata is:
+
+```text
+guild_create / guild_info:
+  Panel-Size      = 327 639
+  Panel-Reference = 640 480
+  Panel-Initial   = 20 20
+
+guild_position:
+  Menu-Size      = 310.001495 290.000336
+  Menu-Reference = 640 480
+  Menu-Initial   = 20 20
+```
+
+The reconstructed Guild creation panel preserves the observable 8x8 / 64-cell
+mark contract, 16 selectable palette colors, eight-character name limit, three
+creation stages and the public DOM ids for next/back/confirm/close. It returns
+semantic actions only.
+
+The existing `CNewUIGuildMakeWindow` remains authoritative for all game-side
+behavior. Its source confirms the INFO -> MARK -> RESULT_INFO flow, the
+8-character guild-name rule, 64 mark pixels packed as 32 nibble-pair bytes,
+and final `SendGuildCreateRequest`. None of these packet side effects are
+performed by RmlUi.
+
+The reconstructed Guild Info panel provides Info, Members, Union and Rival
+presentation tabs, retained member/union/rival rows, proportional scrollbars,
+guild mark/score/member/notice state and one-shot semantic actions for
+position, clear position, fire, leave/disband and relationship controls.
+The legacy `CNewUIGuildInfoWindow` remains authoritative for list requests,
+permission checks, confirmation message boxes, relationship packets and all
+guild mutations.
+
+`RmlGuildPositionPanel` reconstructs the two-position appointment modal and
+returns SelectType/Confirm/Cancel intents only. The central `RmlPcUiHost`
+owns all three controllers but never auto-loads them, preserving the legacy
+Guild UI until a bridge/action boundary is explicitly enabled.

@@ -31,6 +31,12 @@ class RmlTooltipLayer;
 }
 namespace Friend { class RmlFriendPanel; }
 namespace Gens { class RmlGensRankingPanel; }
+namespace Guild
+{
+class RmlGuildCreatePanel;
+class RmlGuildInfoPanel;
+class RmlGuildPositionPanel;
+}
 namespace Help
 {
 class RmlHelpPanel;
@@ -102,6 +108,9 @@ public:
     [[nodiscard]] Common::RmlTooltipLayer& Tooltip() noexcept;
     [[nodiscard]] Friend::RmlFriendPanel& Friend() noexcept;
     [[nodiscard]] Gens::RmlGensRankingPanel& GensRanking() noexcept;
+    [[nodiscard]] Guild::RmlGuildCreatePanel& GuildCreate() noexcept;
+    [[nodiscard]] Guild::RmlGuildInfoPanel& GuildInfo() noexcept;
+    [[nodiscard]] Guild::RmlGuildPositionPanel& GuildPosition() noexcept;
     [[nodiscard]] Help::RmlHelpPanel& Help() noexcept;
     [[nodiscard]] Help::RmlLongNoticeLayer& LongNotice() noexcept;
     [[nodiscard]] HUD::RmlBuffListLayer& BuffList() noexcept;

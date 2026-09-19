@@ -22,6 +22,9 @@
 #include "UI/Modern/PC/Friend/RmlFriendPanel.h"
 #include "UI/Modern/PC/Gens/RmlGensRankingPanel.h"
 #include "UI/Modern/PC/Gens/RmlGensRankingLegacyBridge.h"
+#include "UI/Modern/PC/Guild/RmlGuildCreatePanel.h"
+#include "UI/Modern/PC/Guild/RmlGuildInfoPanel.h"
+#include "UI/Modern/PC/Guild/RmlGuildPositionPanel.h"
 #include "UI/Modern/PC/Help/RmlHelpPanel.h"
 #include "UI/Modern/PC/Help/RmlHelpLegacyBridge.h"
 #include "UI/Modern/PC/Help/RmlLongNoticeLayer.h"
@@ -115,6 +118,9 @@ public:
         commandWindow_.Release();
         longNotice_.Release();
         help_.Release();
+        guildPosition_.Release();
+        guildInfo_.Release();
+        guildCreate_.Release();
         gensRanking_.Release();
         friend_.Release();
         petInfo_.Release();
@@ -197,6 +203,9 @@ public:
         if (petFrame_.IsLoaded()) changed |= petFrame_.Update();
         if (petInfo_.IsLoaded()) changed |= petInfo_.Update();
         if (friend_.IsLoaded()) changed |= friend_.Update();
+        if (guildCreate_.IsLoaded()) changed |= guildCreate_.Update();
+        if (guildInfo_.IsLoaded()) changed |= guildInfo_.Update();
+        if (guildPosition_.IsLoaded()) changed |= guildPosition_.Update();
         if (gensRanking_.IsLoaded() && g_pNewUIGensRanking)
         {
             changed |= gensRankingLegacyBridge_.Synchronize(
@@ -292,6 +301,9 @@ public:
     Common::RmlTooltipLayer tooltip_;
     Friend::RmlFriendPanel friend_;
     Gens::RmlGensRankingPanel gensRanking_;
+    Guild::RmlGuildCreatePanel guildCreate_;
+    Guild::RmlGuildInfoPanel guildInfo_;
+    Guild::RmlGuildPositionPanel guildPosition_;
     Gens::RmlGensRankingLegacyBridge gensRankingLegacyBridge_;
     Help::RmlHelpPanel help_;
     Help::RmlHelpLegacyBridge helpLegacyBridge_;
@@ -390,6 +402,9 @@ MU_PC_UI_GETTER(MessageBox, messageBox_, Common::RmlMessageBoxPanel)
 MU_PC_UI_GETTER(Tooltip, tooltip_, Common::RmlTooltipLayer)
 MU_PC_UI_GETTER(Friend, friend_, Friend::RmlFriendPanel)
 MU_PC_UI_GETTER(GensRanking, gensRanking_, Gens::RmlGensRankingPanel)
+MU_PC_UI_GETTER(GuildCreate, guildCreate_, Guild::RmlGuildCreatePanel)
+MU_PC_UI_GETTER(GuildInfo, guildInfo_, Guild::RmlGuildInfoPanel)
+MU_PC_UI_GETTER(GuildPosition, guildPosition_, Guild::RmlGuildPositionPanel)
 MU_PC_UI_GETTER(Help, help_, Help::RmlHelpPanel)
 MU_PC_UI_GETTER(LongNotice, longNotice_, Help::RmlLongNoticeLayer)
 MU_PC_UI_GETTER(BuffList, buffList_, HUD::RmlBuffListLayer)
