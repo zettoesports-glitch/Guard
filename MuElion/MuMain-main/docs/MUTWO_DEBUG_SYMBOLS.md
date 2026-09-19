@@ -463,3 +463,11 @@ matches the Debug signature. It imports the existing logical texture into
 `Rml::CallbackTextureSource`, and renders a resize-aware textured quad through
 RmlUi geometry. This matches the Debug RTTI showing a SetImage lambda taking
 `const Rml::CallbackTextureInterface&`.
+
+
+## RmlHudMapViewport element aliases
+
+The Debug executable preserves both literal element names `map-view` and
+`map-viewport` next to RTTI for `RmlHudMapViewport`. The reconstructed
+RmlUi runtime now registers the same viewport element instancer under both
+aliases.

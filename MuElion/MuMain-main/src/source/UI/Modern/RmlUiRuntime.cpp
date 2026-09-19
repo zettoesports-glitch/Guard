@@ -70,6 +70,8 @@ public:
             std::make_unique<Rml::ElementInstancerGeneric<RmlHudMapViewport>>();
         Rml::Factory::RegisterElementInstancer(
             "map-view", mapViewportInstancer_.get());
+        Rml::Factory::RegisterElementInstancer(
+            "map-viewport", mapViewportInstancer_.get());
 
         context_ = Rml::CreateContext(
             contextName_, {width, height}, &renderInterface_);
