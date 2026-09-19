@@ -310,3 +310,12 @@ and differential runtime tests succeed.
   `RmlCharacterCreateLegacyBridge`; class availability, selected class,
   localized labels/stats and visibility remain legacy-authoritative while
   modern Create/Cancel/Class actions remain semantic intents only
+
+
+- reconstructed `RmlBuffListLayer` over the public
+  `HUD/buff_list.rml` contract, with separate buff/debuff containers,
+  eight-column retained icons, count/time presentation and click intents
+- added read-only `CNewUIBuffWindow::BuildSnapshot` and
+  `RmlBuffListLegacyBridge`, preserving the existing tier normalization,
+  hidden-buff filtering, buff/debuff ordering, reference counts and remaining
+  time from the authoritative legacy buff system

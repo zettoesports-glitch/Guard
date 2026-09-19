@@ -1,0 +1,17 @@
+<rml>
+<head>
+    <meta name="mu-design-Buff-Size" content="366 36"/>
+    <meta name="mu-design-Buff-Cell" content="26 36 8 8"/>
+    <meta name="mu-design-Buff-Resize" content="700 0.83 21 26 90"/>
+    <meta name="mu-design-Buff-Columns" content="8 3"/>
+    <title>Reconstructed Buffs</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
+    <link type="text/rcss" href="buff_list.rcss"/>
+</head>
+<body>
+    <div id="buff-list">
+        <div id="_BuffList"/>
+        <div id="_DeBuffList"/>
+    </div>
+</body>
+</rml>

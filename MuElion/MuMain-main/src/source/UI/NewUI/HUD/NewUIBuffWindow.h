@@ -5,8 +5,25 @@
 
 #include "UI/NewUI/NewUIManager.h"
 
+#include <string>
+#include <vector>
+
 namespace SEASON3B
 {
+    struct BuffWindowSnapshotEntry
+    {
+        int buffState = 0;
+        bool debuff = false;
+        int referenceCount = 0;
+        std::wstring remainingTime;
+    };
+
+    struct BuffWindowSnapshot
+    {
+        bool visible = false;
+        std::vector<BuffWindowSnapshotEntry> entries;
+    };
+
     class CNewUIBuffWindow : public CNewUIObj
     {
     public:
@@ -42,6 +59,10 @@ namespace SEASON3B
 
         void OpenningProcess();
         void ClosingProcess();
+
+        // Read-only ordered/filtered projection for the reconstructed RmlUi
+        // buff list. The legacy buff system remains authoritative.
+        void BuildSnapshot(BuffWindowSnapshot& snapshot);
 
     private:
         void LoadImages();

@@ -22,6 +22,7 @@ class RmlTooltipLayer;
 namespace Friend { class RmlFriendPanel; }
 namespace HUD
 {
+class RmlBuffListLayer;
 class RmlMainFrameLayer;
 class RmlMasterTreePanel;
 class RmlMoveCommandPanel;
@@ -70,6 +71,7 @@ public:
     [[nodiscard]] Common::RmlMessageBoxPanel& MessageBox() noexcept;
     [[nodiscard]] Common::RmlTooltipLayer& Tooltip() noexcept;
     [[nodiscard]] Friend::RmlFriendPanel& Friend() noexcept;
+    [[nodiscard]] HUD::RmlBuffListLayer& BuffList() noexcept;
     [[nodiscard]] HUD::RmlMainFrameLayer& MainFrame() noexcept;
     [[nodiscard]] HUD::RmlMasterTreePanel& MasterTree() noexcept;
     [[nodiscard]] HUD::RmlMoveCommandPanel& MoveCommand() noexcept;

@@ -217,6 +217,29 @@ bool SEASON3B::CNewUIBuffWindow::SetDisableRenderBuff(const eBuffState& _BuffSta
     return false;
 }
 
+
+void SEASON3B::CNewUIBuffWindow::BuildSnapshot(
+    BuffWindowSnapshot& snapshot)
+{
+    snapshot.visible = IsVisible();
+    snapshot.entries.clear();
+
+    std::list<eBuffState> ordered;
+    BuffSort(ordered);
+    snapshot.entries.reserve(ordered.size());
+
+    OBJECT* heroObject = &Hero->Object;
+    for (const eBuffState buff : ordered)
+    {
+        BuffWindowSnapshotEntry entry;
+        entry.buffState = static_cast<int>(buff);
+        entry.debuff = (g_IsBuffClass(buff) == eBuffClass_DeBuff);
+        entry.referenceCount = g_CharacterBuffCount(heroObject, buff);
+        g_BuffStringTime(buff, entry.remainingTime);
+        snapshot.entries.push_back(std::move(entry));
+    }
+}
+
 bool SEASON3B::CNewUIBuffWindow::UpdateMouseEvent()
 {
     float x = 0.0f, y = 0.0f;

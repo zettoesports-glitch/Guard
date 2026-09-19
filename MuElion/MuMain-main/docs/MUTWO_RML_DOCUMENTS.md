@@ -145,3 +145,5 @@ legacy UI before parity is validated.
 
 
 - `Data/UI/PC/Character/character_create.rml`
+
+- `Data/UI/PC/HUD/buff_list.rml`

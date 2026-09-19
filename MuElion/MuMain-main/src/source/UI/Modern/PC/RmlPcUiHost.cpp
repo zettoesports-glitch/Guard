@@ -13,6 +13,8 @@
 #include "UI/Modern/PC/Common/RmlMessageBoxPanel.h"
 #include "UI/Modern/PC/Common/RmlTooltipLayer.h"
 #include "UI/Modern/PC/Friend/RmlFriendPanel.h"
+#include "UI/Modern/PC/HUD/RmlBuffListLayer.h"
+#include "UI/Modern/PC/HUD/RmlBuffListLegacyBridge.h"
 #include "UI/Modern/PC/HUD/RmlMainFrameLayer.h"
 #include "UI/Modern/PC/HUD/RmlMainFrameLegacyBridge.h"
 #include "UI/Modern/PC/HUD/RmlMasterTreePanel.h"
@@ -55,6 +57,7 @@ public:
         viewportWidth_ = width;
         viewportHeight_ = height;
         login_.SetViewport(width, height);
+        buffList_.SetViewport(width, height);
         characterCreate_.SetViewport(width, height);
         serverSelect_.SetViewport(width, height);
         initialized_ = true;
@@ -91,6 +94,7 @@ public:
         characterFrame_.Release();
         party_.Release();
         topMenu_.Release();
+        buffList_.Release();
         mainFrame_.Release();
         chat_.Release();
         login_.Release();
@@ -111,6 +115,7 @@ public:
         // Login owns an explicit viewport contract, so keep it synchronized
         // directly even when it is not yet loaded.
         login_.SetViewport(width, height);
+        buffList_.SetViewport(width, height);
         characterCreate_.SetViewport(width, height);
         serverSelect_.SetViewport(width, height);
     }
@@ -124,6 +129,12 @@ public:
 
         // Only loaded panels are synchronized/polled. Merely initializing
         // the host never creates documents or changes the legacy surface.
+        if (buffList_.IsLoaded() && g_pBuffWindow)
+        {
+            changed |= buffListLegacyBridge_.Synchronize(
+                *g_pBuffWindow, buffList_);
+            changed |= buffList_.Update();
+        }
         if (mainFrame_.IsLoaded())
         {
             changed |= mainFrameLegacyBridge_.Synchronize(mainFrame_);
@@ -198,6 +209,8 @@ public:
     Common::RmlMessageBoxPanel messageBox_;
     Common::RmlTooltipLayer tooltip_;
     Friend::RmlFriendPanel friend_;
+    HUD::RmlBuffListLayer buffList_;
+    HUD::RmlBuffListLegacyBridge buffListLegacyBridge_;
     HUD::RmlMainFrameLayer mainFrame_;
     HUD::RmlMainFrameLegacyBridge mainFrameLegacyBridge_;
     HUD::RmlMasterTreePanel masterTree_;
@@ -278,6 +291,7 @@ MU_PC_UI_GETTER(CommandWindow, commandWindow_, Command::RmlCommandWindowPanel)
 MU_PC_UI_GETTER(MessageBox, messageBox_, Common::RmlMessageBoxPanel)
 MU_PC_UI_GETTER(Tooltip, tooltip_, Common::RmlTooltipLayer)
 MU_PC_UI_GETTER(Friend, friend_, Friend::RmlFriendPanel)
+MU_PC_UI_GETTER(BuffList, buffList_, HUD::RmlBuffListLayer)
 MU_PC_UI_GETTER(MainFrame, mainFrame_, HUD::RmlMainFrameLayer)
 MU_PC_UI_GETTER(MasterTree, masterTree_, HUD::RmlMasterTreePanel)
 MU_PC_UI_GETTER(MoveCommand, moveCommand_, HUD::RmlMoveCommandPanel)

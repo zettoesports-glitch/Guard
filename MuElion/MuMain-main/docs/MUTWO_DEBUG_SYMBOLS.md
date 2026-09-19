@@ -2118,3 +2118,22 @@ class availability/localized labels, stat labels/values and description.
 the modern panel. The modern panel emits one-shot `SelectClass`,
 `Create(name,class)` and `Cancel` intents; applying those intents to the
 legacy window/network remains a separate callback integration step.
+
+
+## RmlBuffListLayer reconstruction
+
+The public MuClient HUD exposes `Data/UI/PC/HUD/buff_list.rml` with
+containers `_BuffList` and `_DeBuffList` and observable metadata:
+authored size 366x36, 26x36 cells, eight-column layout, small-stage threshold
+700 with scale 0.83, and the published supported buff-state icon inventory.
+
+The existing `CNewUIBuffWindow::BuffSort` is retained as the authoritative
+ordering/filtering path. It normalizes upgraded variants to their base buff,
+keeps the highest tier, excludes non-rendered transient states, and places
+buffs before debuffs. A new read-only `BuildSnapshot` simply projects that
+already-sorted result with `g_CharacterBuffCount`,
+`g_IsBuffClass`, and `g_BuffStringTime`.
+
+The modern layer dynamically builds retained icons and emits clicked buff-state
+ids only. Cancellation policy (for example Infinity Arrow / Swell of Magic
+Power confirmation) remains in the legacy game UI and is not duplicated.
