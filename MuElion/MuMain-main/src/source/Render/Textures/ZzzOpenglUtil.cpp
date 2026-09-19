@@ -646,9 +646,9 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
     }
 
     auto& facade = mu::pipeline::GetLegacyRenderFacade();
-    (void)facade.MatrixMode(mu::pipeline::LegacyMatrixMode::Projection);
-    (void)facade.PushMatrix();
-    (void)facade.LoadIdentity();
+    (void)mu::pipeline::GetLegacyRenderFacade().MatrixMode(mu::pipeline::LegacyMatrixMode::Projection);
+    (void)mu::pipeline::GetLegacyRenderFacade().PushMatrix();
+    (void)mu::pipeline::GetLegacyRenderFacade().LoadIdentity();
     SetRenderViewport(x, y, width, height);
 
     // Calculate aspect ratio dynamically from viewport dimensions
@@ -659,14 +659,14 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
     // Apply RENDER_DISTANCE_MULTIPLIER for consistent rendering distance across all systems
     CameraProjection::SetupPerspective(g_Camera, g_Camera.FOV, aspectRatio, g_Camera.ViewNear, g_Camera.ViewFar * RENDER_DISTANCE_MULTIPLIER);
 
-    (void)facade.MatrixMode(mu::pipeline::LegacyMatrixMode::ModelView);
-    (void)facade.PushMatrix();
-    (void)facade.LoadIdentity();
-    (void)facade.Rotate(g_Camera.Angle[1], 0.f, 1.f, 0.f);
+    (void)mu::pipeline::GetLegacyRenderFacade().MatrixMode(mu::pipeline::LegacyMatrixMode::ModelView);
+    (void)mu::pipeline::GetLegacyRenderFacade().PushMatrix();
+    (void)mu::pipeline::GetLegacyRenderFacade().LoadIdentity();
+    (void)mu::pipeline::GetLegacyRenderFacade().Rotate(g_Camera.Angle[1], 0.f, 1.f, 0.f);
     if (g_Camera.TopViewEnable == false)
-        (void)facade.Rotate(g_Camera.Angle[0], 1.f, 0.f, 0.f);
-    (void)facade.Rotate(g_Camera.Angle[2], 0.f, 0.f, 1.f);
-    (void)facade.Translate(-g_Camera.Position[0], -g_Camera.Position[1], -g_Camera.Position[2]);
+        (void)mu::pipeline::GetLegacyRenderFacade().Rotate(g_Camera.Angle[0], 1.f, 0.f, 0.f);
+    (void)mu::pipeline::GetLegacyRenderFacade().Rotate(g_Camera.Angle[2], 0.f, 0.f, 1.f);
+    (void)mu::pipeline::GetLegacyRenderFacade().Translate(-g_Camera.Position[0], -g_Camera.Position[1], -g_Camera.Position[2]);
 
     (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
     (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
@@ -679,8 +679,8 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
     DepthTestEnable = true;
     CullFaceEnable = true;
     DepthMaskEnable = true;
-    (void)facade.SetDepthFunc(mu::pipeline::RenderCompareFunction::LessEqual);
-    (void)facade.SetAlphaFunc(mu::pipeline::RenderCompareFunction::Greater, 0.25f);
+    (void)mu::pipeline::GetLegacyRenderFacade().SetDepthFunc(mu::pipeline::RenderCompareFunction::LessEqual);
+    (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaFunc(mu::pipeline::RenderCompareFunction::Greater, 0.25f);
     if (FogEnable)
     {
         // Fog scales dynamically with view distance (g_Camera.ViewFar) so it
@@ -712,11 +712,11 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
         fogParams.color[1] = FogColor[1];
         fogParams.color[2] = FogColor[2];
         fogParams.color[3] = FogColor[3];
-        (void)facade.SetFogMode(mu::pipeline::RenderFogMode::Linear);
-        (void)facade.SetFogRange(fogStart, fogEnd);
-        (void)facade.SetFogDensity(FogDensity);
-        (void)facade.SetFogColor({FogColor[0], FogColor[1], FogColor[2], FogColor[3]});
-        (void)facade.SetFogEnable(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogMode(mu::pipeline::RenderFogMode::Linear);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogRange(fogStart, fogEnd);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogDensity(FogDensity);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogColor({FogColor[0], FogColor[1], FogColor[2], FogColor[3]});
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(true);
     }
     else
     {
@@ -729,16 +729,16 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
 void EndOpengl()
 {
     auto& facade = mu::pipeline::GetLegacyRenderFacade();
-    (void)facade.MatrixMode(mu::pipeline::LegacyMatrixMode::ModelView);
-    (void)facade.PopMatrix();
-    (void)facade.MatrixMode(mu::pipeline::LegacyMatrixMode::Projection);
-    (void)facade.PopMatrix();
+    (void)mu::pipeline::GetLegacyRenderFacade().MatrixMode(mu::pipeline::LegacyMatrixMode::ModelView);
+    (void)mu::pipeline::GetLegacyRenderFacade().PopMatrix();
+    (void)mu::pipeline::GetLegacyRenderFacade().MatrixMode(mu::pipeline::LegacyMatrixMode::Projection);
+    (void)mu::pipeline::GetLegacyRenderFacade().PopMatrix();
 
     if (s_worldTapeDepth > 0)
         --s_worldTapeDepth;
     if (s_worldTapeDepth == 0 && s_worldTapeOwnsPass)
     {
-        (void)facade.EndPass();
+        (void)mu::pipeline::GetLegacyRenderFacade().EndPass();
         s_worldTapeOwnsPass = false;
     }
 }
@@ -747,8 +747,8 @@ void UpdateMousePositionn()
 {
     vec3_t vPos;
 
-    (void)facade.LoadIdentity();
-    (void)facade.Translate(-g_Camera.Position[0], -g_Camera.Position[1], -g_Camera.Position[2]);
+    (void)mu::pipeline::GetLegacyRenderFacade().LoadIdentity();
+    (void)mu::pipeline::GetLegacyRenderFacade().Translate(-g_Camera.Position[0], -g_Camera.Position[1], -g_Camera.Position[2]);
     CameraProjection::GetOpenGLMatrix(g_Camera.Matrix);
 
     Vector(-g_Camera.Matrix[0][3], -g_Camera.Matrix[1][3], -g_Camera.Matrix[2][3], vPos);
@@ -916,13 +916,13 @@ void RenderPlane3D(float Width, float Height, float Matrix[3][4])
 
 void BeginSprite()
 {
-    (void)facade.PushMatrix();
-    (void)facade.LoadIdentity();
+    (void)mu::pipeline::GetLegacyRenderFacade().PushMatrix();
+    (void)mu::pipeline::GetLegacyRenderFacade().LoadIdentity();
 }
 
 void EndSprite()
 {
-    (void)facade.PopMatrix();
+    (void)mu::pipeline::GetLegacyRenderFacade().PopMatrix();
 }
 
 void RenderSprite(int Texture, vec3_t Position, float Width, float Height, vec3_t Light, float Rotation, float u, float v, float uWidth, float vHeight)
