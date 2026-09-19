@@ -13,6 +13,8 @@
 #include "App/Platform/Windows/Local.h"
 #include "UI/NewUI/NewUISystem.h"
 
+#include <algorithm>
+
 extern MARK_t		GuildMark[MAX_MARKS];
 extern int			SelectMarkColor;
 
@@ -236,6 +238,37 @@ void CNewUIGuildMakeWindow::UnloadImages()
     DeleteBitmap(IMAGE_GUILDMAKE_BACK_LEFT);
     DeleteBitmap(IMAGE_GUILDMAKE_BACK_TOP);
     DeleteBitmap(IMAGE_GUILDMAKE_BACK);
+}
+
+void SEASON3B::CNewUIGuildMakeWindow::BuildSnapshot(
+    GuildCreateSnapshot& snapshot)
+{
+    snapshot.visible = IsVisible();
+    snapshot.x = m_Pos.x;
+    snapshot.y = m_Pos.y;
+    snapshot.page = static_cast<int>(m_GuildMakeState);
+    snapshot.guildName.clear();
+
+    if (m_EditBox)
+    {
+        wchar_t text[GuildConstants::GUILD_NAME_BUFFER_SIZE] = {};
+        m_EditBox->GetText(
+            text, GuildConstants::GUILD_NAME_BUFFER_SIZE);
+        snapshot.guildName = text;
+    }
+    else
+    {
+        snapshot.guildName = GuildMark[MARK_EDIT].GuildName;
+    }
+
+    for (std::size_t i = 0; i < snapshot.mark.size(); ++i)
+    {
+        snapshot.mark[i] = static_cast<std::uint8_t>(
+            GuildMark[MARK_EDIT].Mark[i] & 0x0f);
+    }
+
+    snapshot.selectedColor = static_cast<std::uint8_t>(
+        std::clamp(SelectMarkColor, 0, 15));
 }
 
 float CNewUIGuildMakeWindow::GetLayerDepth()

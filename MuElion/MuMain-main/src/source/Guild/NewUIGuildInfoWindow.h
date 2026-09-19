@@ -16,8 +16,47 @@
 #include "UI/NewUI/Widgets/NewUIButton.h"
 #include "GuildConstants.h"
 
+#include <array>
+#include <cstdint>
+#include <string>
+#include <vector>
+
 namespace SEASON3B
 {
+    struct GuildInfoMemberSnapshot
+    {
+        std::wstring name;
+        std::uint8_t number = 0;
+        std::uint8_t server = 0;
+        std::uint8_t status = 0;
+    };
+
+    struct GuildInfoUnionSnapshot
+    {
+        std::wstring name;
+        int memberCount = 0;
+        std::array<std::uint8_t, 64> mark{};
+    };
+
+    struct GuildInfoSnapshot
+    {
+        bool visible = false;
+        int x = 0;
+        int y = 0;
+        int tab = 1;
+        bool hasGuild = false;
+        bool isGuildMaster = false;
+        std::wstring guildName;
+        int guildScore = 0;
+        std::size_t memberCount = 0;
+        std::size_t memberCapacity = 0;
+        std::wstring rivalGuild;
+        std::array<std::uint8_t, 64> guildMark{};
+        std::vector<std::wstring> notices;
+        std::vector<GuildInfoMemberSnapshot> members;
+        std::vector<GuildInfoUnionSnapshot> unions;
+    };
+
     struct ServerMessageInfo
     {
         GuildRelationshipType s_byRelationShipType;
@@ -143,6 +182,7 @@ namespace SEASON3B
         void AddUnionList(BYTE* pGuildMark, wchar_t* szGuildName, int nMemberCount);
 
         int GetUnionCount();
+        void BuildSnapshot(GuildInfoSnapshot& snapshot) const;
 
     public:
         const ServerMessageInfo& GetServerMessage();

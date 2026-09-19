@@ -113,7 +113,9 @@ public:
   Text(ById(document_,"tfGuildName"),state_.guildName);
   Text(ById(document_,"tfGuildPointValue"),std::to_string(state_.guildScore));
   Text(ById(document_,"tfGuildMemberNumValue"),
-       std::to_string(state_.memberCount)+" / "+std::to_string(state_.memberCapacity));
+       state_.memberCapacity > 0
+           ? std::to_string(state_.memberCount)+" / "+std::to_string(state_.memberCapacity)
+           : std::to_string(state_.memberCount));
   Text(ById(document_,"tfRivalGuildValue"),state_.rivalGuild.empty()?"-":state_.rivalGuild);
   Text(ById(document_,"taGuildNotice"),state_.notice);
   Text(ById(document_,"btnDisband-label"),state_.isGuildMaster?"Disband":"Leave");

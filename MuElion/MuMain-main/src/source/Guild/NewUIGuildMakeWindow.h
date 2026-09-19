@@ -13,8 +13,23 @@
 #include "UI/NewUI/Inventory/NewUIMyInventory.h"
 #include "UI/NewUI/Widgets/NewUIButton.h"
 
+#include <array>
+#include <cstdint>
+#include <string>
+
 namespace SEASON3B
 {
+    struct GuildCreateSnapshot
+    {
+        bool visible = false;
+        int x = 0;
+        int y = 0;
+        int page = 0;
+        std::wstring guildName;
+        std::array<std::uint8_t, 64> mark{};
+        std::uint8_t selectedColor = 0;
+    };
+
     class CNewUIManager;
     class CNewUIGuildMakeWindow : public CNewUIObj
     {
@@ -99,6 +114,8 @@ namespace SEASON3B
         void SetPos(int x, int y);
         const POINT& GetPos();
         float GetLayerDepth();	//. 4.4f
+
+        void BuildSnapshot(GuildCreateSnapshot& snapshot);
 
     private:
         void ChangeWindowState(const GUILDMAKE_STATE state);

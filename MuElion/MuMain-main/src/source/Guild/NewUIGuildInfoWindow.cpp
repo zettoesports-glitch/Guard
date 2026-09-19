@@ -943,6 +943,74 @@ int SEASON3B::CNewUIGuildInfoWindow::GetUnionCount()
     return m_UnionListBox.GetTextCount();
 }
 
+void SEASON3B::CNewUIGuildInfoWindow::BuildSnapshot(
+    GuildInfoSnapshot& snapshot) const
+{
+    snapshot = {};
+    snapshot.visible = IsVisible();
+    snapshot.x = m_Pos.x;
+    snapshot.y = m_Pos.y;
+    snapshot.tab = m_nCurrentTab;
+    snapshot.hasGuild = Hero && Hero->GuildStatus != G_NONE;
+    snapshot.isGuildMaster = Hero && Hero->GuildStatus == G_MASTER;
+    snapshot.guildScore = GuildTotalScore;
+    snapshot.rivalGuild = m_RivalGuildName;
+
+    if (snapshot.hasGuild &&
+        Hero->GuildMarkIndex >= 0 &&
+        Hero->GuildMarkIndex < MAX_MARKS)
+    {
+        const MARK_t& guild = GuildMark[Hero->GuildMarkIndex];
+        snapshot.guildName = guild.GuildName;
+        for (std::size_t i = 0; i < snapshot.guildMark.size(); ++i)
+        {
+            snapshot.guildMark[i] = static_cast<std::uint8_t>(
+                guild.Mark[i] & 0x0f);
+        }
+    }
+
+    for (const GUILDLOG_TEXT& entry : m_GuildNotice.GetEntries())
+        snapshot.notices.emplace_back(entry.m_szContent);
+
+    for (const GUILDLIST_TEXT& entry : m_GuildMember.GetEntries())
+    {
+        GuildInfoMemberSnapshot member;
+        member.name = entry.m_szID;
+        member.number = entry.m_Number;
+        member.server = entry.m_Server;
+        member.status = entry.m_GuildStatus;
+        snapshot.members.push_back(std::move(member));
+    }
+    snapshot.memberCount = snapshot.members.size();
+
+    for (const UNIONGUILD_TEXT& entry : m_UnionListBox.GetEntries())
+    {
+        GuildInfoUnionSnapshot guild;
+        guild.name = entry.szName;
+        guild.memberCount = entry.nMemberCount;
+        for (std::size_t i = 0; i < guild.mark.size(); ++i)
+        {
+            guild.mark[i] = static_cast<std::uint8_t>(
+                entry.GuildMark[i] & 0x0f);
+        }
+        snapshot.unions.push_back(std::move(guild));
+    }
+
+    if (snapshot.isGuildMaster && CharacterAttribute)
+    {
+        const int baseClass =
+            gCharacterManager.GetBaseClass(CharacterAttribute->Class);
+        int capacity = CharacterAttribute->Level / 10;
+        if (baseClass == CLASS_DARK_LORD)
+            capacity += CharacterAttribute->Charisma / 10;
+
+        capacity = std::clamp(
+            capacity, 0, GuildConstants::Capacity::MAX_CAPACITY);
+        snapshot.memberCapacity =
+            static_cast<std::size_t>(capacity);
+    }
+}
+
 void SEASON3B::CNewUIGuildInfoWindow::ReceiveGuildRelationShip(GuildRelationshipType byRelationShipType, GuildRequestType byRequestType,
     BYTE  byTargetUserIndexH, BYTE byTargetUserIndexL)
 {

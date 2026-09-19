@@ -629,6 +629,10 @@ public:
     {
         return (SLGetSelectLine() == m_TextList.end() ? NULL : &(*SLGetSelectLine()));
     }
+    const std::deque<GUILDLOG_TEXT>& GetEntries() const noexcept
+    {
+        return m_TextList;
+    }
 
 protected:
     virtual void RenderInterface();
@@ -649,6 +653,10 @@ public:
     GUILDLIST_TEXT* GetSelectedText()
     {
         return (SLGetSelectLine() == m_TextList.end() ? NULL : &(*SLGetSelectLine()));
+    }
+    const std::deque<GUILDLIST_TEXT>& GetEntries() const noexcept
+    {
+        return m_TextList;
     }
 
 protected:
@@ -675,6 +683,10 @@ public:
     UNIONGUILD_TEXT* GetSelectedText()
     {
         return (SLGetSelectLine() == m_TextList.end() ? NULL : &(*SLGetSelectLine()));
+    }
+    const std::deque<UNIONGUILD_TEXT>& GetEntries() const noexcept
+    {
+        return m_TextList;
     }
 
 protected:
