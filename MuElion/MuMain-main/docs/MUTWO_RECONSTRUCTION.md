@@ -62,6 +62,7 @@ signature inventory has a declaration and implementation. The audit covers
 - geometry / terrain / grass paths
 - trail / particle / quad / sprite instances
 - BMD bone palette, geometry, rigid instances and shadow geometry
+- Debug-matched BMD scale routing and bit-6 rigid-transform override
 - texture definition / frame-only quad
 - copy target / RGBA target download
 

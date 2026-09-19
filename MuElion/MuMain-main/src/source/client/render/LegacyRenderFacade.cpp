@@ -1138,24 +1138,91 @@ bool LegacyRenderFacade::DrawBmdGeometry(
     if (vertices.empty() || vertices.size() % 3u != 0u)
         return false;
 
-    const std::size_t boneOffset = constants.bmdMode[1];
-    if (boneOffset > m_boneMatrices.size())
-        return false;
+    const bool rigidTransform =
+        (constants.bmdMode[3] & RenderTapeBmdRigidTransform) != 0u;
+    const bool boneScalePath =
+        (constants.bmdMode[3] & RenderTapeBmdBoneScalePath) != 0u;
 
-    const auto boneSpan =
-        std::span<const RenderTapeBoneMatrix>(m_boneMatrices).subspan(boneOffset);
-    const auto boneFloats = std::span<const float>(
-        reinterpret_cast<const float*>(boneSpan.data()), boneSpan.size() * 12u);
+    std::array<float, 12> rigidBone{};
+    std::span<const float> boneFloats;
+    std::uint32_t paletteVersion = 0;
+
+    if (rigidTransform)
+    {
+        // The recovered MuTwo shader bypasses bmdBones entirely when bit 6 is
+        // set and uses the three rigidTransform rows for both position and
+        // normal transforms. Feed the existing SDL GPU skinning shader a
+        // one-bone palette and remap both vertex bone indices to zero.
+        for (std::size_t column = 0; column < 4; ++column)
+        {
+            rigidBone[column] = constants.rigidTransform0[column];
+            rigidBone[4 + column] = constants.rigidTransform1[column];
+            rigidBone[8 + column] = constants.rigidTransform2[column];
+        }
+
+        for (auto& vertex : vertices)
+        {
+            vertex.positionBoneIndex = 0;
+            vertex.normalBoneIndex = 0;
+        }
+
+        boneFloats = rigidBone;
+
+        // RecordBonePalette caches by pointer, size and paletteVersion. A stack
+        // palette can reuse the same address across calls, so derive a stable
+        // content version to prevent stale rigid matrices from being reused.
+        std::uint32_t hash = 2166136261u;
+        const auto* bytes =
+            reinterpret_cast<const unsigned char*>(rigidBone.data());
+        for (std::size_t i = 0; i < sizeof(rigidBone); ++i)
+        {
+            hash ^= bytes[i];
+            hash *= 16777619u;
+        }
+        paletteVersion = hash;
+    }
+    else
+    {
+        const std::size_t boneOffset = constants.bmdMode[1];
+        if (boneOffset >= m_boneMatrices.size())
+            return false;
+
+        const auto boneSpan =
+            std::span<const RenderTapeBoneMatrix>(m_boneMatrices).subspan(boneOffset);
+        boneFloats = std::span<const float>(
+            reinterpret_cast<const float*>(boneSpan.data()), boneSpan.size() * 12u);
+        paletteVersion = static_cast<std::uint32_t>(boneOffset);
+    }
+
+    // Exact scale semantics from the embedded MuTwo vertex shader:
+    //   normal path (bit 4 clear): input position is scaled by bmdScale.x
+    //   alternate path (bit 4 set): transformed position is scaled by bmdScale.y
+    //   translate path (bit 0 set): result *= bmdScale.z, then += body origin
+    // The existing SDL GPU shader can express both transform paths through its
+    // boneScale field; restPoseScale must be 1 when that scale happens to be 1.
+    const float transformScale =
+        boneScalePath ? constants.bmdScale[1] : constants.bmdScale[0];
+
+    auto textureCoordinates =
+        static_cast<mu::SkinningTextureCoordinates>(constants.bmdMode[2]);
+    // MuTwo mode 8 is the fixed normal-derived mapping while its fallback
+    // (observed for mode 9) is normal.xy * restUV + offset. The pre-existing
+    // SDL skinning shader names these final two modes in the opposite numeric
+    // order, so translate only at this adapter boundary.
+    if (constants.bmdMode[2] == 8u)
+        textureCoordinates = mu::SkinningTextureCoordinates::Metal;
+    else if (constants.bmdMode[2] >= 9u)
+        textureCoordinates = mu::SkinningTextureCoordinates::Oil;
 
     mu::SkinningParameters parameters{
         .boneMatrices = boneFloats,
-        .paletteVersion = static_cast<std::uint32_t>(boneOffset),
+        .paletteVersion = paletteVersion,
         .bodyOrigin = {constants.bmdBodyOrigin[0],
                        constants.bmdBodyOrigin[1],
                        constants.bmdBodyOrigin[2]},
-        .bodyScale = constants.bmdScale[0],
-        .boneScale = constants.bmdScale[1],
-        .restPoseScale = constants.bmdScale[2],
+        .bodyScale = constants.bmdScale[2],
+        .boneScale = transformScale,
+        .restPoseScale = 1.0f,
         .lightDirection = {constants.bmdLightPosition[0],
                            constants.bmdLightPosition[1],
                            constants.bmdLightPosition[2]},
@@ -1166,8 +1233,7 @@ bool LegacyRenderFacade::DrawBmdGeometry(
         .chromeLight = {constants.bmdChromeLight[0],
                         constants.bmdChromeLight[1]},
         .chromeTimeTerm = constants.bmdChromeLight[3],
-        .textureCoordinates =
-            static_cast<mu::SkinningTextureCoordinates>(constants.bmdMode[2]),
+        .textureCoordinates = textureCoordinates,
         .translate = (constants.bmdMode[3] & RenderTapeBmdTranslate) != 0u,
         .lightEnabled = (constants.bmdMode[3] & RenderTapeBmdLighting) != 0u,
     };

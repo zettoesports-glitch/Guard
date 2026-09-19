@@ -290,7 +290,12 @@ enum RenderTapeBmdModeFlag : std::uint32_t
     RenderTapeBmdWave = 1u << 3,
     RenderTapeBmdBoneScalePath = 1u << 4,
     RenderTapeBmdTerrainLightOverride = 1u << 5,
-    RenderTapeBmdFlag64 = 1u << 6,
+    // Embedded shader: bypass bmdBones and use rigidTransform0/1/2 for both
+    // position and normal transforms.
+    RenderTapeBmdRigidTransform = 1u << 6,
+
+    // Kept as an alias for source compatibility with the first reconstruction.
+    RenderTapeBmdFlag64 = RenderTapeBmdRigidTransform,
 };
 
 // Mode 6 in the embedded shader consumes exactly six float4 rows per rigid

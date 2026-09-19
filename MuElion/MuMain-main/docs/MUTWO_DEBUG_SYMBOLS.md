@@ -262,8 +262,20 @@ Further shader analysis confirms:
 - `bmdMode.z` selects the legacy texture-coordinate mode (mesh/chrome family).
 - `bmdMode.w` is a bitfield. Observed bits include translate (bit 0),
   lighting (bit 1), UV animation (bit 2), wave deformation (bit 3), the
-  alternate/bone-scale transform path (bit 4), and terrain-light override
-  (bit 5).
+  alternate/bone-scale transform path (bit 4), terrain-light override
+  (bit 5), and rigid-transform override (bit 6).
+- When bit 6 is set, the shader does not index `bmdBones`: it uses
+  `rigidTransform0/1/2` for both position and normal transforms. The
+  reconstruction maps that path onto a one-bone palette for the SDL GPU
+  skinning shader and rewrites the copied vertex bone indices to zero.
+- Position scale semantics are now matched at the adapter boundary:
+  `bmdScale.x` for the normal transform path, `bmdScale.y` for bit 4,
+  and `bmdScale.z` for the post-transform translate path.
+- Texture-coordinate mode 8 in MuTwo is the fixed normal-derived mapping,
+  while the fallback observed for mode 9 is the normal.xy/rest-UV mapping.
+  The SDL GPU shader uses the opposite numeric names for those two terminal
+  modes, so the facade translates 8/9 rather than changing global renderer
+  semantics.
 - Shader mode 6 consumes six float4 rows per rigid instance:
   transform0, transform1, transform2, bodyLight+alpha, baseColor, uvAnimation.
   The C++ reconstruction now asserts `sizeof(RenderTapeRigidInstance) == 96`.
