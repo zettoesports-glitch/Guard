@@ -205,3 +205,7 @@ and differential runtime tests succeed.
 
 - reconstructed `RmlSystemMenuPanel` with recovered full/compact geometry,
   independent action visibility, Escape handling and semantic system actions
+
+- reconstructed `RmlServerMessageLayer` safe passive server-text overlay
+- reconstructed `RmlStoreLabelLayer` dynamic world names/store/chat layer
+  with projected anchors and relationship/reputation presentation state

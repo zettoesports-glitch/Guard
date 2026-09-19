@@ -1,9 +1,17 @@
 <rml>
 <head>
-    <title>Reconstructed Store Label</title>
-    <link type="text/rcss" href="../ui_assets.rcss"/>
+    <meta name="mu-design-StoreLabel-Width" content="146"/>
+    <meta name="mu-design-StoreLabel-OneTitleHeight" content="60"/>
+    <meta name="mu-design-StoreLabel-TwoTitleHeight" content="75"/>
+    <meta name="mu-design-StoreLabel-Left" content="-73"/>
+    <meta name="mu-design-StoreLabel-Top" content="-80"/>
+    <meta name="mu-design-StoreLabel-WorldRaise" content="60"/>
+    <meta name="mu-design-StoreLabel-HighlightPeriod" content="265"/>
+    <meta name="mu-design-StoreLabel-RightMargin" content="4"/>
+    <title>Reconstructed Player Names</title>
+    <link type="text/rcss" href="store_label.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-world-store-label">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="player-name-layer"/>
 </body>
 </rml>

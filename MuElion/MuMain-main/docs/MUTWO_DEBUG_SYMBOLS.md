@@ -1448,3 +1448,20 @@ vertical cadence; two-or-fewer primary actions use the recovered compact
 height/offset. All interaction is surfaced as a semantic action enum. Escape
 maps to Close, but logout/server/character/option operations are intentionally
 left to the game-side owner.
+
+
+## ServerMessage and StoreLabel layers
+
+The remaining passive-overlay documents are now represented as presentation
+layers rather than neutral skeletons.
+
+`RmlServerMessageLayer` consumes the six recovered `ServerMessage-*`
+design values (400x200 panel, left/top reference geometry) and renders server
+text as a safe text node with no game-side callback.
+
+`RmlStoreLabelLayer` consumes the recovered store-label dimensions,
+world-raise, highlight period, and margin values. The caller supplies projected
+screen anchors and value-only presentation state for player id, guild/title,
+private store text, chat bubble, reputation, guild relation, gens rank and
+castle mark. The RmlUi layer builds transient DOM labels and does not inspect
+or own character objects.

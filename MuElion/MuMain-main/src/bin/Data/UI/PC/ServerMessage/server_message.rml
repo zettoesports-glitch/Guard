@@ -1,9 +1,17 @@
 <rml>
 <head>
-    <title>Reconstructed Server Message</title>
-    <link type="text/rcss" href="../ui_assets.rcss"/>
+    <meta name="mu-design-ServerMessage-Height" content="200"/>
+    <meta name="mu-design-ServerMessage-Width" content="400"/>
+    <meta name="mu-design-ServerMessage-Left" content="10"/>
+    <meta name="mu-design-ServerMessage-TopOffset" content="10"/>
+    <meta name="mu-design-ServerMessage-ReferenceTop" content="31"/>
+    <meta name="mu-design-ServerMessage-ReferenceHeight" content="600"/>
+    <title>Reconstructed Server Messages</title>
+    <link type="text/rcss" href="server_message.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-servermessage-server-message">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="server-message-panel" class="server-message-panel">
+        <div id="server-message-text" class="server-message-text"/>
+    </div>
 </body>
 </rml>
