@@ -1,9 +1,1001 @@
 <rml>
 <head>
-    <title>Reconstructed Master Tree</title>
+    <meta name="mu-design-Panel-Size" content="925.9 711.9"/>
+    <meta name="mu-design-Skill-Columns" content="25"/>
+    <meta name="mu-design-Legacy-ReferenceSize" content="640 480"/>
+    <meta name="mu-design-Tooltip-BottomThreshold" content="300"/>
+    <title>Reconstructed Master Skill Tree</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="master_tree.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-hud-master-tree">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+<div id="master-tree">
+    <div id="master-background" class="master-background"/>
+    <div id="btnExp" class="mu-button master-exp-button"/>
+    <div id="btnClose" class="mu-button master-close-button">X</div>
+    <div id="btnDrag" class="master-drag"/>
+    <div id="tfExp" class="master-label exp"/>
+    <div id="tfPoint" class="master-label point"/>
+    <div id="tfLevel" class="master-label level"/>
+    <div id="tfClass" class="master-label class-name"/>
+    <div id="tfAttribute1" class="master-label category category-1"/>
+    <div id="tfAttribute2" class="master-label category category-2"/>
+    <div id="tfAttribute3" class="master-label category category-3"/>
+    <div id="mcSkillSlots">
+<div id="mcSkillSlot1" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot1-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-1" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-1" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot2" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot2-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-2" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-2" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot3" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot3-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-3" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-3" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot4" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot4-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-4" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-4" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot5" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot5-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-5" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-5" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot6" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot6-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-6" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-6" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot7" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot7-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-7" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-7" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot8" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot8-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-8" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-8" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot9" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot9-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-9" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-9" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot10" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot10-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-10" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-10" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot11" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot11-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-11" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-11" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot12" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot12-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-12" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-12" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot13" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot13-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-13" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-13" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot14" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot14-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-14" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-14" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot15" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot15-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-15" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-15" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot16" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot16-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-16" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-16" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot17" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot17-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-17" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-17" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot18" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot18-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-18" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-18" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot19" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot19-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-19" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-19" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot20" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot20-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-20" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-20" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot21" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot21-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-21" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-21" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot22" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot22-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-22" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-22" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot23" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot23-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-23" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-23" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot24" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot24-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-24" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-24" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot25" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot25-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-25" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-25" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot26" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot26-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-26" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-26" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot27" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot27-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-27" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-27" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot28" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot28-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-28" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-28" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot29" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot29-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-29" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-29" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot30" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot30-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-30" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-30" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot31" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot31-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-31" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-31" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot32" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot32-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-32" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-32" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot33" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot33-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-33" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-33" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot34" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot34-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-34" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-34" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot35" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot35-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-35" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-35" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot36" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot36-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-36" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-36" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot37" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot37-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-37" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-37" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot38" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot38-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-38" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-38" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot39" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot39-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-39" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-39" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot40" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot40-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-40" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-40" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot41" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot41-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-41" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-41" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot42" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot42-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-42" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-42" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot43" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot43-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-43" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-43" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot44" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot44-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-44" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-44" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot45" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot45-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-45" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-45" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot46" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot46-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-46" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-46" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot47" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot47-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-47" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-47" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot48" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot48-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-48" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-48" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot49" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot49-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-49" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-49" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot50" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot50-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-50" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-50" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot51" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot51-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-51" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-51" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot52" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot52-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-52" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-52" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot53" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot53-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-53" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-53" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot54" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot54-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-54" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-54" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot55" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot55-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-55" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-55" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot56" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot56-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-56" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-56" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot57" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot57-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-57" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-57" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot58" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot58-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-58" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-58" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot59" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot59-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-59" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-59" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot60" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot60-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-60" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-60" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot61" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot61-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-61" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-61" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot62" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot62-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-62" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-62" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot63" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot63-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-63" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-63" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot64" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot64-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-64" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-64" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot65" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot65-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-65" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-65" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot66" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot66-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-66" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-66" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot67" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot67-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-67" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-67" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot68" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot68-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-68" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-68" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot69" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot69-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-69" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-69" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot70" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot70-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-70" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-70" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot71" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot71-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-71" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-71" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot72" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot72-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-72" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-72" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot73" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot73-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-73" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-73" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot74" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot74-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-74" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-74" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot75" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot75-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-75" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-75" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot76" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot76-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-76" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-76" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot77" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot77-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-77" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-77" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot78" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot78-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-78" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-78" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot79" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot79-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-79" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-79" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot80" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot80-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-80" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-80" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot81" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot81-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-81" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-81" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot82" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot82-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-82" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-82" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot83" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot83-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-83" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-83" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot84" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot84-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-84" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-84" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot85" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot85-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-85" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-85" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot86" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot86-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-86" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-86" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot87" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot87-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-87" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-87" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot88" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot88-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-88" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-88" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot89" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot89-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-89" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-89" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot90" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot90-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-90" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-90" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot91" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot91-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-91" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-91" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot92" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot92-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-92" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-92" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot93" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot93-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-93" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-93" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot94" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot94-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-94" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-94" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot95" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot95-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-95" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-95" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot96" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot96-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-96" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-96" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot97" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot97-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-97" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-97" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot98" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot98-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-98" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-98" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot99" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot99-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-99" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-99" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot100" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot100-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-100" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-100" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot101" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot101-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-101" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-101" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot102" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot102-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-102" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-102" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot103" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot103-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-103" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-103" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot104" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot104-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-104" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-104" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot105" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot105-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-105" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-105" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot106" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot106-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-106" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-106" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot107" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot107-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-107" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-107" class="skill-rank"/>
+</div>
+<div id="mcSkillSlot108" class="master-slot direction-0">
+    <div class="direction-art"/>
+    <div id="mcSkillSlot108-btnBase" class="mu-button skill-button">
+        <div class="mu-skill-icon">
+            <div id="master-skill-sheet-108" class="skill-sheet"/>
+        </div>
+    </div>
+    <div id="master-skill-rank-108" class="skill-rank"/>
+</div>
+
+    </div>
+</div>
 </body>
 </rml>

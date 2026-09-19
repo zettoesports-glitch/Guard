@@ -213,3 +213,8 @@ and differential runtime tests succeed.
 - reconstructed `RmlMoveCommandPanel` with 12-row move list, five favorite
   rows, recovered design geometry, scrollbar, favorite toggles and semantic
   select/show-map/close actions while leaving warp/network checks game-side
+
+- reconstructed `RmlMasterTreePanel` with all 108 authored slots, recovered
+  panel/reference metadata, legacy-derived group/rank/column fallback geometry,
+  drag/close/EXP controls and semantic upgrade requests while preserving
+  master-skill eligibility/confirmation game-side

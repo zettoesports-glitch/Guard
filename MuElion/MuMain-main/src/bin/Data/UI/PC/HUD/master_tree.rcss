@@ -1,0 +1,34 @@
+body { margin:0; width:100%; height:100%; overflow:hidden; font-family:Arial; }
+#master-tree, #master-tree div { position:absolute; box-sizing:border-box; }
+#master-tree { display:none; transform-origin:0 0; width:925.9px; height:711.9px; pointer-events:auto; }
+.master-background { left:0; top:0; width:100%; height:100%; border-width:1px; border-color:#665b3e; background-color:#11151df5; pointer-events:none; }
+.master-drag { left:0; top:0; width:100%; height:48px; drag:drag; cursor:move; pointer-events:auto; z-index:1; }
+.master-close-button { right:15px; top:13px; width:24px; height:24px; line-height:24px; text-align:center; z-index:3; pointer-events:auto; }
+.master-exp-button { left:650px; top:13px; width:160px; height:24px; z-index:2; pointer-events:auto; }
+.master-label { height:24px; line-height:24px; color:#ddd; white-space:nowrap; overflow:hidden; pointer-events:none; }
+.master-label.class-name { left:165px; top:13px; width:180px; color:#ffc000; }
+.master-label.level { left:350px; top:13px; width:110px; }
+.master-label.point { left:470px; top:13px; width:150px; }
+.master-label.exp { left:650px; top:13px; width:160px; text-align:center; }
+.master-label.category { top:58px; width:250px; text-align:center; color:#ff9b00; }
+.master-label.category-1 { left:25px; } .master-label.category-2 { left:337px; } .master-label.category-3 { left:650px; }
+#mcSkillSlots { left:0; top:0; width:100%; height:100%; pointer-events:none; }
+.master-slot { display:none; pointer-events:none; }
+.master-slot .direction-art { left:0; top:0; width:100%; height:100%; border-width:1px; border-color:#3b3f48; background-color:#171b22; pointer-events:none; }
+.master-slot.available .direction-art { border-color:#71674f; }
+.master-slot.maxed .direction-art { border-color:#d5b35b; }
+.skill-button { left:8px; top:5px; width:29px; height:29px; pointer-events:auto; z-index:2; }
+.mu-skill-icon { left:0; top:0; width:100%; height:100%; overflow:hidden; clip:always; pointer-events:none; }
+.skill-sheet { left:0; top:0; width:100%; height:100%; background-color:#454954; pointer-events:none; }
+.available .skill-sheet { background-color:#6b7487; }
+.maxed .skill-sheet { background-color:#8b753d; }
+.skill-rank { right:2px; bottom:1px; min-width:15px; height:14px; line-height:14px; text-align:right; color:#eee; font-size:11px; pointer-events:none; z-index:3; }
+.master-slot.direction-1 .direction-art { border-right-width:3px; }
+.master-slot.direction-2 .direction-art { border-left-width:3px; }
+.master-slot.direction-3 .direction-art { border-bottom-width:3px; }
+.master-slot.direction-4 .direction-art { border-bottom-width:5px; }
+.master-slot.direction-5 .direction-art { border-right-width:5px; border-bottom-width:3px; }
+.master-slot.direction-6 .direction-art { border-left-width:5px; border-bottom-width:3px; }
+.master-slot.direction-7 .direction-art { border-right-width:3px; border-bottom-width:5px; }
+.master-slot.direction-8 .direction-art { border-left-width:3px; border-bottom-width:5px; }
+.mu-hidden { display:none; }

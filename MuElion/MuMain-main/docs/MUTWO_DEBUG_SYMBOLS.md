@@ -1488,3 +1488,40 @@ list scrolls over arbitrary destination counts through the reconstructed
 authored slots. Favorite-cell clicks stop propagation and emit
 `ToggleFavorite(mapIndex)`; row selection, show-map and close are separate
 one-shot actions.
+
+
+## RmlMasterTreePanel reconstruction
+
+The public master-tree document contains **108 authored skill slots**, each with
+a matching `mcSkillSlotN-btnBase`, plus `btnExp`, `btnClose`,
+`btnDrag`, four top labels and three category labels. Recovered design
+metadata:
+
+```text
+Panel-Size = 925.9 711.9
+Skill-Columns = 25
+Legacy-ReferenceSize = 640 480
+Tooltip-BottomThreshold = 300
+```
+
+The existing `CNewUIMasterLevel` supplies stronger game-side semantics:
+
+- three categories;
+- category origins (11,55), (221,55), (431,55);
+- column = `(Index - 1) % 4`;
+- column step = 49;
+- Y = categoryY + (rank - 1) * 41;
+- two prerequisite skills;
+- a parent prerequisite requires level >= 10;
+- rank N requires sufficient points in rank N-1;
+- required master points, max level, equipment/base-skill checks remain
+  authoritative before upgrade confirmation.
+
+The RmlUi reconstruction deliberately does not duplicate those eligibility
+rules. `RmlMasterTreePanel::SkillSlot` receives the already evaluated
+visible/enabled state, explicit modern slotId (1..108), skill id, group/rank/
+column/direction and level. Its fallback placement is derived from the legacy
+category/step geometry and scaled into the recovered 925.9x711.9 panel.
+Clicking an enabled slot emits only `UpgradeSkill(skillId)`; the existing
+game-side master-skill system remains responsible for confirmation and packet
+submission.
