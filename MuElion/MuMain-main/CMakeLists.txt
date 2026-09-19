@@ -200,6 +200,50 @@ FetchContent_Declare(miniaudio
 FetchContent_MakeAvailable(miniaudio)
 
 if(MU_ENABLE_MODERN_UI)
+    # RmlUi 6.3's in-tree build requires Freetype::Freetype when the default
+    # font engine is enabled and lunasvg::lunasvg when the SVG plugin is
+    # enabled. Fetch them here so a clean Windows machine does not depend on
+    # vcpkg/system packages being installed ahead of time.
+    function(mu_fetch_rmlui_dependencies)
+        set(BUILD_SHARED_LIBS OFF)
+
+        # Keep FreeType self-contained and deterministic. MuTwo only needs the
+        # RmlUi font engine here; optional font-compression/shaping integrations
+        # are not required for that contract.
+        set(FT_DISABLE_BZIP2 ON CACHE BOOL "" FORCE)
+        set(FT_DISABLE_PNG ON CACHE BOOL "" FORCE)
+        set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
+        set(FT_DISABLE_BROTLI ON CACHE BOOL "" FORCE)
+
+        FetchContent_Declare(freetype
+            GIT_REPOSITORY https://github.com/freetype/freetype.git
+            GIT_TAG        VER-2-13-3
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(freetype)
+        if(TARGET freetype AND NOT TARGET Freetype::Freetype)
+            add_library(Freetype::Freetype ALIAS freetype)
+        endif()
+
+        set(LUNASVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+        FetchContent_Declare(lunasvg
+            GIT_REPOSITORY https://github.com/sammycage/lunasvg.git
+            GIT_TAG        v3.0.1
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(lunasvg)
+
+        if(NOT TARGET Freetype::Freetype)
+            message(FATAL_ERROR
+                "MuTwo modern UI requires the Freetype::Freetype target.")
+        endif()
+        if(NOT TARGET lunasvg::lunasvg)
+            message(FATAL_ERROR
+                "MuTwo modern UI requires the lunasvg::lunasvg target.")
+        endif()
+    endfunction()
+    mu_fetch_rmlui_dependencies()
+
     # Main-x64-Debug.exe was built after RmlUi 6.3 and exposes the same
     # RenderInterface/CallbackTexture API. Pin the stable 6.3 commit rather
     # than tracking master so the reconstructed ABI remains deterministic.
