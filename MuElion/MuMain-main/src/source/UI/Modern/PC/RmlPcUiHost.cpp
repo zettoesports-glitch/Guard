@@ -30,6 +30,8 @@
 #include "UI/Modern/PC/Option/RmlOptionPanel.h"
 #include "UI/Modern/PC/Party/RmlPartyFrameLayer.h"
 #include "UI/Modern/PC/ServerMessage/RmlServerMessageLayer.h"
+#include "UI/Modern/PC/ServerSelect/RmlServerSelectPanel.h"
+#include "UI/Modern/PC/ServerSelect/RmlServerSelectLegacyBridge.h"
 #include "UI/Modern/PC/SystemMenu/RmlSystemMenuPanel.h"
 #include "UI/Modern/PC/World/RmlStoreLabelLayer.h"
 
@@ -49,6 +51,7 @@ public:
         viewportWidth_ = width;
         viewportHeight_ = height;
         login_.SetViewport(width, height);
+        serverSelect_.SetViewport(width, height);
         initialized_ = true;
         return true;
     }
@@ -59,6 +62,7 @@ public:
         // Reverse roughly follows UI dependency/overlay order.
         storeLabel_.Release();
         serverMessage_.Release();
+        serverSelect_.Release();
         tooltip_.Release();
         messageBox_.Release();
 
@@ -101,6 +105,7 @@ public:
         // Login owns an explicit viewport contract, so keep it synchronized
         // directly even when it is not yet loaded.
         login_.SetViewport(width, height);
+        serverSelect_.SetViewport(width, height);
     }
 
     [[nodiscard]] bool Update() noexcept
@@ -154,6 +159,11 @@ public:
         if (trade_.IsLoaded()) changed |= trade_.Update();
         if (muHelper_.IsLoaded()) changed |= muHelper_.Update();
         if (login_.IsLoaded()) changed |= login_.Update();
+        if (serverSelect_.IsLoaded())
+        {
+            changed |= serverSelectLegacyBridge_.Synchronize(serverSelect_);
+            changed |= serverSelect_.Update();
+        }
 
         if (messageBox_.IsLoaded()) changed |= messageBox_.Update();
 
@@ -194,6 +204,8 @@ public:
     Option::RmlOptionPanel option_;
     Party::RmlPartyFrameLayer party_;
     ServerMessage::RmlServerMessageLayer serverMessage_;
+    ServerSelect::RmlServerSelectPanel serverSelect_;
+    ServerSelect::RmlServerSelectLegacyBridge serverSelectLegacyBridge_;
     SystemMenu::RmlSystemMenuPanel systemMenu_;
     World::RmlStoreLabelLayer storeLabel_;
 
@@ -266,6 +278,7 @@ MU_PC_UI_GETTER(MuHelper, muHelper_, MuHelper::RmlMuHelperPanel)
 MU_PC_UI_GETTER(Option, option_, Option::RmlOptionPanel)
 MU_PC_UI_GETTER(Party, party_, Party::RmlPartyFrameLayer)
 MU_PC_UI_GETTER(ServerMessage, serverMessage_, ServerMessage::RmlServerMessageLayer)
+MU_PC_UI_GETTER(ServerSelect, serverSelect_, ServerSelect::RmlServerSelectPanel)
 MU_PC_UI_GETTER(SystemMenu, systemMenu_, SystemMenu::RmlSystemMenuPanel)
 MU_PC_UI_GETTER(StoreLabel, storeLabel_, World::RmlStoreLabelLayer)
 

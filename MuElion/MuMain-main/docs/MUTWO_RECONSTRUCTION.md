@@ -290,3 +290,13 @@ and differential runtime tests succeed.
   two 32-slot grids, player/Zen metadata, warning/confirmation presentation
   and semantic close/Zen/confirm/slot actions while legacy trade retains all
   item legality, timers and network requests
+
+
+- reconstructed `RmlServerSelectPanel` for the public
+  `Data/UI/PC/ServerSelect/server_select.rml` contract with dynamic group/
+  server rows, load bars, PvP/Non-PvP/Gold presentation and one-shot server
+  selection intent
+- added `RmlServerSelectLegacyBridge` over the existing
+  `CServerListManager` public group/server data; server discovery and
+  ownership remain legacy-side, and the modern panel does not initiate the
+  network connection itself

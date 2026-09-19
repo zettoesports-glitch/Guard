@@ -137,3 +137,8 @@ These skeletons intentionally contain no copied MuClient markup or styling.
 They establish the recovered file/layout contract so each screen can be
 reconstructed incrementally without guessing directory names or replacing the
 legacy UI before parity is validated.
+
+
+### Additional public PC document contract
+
+- `Data/UI/PC/ServerSelect/server_select.rml`

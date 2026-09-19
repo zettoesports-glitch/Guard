@@ -2066,3 +2066,32 @@ The reconstructed drop-state colors are intentionally left neutral here. The
 legacy seller calculates allowed/banned drop state from the **currently picked
 item** during drag-and-drop; reproducing that transient feedback belongs in the
 future picked-item/action bridge rather than the steady-state snapshot.
+
+
+## RmlServerSelectPanel reconstruction
+
+The public MuClient PC tree exposes the document
+`Data/UI/PC/ServerSelect/server_select.rml` with the stable DOM ids
+`server-select`, `title`, `group-list`, `server-list`,
+`description`, and `advisory`. The local RML/RCSS is independently
+authored around that observable contract.
+
+The existing MuMain `CServerListManager` is kept authoritative. It exposes
+the already-decoded server groups and server entries, including group names and
+descriptions, `m_iConnectIndex`, per-server index, load percentage, and the
+legacy `m_byNonPvP` classification:
+
+```text
+0 = PVP
+1 = Non-PVP
+2 = Gold PVP
+3 = Gold
+```
+
+The bridge copies this state into a presentation-neutral panel model without
+retaining `CServerGroup*` or `CServerInfo*`. A selected modern row returns
+a one-shot selection payload containing the group key, connection index,
+server index, classification and displayed name. It deliberately does not call
+`SetSelectServerInfo` or start the connection: that side effect remains at
+the legacy scene/network boundary until the exact callback ownership is
+recovered.

@@ -41,6 +41,7 @@ namespace MuHelper { class RmlMuHelperPanel; }
 namespace Option { class RmlOptionPanel; }
 namespace Party { class RmlPartyFrameLayer; }
 namespace ServerMessage { class RmlServerMessageLayer; }
+namespace ServerSelect { class RmlServerSelectPanel; }
 namespace SystemMenu { class RmlSystemMenuPanel; }
 namespace World { class RmlStoreLabelLayer; }
 
@@ -83,6 +84,7 @@ public:
     [[nodiscard]] Option::RmlOptionPanel& Option() noexcept;
     [[nodiscard]] Party::RmlPartyFrameLayer& Party() noexcept;
     [[nodiscard]] ServerMessage::RmlServerMessageLayer& ServerMessage() noexcept;
+    [[nodiscard]] ServerSelect::RmlServerSelectPanel& ServerSelect() noexcept;
     [[nodiscard]] SystemMenu::RmlSystemMenuPanel& SystemMenu() noexcept;
     [[nodiscard]] World::RmlStoreLabelLayer& StoreLabel() noexcept;
 
