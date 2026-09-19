@@ -1,6 +1,7 @@
 #include "Render/Renderer/GLCompatShim.h"
 
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 
 #include <algorithm>
 #include <array>
@@ -37,15 +38,36 @@ constexpr MUCompatGLenum kGLSrcColor = 0x0300;
 constexpr MUCompatGLenum kGLUnsignedByte = 0x1401;
 constexpr MUCompatGLenum kGLRgb = 0x1907;
 constexpr MUCompatGLenum kGLRgba = 0x1908;
+constexpr MUCompatGLenum kGLFloat = 0x1406;
+constexpr MUCompatGLenum kGLVertexArray = 0x8074;
+constexpr MUCompatGLenum kGLColorArray = 0x8076;
+constexpr MUCompatGLenum kGLTextureCoordArray = 0x8078;
+constexpr MUCompatGLenum kGLFogMode = 0x0B65;
+constexpr MUCompatGLenum kGLFogDensity = 0x0B62;
+constexpr MUCompatGLenum kGLFogStart = 0x0B63;
+constexpr MUCompatGLenum kGLFogEnd = 0x0B64;
+constexpr MUCompatGLenum kGLFogColor = 0x0B66;
 
 struct ImmediateVertex
 {
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
+    float nx = 0.0f;
+    float ny = 0.0f;
+    float nz = 1.0f;
     float u = 0.0f;
     float v = 0.0f;
     std::uint32_t color = 0xFFFFFFFFu;
+};
+
+struct ClientPointerState
+{
+    MUCompatGLint size = 0;
+    MUCompatGLenum type = 0;
+    MUCompatGLsizei stride = 0;
+    const void* pointer = nullptr;
+    bool enabled = false;
 };
 
 MUCompatGLenum s_mode = 0;
@@ -53,6 +75,9 @@ std::vector<ImmediateVertex> s_vertices;
 std::vector<mu::Vertex3D> s_renderVertices;
 float s_u = 0.0f;
 float s_v = 0.0f;
+float s_nx = 0.0f;
+float s_ny = 0.0f;
+float s_nz = 1.0f;
 std::uint32_t s_color = 0xFFFFFFFFu;
 std::uint32_t s_boundTexture = 0;
 constexpr MUCompatGLuint kFirstDynamicTextureId = 0x40000000u;
@@ -65,6 +90,10 @@ bool s_alphaTest = false;
 bool s_cullFace = false;
 bool s_fog = false;
 bool s_stencil = false;
+ClientPointerState s_vertexPointer;
+ClientPointerState s_colorPointer;
+ClientPointerState s_texCoordPointer;
+mu::FogParams s_fogParams{static_cast<int>(0x2601), 0.0f, 1.0f, 1.0f, {0.0f, 0.0f, 0.0f, 1.0f}};
 
 [[nodiscard]] std::uint8_t ByteFromFloat(float value)
 {
@@ -95,7 +124,7 @@ bool s_stencil = false;
 
 void PushVertex(float x, float y, float z)
 {
-    s_vertices.push_back({x, y, z, s_u, s_v, s_color});
+    s_vertices.push_back({x, y, z, s_nx, s_ny, s_nz, s_u, s_v, s_color});
 }
 
 void SubmitTriangles(const std::vector<ImmediateVertex>& vertices)
@@ -104,7 +133,7 @@ void SubmitTriangles(const std::vector<ImmediateVertex>& vertices)
     for (std::size_t i = 0; i < vertices.size(); ++i)
     {
         const ImmediateVertex& v = vertices[i];
-        s_renderVertices[i] = {v.x, v.y, v.z, 0.0f, 0.0f, 1.0f, v.u, v.v, v.color};
+        s_renderVertices[i] = {v.x, v.y, v.z, v.nx, v.ny, v.nz, v.u, v.v, v.color};
     }
     mu::GetRenderer().RenderTriangles(s_renderVertices, s_texture2D ? s_boundTexture : 0u);
 }
@@ -116,10 +145,10 @@ void SubmitQuads()
     for (std::size_t i = 0; i + 3 < s_vertices.size(); i += 4)
     {
         const ImmediateVertex* quad = s_vertices.data() + i;
-        s_renderVertices[output++] = {quad[0].x, quad[0].y, quad[0].z, 0.f, 0.f, 1.f, quad[0].u, quad[0].v, quad[0].color};
-        s_renderVertices[output++] = {quad[1].x, quad[1].y, quad[1].z, 0.f, 0.f, 1.f, quad[1].u, quad[1].v, quad[1].color};
-        s_renderVertices[output++] = {quad[2].x, quad[2].y, quad[2].z, 0.f, 0.f, 1.f, quad[2].u, quad[2].v, quad[2].color};
-        s_renderVertices[output++] = {quad[3].x, quad[3].y, quad[3].z, 0.f, 0.f, 1.f, quad[3].u, quad[3].v, quad[3].color};
+        s_renderVertices[output++] = {quad[0].x, quad[0].y, quad[0].z, quad[0].nx, quad[0].ny, quad[0].nz, quad[0].u, quad[0].v, quad[0].color};
+        s_renderVertices[output++] = {quad[1].x, quad[1].y, quad[1].z, quad[1].nx, quad[1].ny, quad[1].nz, quad[1].u, quad[1].v, quad[1].color};
+        s_renderVertices[output++] = {quad[2].x, quad[2].y, quad[2].z, quad[2].nx, quad[2].ny, quad[2].nz, quad[2].u, quad[2].v, quad[2].color};
+        s_renderVertices[output++] = {quad[3].x, quad[3].y, quad[3].z, quad[3].nx, quad[3].ny, quad[3].nz, quad[3].u, quad[3].v, quad[3].color};
     }
     mu::GetRenderer().RenderQuad3D(s_renderVertices, s_texture2D ? s_boundTexture : 0u);
 }
@@ -212,7 +241,7 @@ void mu_glEnd()
         std::vector<mu::Vertex3D> lines;
         lines.reserve(s_vertices.size());
         for (const ImmediateVertex& v : s_vertices)
-            lines.push_back({v.x, v.y, v.z, 0.0f, 0.0f, 1.0f, v.u, v.v, v.color});
+            lines.push_back({v.x, v.y, v.z, v.nx, v.ny, v.nz, v.u, v.v, v.color});
         mu::GetRenderer().RenderLines(lines, s_texture2D ? s_boundTexture : 0u);
         break;
     }
@@ -223,7 +252,7 @@ void mu_glEnd()
         std::vector<mu::Vertex3D> strip;
         strip.reserve(s_vertices.size());
         for (const ImmediateVertex& v : s_vertices)
-            strip.push_back({v.x, v.y, v.z, 0.0f, 0.0f, 1.0f, v.u, v.v, v.color});
+            strip.push_back({v.x, v.y, v.z, v.nx, v.ny, v.nz, v.u, v.v, v.color});
         mu::GetRenderer().RenderQuadStrip(strip, s_texture2D ? s_boundTexture : 0u);
         break;
     }
@@ -362,9 +391,29 @@ void mu_glStencilOp(MUCompatGLenum sfail, MUCompatGLenum dpfail, MUCompatGLenum 
 void mu_glColorMask(MUCompatGLboolean r, MUCompatGLboolean g, MUCompatGLboolean b, MUCompatGLboolean a) { mu::GetRenderer().SetColorMask(r, g, b, a); }
 void mu_glPolygonMode(MUCompatGLenum face, MUCompatGLenum mode) { mu::GetRenderer().SetPolygonMode(static_cast<int>(face), static_cast<int>(mode)); }
 void mu_glFrontFace(MUCompatGLenum mode) { mu::GetRenderer().SetFrontFace(static_cast<int>(mode)); }
-void mu_glFogf(MUCompatGLenum, MUCompatGLfloat) {}
-void mu_glFogi(MUCompatGLenum, MUCompatGLint) {}
-void mu_glFogfv(MUCompatGLenum, const MUCompatGLfloat*) {}
+void mu_glFogf(MUCompatGLenum pname, MUCompatGLfloat param)
+{
+    if (pname == kGLFogDensity) s_fogParams.density = param;
+    else if (pname == kGLFogStart) s_fogParams.start = param;
+    else if (pname == kGLFogEnd) s_fogParams.end = param;
+    mu::GetRenderer().SetFog(s_fogParams);
+}
+void mu_glFogi(MUCompatGLenum pname, MUCompatGLint param)
+{
+    if (pname == kGLFogMode) s_fogParams.mode = param;
+    mu::GetRenderer().SetFog(s_fogParams);
+}
+void mu_glFogfv(MUCompatGLenum pname, const MUCompatGLfloat* params)
+{
+    if (pname == kGLFogColor && params)
+    {
+        s_fogParams.color[0] = params[0];
+        s_fogParams.color[1] = params[1];
+        s_fogParams.color[2] = params[2];
+        s_fogParams.color[3] = params[3];
+    }
+    mu::GetRenderer().SetFog(s_fogParams);
+}
 void mu_glReadPixels(MUCompatGLint x, MUCompatGLint y, MUCompatGLsizei width, MUCompatGLsizei height, MUCompatGLenum, MUCompatGLenum, void* pixels) { mu::GetRenderer().ReadPixels(x, y, width, height, pixels); }
 const MUCompatGLubyte* mu_glGetString(MUCompatGLenum)
 {
@@ -386,16 +435,104 @@ void mu_gluOrtho2D(MUCompatGLdouble left, MUCompatGLdouble right, MUCompatGLdoub
 }
 void* mu_gluNewQuadric() { return nullptr; }
 void mu_gluSphere(void*, MUCompatGLdouble, MUCompatGLint, MUCompatGLint) {}
-void mu_glEnableClientState(MUCompatGLenum) {}
-void mu_glDisableClientState(MUCompatGLenum) {}
-void mu_glVertexPointer(MUCompatGLint, MUCompatGLenum, MUCompatGLsizei, const void*) {}
-void mu_glTexCoordPointer(MUCompatGLint, MUCompatGLenum, MUCompatGLsizei, const void*) {}
-void mu_glColorPointer(MUCompatGLint, MUCompatGLenum, MUCompatGLsizei, const void*) {}
-void mu_glDrawArrays(MUCompatGLenum, MUCompatGLint, MUCompatGLsizei) {}
+void mu_glEnableClientState(MUCompatGLenum array)
+{
+    if (array == kGLVertexArray) s_vertexPointer.enabled = true;
+    else if (array == kGLColorArray) s_colorPointer.enabled = true;
+    else if (array == kGLTextureCoordArray) s_texCoordPointer.enabled = true;
+
+    mu::pipeline::GetLegacyRenderFacade().EnableClientArray(
+        static_cast<mu::pipeline::RenderClientArraySemantic>(array));
+}
+
+void mu_glDisableClientState(MUCompatGLenum array)
+{
+    if (array == kGLVertexArray) s_vertexPointer.enabled = false;
+    else if (array == kGLColorArray) s_colorPointer.enabled = false;
+    else if (array == kGLTextureCoordArray) s_texCoordPointer.enabled = false;
+
+    mu::pipeline::GetLegacyRenderFacade().DisableClientArray(
+        static_cast<mu::pipeline::RenderClientArraySemantic>(array));
+}
+
+void mu_glVertexPointer(MUCompatGLint size, MUCompatGLenum type, MUCompatGLsizei stride, const void* pointer)
+{
+    s_vertexPointer = {size, type, stride, pointer, s_vertexPointer.enabled};
+}
+
+void mu_glTexCoordPointer(MUCompatGLint size, MUCompatGLenum type, MUCompatGLsizei stride, const void* pointer)
+{
+    s_texCoordPointer = {size, type, stride, pointer, s_texCoordPointer.enabled};
+}
+
+void mu_glColorPointer(MUCompatGLint size, MUCompatGLenum type, MUCompatGLsizei stride, const void* pointer)
+{
+    s_colorPointer = {size, type, stride, pointer, s_colorPointer.enabled};
+}
+
+void mu_glDrawArrays(MUCompatGLenum mode, MUCompatGLint first, MUCompatGLsizei count)
+{
+    if (first < 0 || count < 0 || !s_vertexPointer.enabled || !s_vertexPointer.pointer)
+        return;
+
+    auto upload = [first, count](const ClientPointerState& state,
+                                 mu::pipeline::RenderClientArraySemantic semantic,
+                                 bool normalized) -> bool
+    {
+        if (!state.enabled || !state.pointer)
+            return true;
+
+        std::size_t scalar = 0;
+        switch (state.type)
+        {
+        case 0x1400:
+        case 0x1401: scalar = 1; break;
+        case 0x1402:
+        case 0x1403: scalar = 2; break;
+        case 0x1404:
+        case 0x1405:
+        case kGLFloat: scalar = 4; break;
+        case 0x140A: scalar = 8; break;
+        default: return false;
+        }
+
+        if (state.size <= 0 || count == 0)
+            return count == 0;
+
+        const std::size_t elementBytes = scalar * static_cast<std::size_t>(state.size);
+        const std::size_t strideBytes = state.stride > 0 ? static_cast<std::size_t>(state.stride) : elementBytes;
+        const std::size_t last = static_cast<std::size_t>(first + count - 1);
+        if (last > (static_cast<std::size_t>(-1) - elementBytes) / strideBytes)
+            return false;
+
+        const std::size_t bytesNeeded = last * strideBytes + elementBytes;
+        const auto* bytes = static_cast<const std::byte*>(state.pointer);
+        return mu::pipeline::GetLegacyRenderFacade().SetClientArray(
+            semantic, std::span<const std::byte>(bytes, bytesNeeded),
+            static_cast<std::uint32_t>(state.size),
+            static_cast<mu::pipeline::RenderClientArrayScalarType>(state.type),
+            state.stride, normalized);
+    };
+
+    if (!upload(s_vertexPointer, mu::pipeline::RenderClientArraySemantic::Vertex, false))
+        return;
+    if (!upload(s_colorPointer, mu::pipeline::RenderClientArraySemantic::Color, s_colorPointer.type != kGLFloat))
+        return;
+    if (!upload(s_texCoordPointer, mu::pipeline::RenderClientArraySemantic::TextureCoordinate, false))
+        return;
+
+    (void)mu::pipeline::GetLegacyRenderFacade().DrawArrays(
+        static_cast<mu::pipeline::LegacyPrimitive>(mode), first, count);
+}
 void mu_glReadBuffer(MUCompatGLenum) {}
 void mu_glFlush() {}
 void mu_glPixelStorei(MUCompatGLenum, MUCompatGLint) {}
 void mu_glPushAttrib(MUCompatGLbitfield) {}
 void mu_glPopAttrib() {}
-void mu_glNormal3f(MUCompatGLfloat, MUCompatGLfloat, MUCompatGLfloat) {}
+void mu_glNormal3f(MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z)
+{
+    s_nx = x;
+    s_ny = y;
+    s_nz = z;
+}
 void mu_glCopyTexImage2D(MUCompatGLenum, MUCompatGLint, MUCompatGLenum, MUCompatGLint, MUCompatGLint, MUCompatGLsizei, MUCompatGLsizei, MUCompatGLint) {}
