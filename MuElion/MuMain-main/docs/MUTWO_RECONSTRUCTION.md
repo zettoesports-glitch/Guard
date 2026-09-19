@@ -226,6 +226,9 @@ and differential runtime tests succeed.
 - reconstructed `RmlOptionPanel` with checkbox/radio/select controls for
 - reconstructed Inventory/Expanded Inventory presentation with Debug-derived
 - reconstructed Private Store presentation with exact Debug design keys,
+- reconstructed MuHelper presentation over the real `MUHelper::ConfigData`
+  domain with tabs, ranges, checkbox state, skill slots, extra-item list and
+  one-shot save/reset/settings requests
   8x4 slot grid, seller/buyer mode, drop-state colors and one-shot actions
   dimensions, grid/equipment contracts, 64 base slots, 128 extension slots,
   drag/button controls and one-shot requests; legacy item ownership preserved

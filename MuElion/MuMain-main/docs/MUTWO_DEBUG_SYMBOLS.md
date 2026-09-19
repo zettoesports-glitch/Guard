@@ -1750,3 +1750,38 @@ The reconstructed `RmlPrivateStorePanel` supports seller/buyer presentation,
 slot requests. Legacy `CNewUIMyShopInventory` and
 `CNewUIPurchaseShopInventory` remain responsible for price dialogs, item
 eligibility, purchase/open/close packets and inventory ownership.
+
+
+## MuHelper presentation reconstruction
+
+The x64 Debug executable preserves the exact document path
+`Data/UI/PC/MuHelper/mu_helper.rml` and design keys:
+
+```text
+MuHelper-Width
+MuHelper-Height
+MuHelper-SidePanelWidth
+```
+
+The public observable document contract additionally carries
+`MuHelper-ReferenceWidth` and `MuHelper-ReferenceHeight`, and exposes the
+stable DOM ids for tabs, hunting/obtaining ranges, checkbox options, skill
+slots, extra-item list, reset/save/close and advanced-settings launchers.
+
+No dedicated modern MuHelper class RTTI name is currently preserved in the
+Debug image. The local `RmlMuHelperPanel` name is therefore semantic.
+Unlike a disconnected presentation model, however, its state type is the
+existing legacy/domain `MUHelper::ConfigData`.
+
+The first materialized layer maps the unambiguous domain fields directly:
+hunting/obtaining range, fallback basic attack, long-range counter, return
+position/time, potion/combo/raven/support/heal/drain/buff options, repair and
+item-pick filters, extra item names, friend/guild acceptance and self-defense.
+It binds six assigned-skill slots and ten available-skill presentation slots,
+plus a five-row scrolling extra-item list.
+
+Save/reset/close and advanced option buttons are exposed as one-shot actions.
+The panel intentionally does not send `SendMuHelperSaveDataRequest` or status
+packets itself; network/domain ownership remains with the existing
+`MUHelper::CMuHelper` and legacy UI until the higher-level ownership bridge is
+validated.
