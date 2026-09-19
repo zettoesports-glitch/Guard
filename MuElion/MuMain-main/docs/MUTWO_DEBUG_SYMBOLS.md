@@ -1465,3 +1465,26 @@ screen anchors and value-only presentation state for player id, guild/title,
 private store text, chat bubble, reputation, guild relation, gens rank and
 castle mark. The RmlUi layer builds transient DOM labels and does not inspect
 or own character objects.
+
+
+## RmlMoveCommandPanel reconstruction
+
+The move-command document exposes a fixed 12-row primary list, 5-row favorites
+area, one vertical scrollbar, a show-map button, and close button. Its recovered
+presentation contract includes the 376.998901 x 532.997894 panel size, row
+height 20, main/favorite list anchors, checkbox/favorite column geometry,
+scrollbar geometry, root Y=50, and 640x480 reference space.
+
+The existing `CNewUIMoveCommandWindow` confirms that the authoritative data
+already lives in `CMoveCommandData::MOVEINFODATA`: map index/name, required
+level/max level/zen, `_bCanMove`, `_bStrife`, and selection state. Its
+legacy click handler performs the actual warp request only after game-side
+eligibility and cross-server checks.
+
+The modern `RmlMoveCommandPanel` therefore consumes value-only destination
+state and emits semantic requests. It does not send a warp packet. The primary
+list scrolls over arbitrary destination counts through the reconstructed
+`RmlMuScrollBar`, while the separately supplied favorite list uses five
+authored slots. Favorite-cell clicks stop propagation and emit
+`ToggleFavorite(mapIndex)`; row selection, show-map and close are separate
+one-shot actions.

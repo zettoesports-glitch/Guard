@@ -1,9 +1,177 @@
 <rml>
 <head>
+    <meta name="mu-design-MoveCommand-PanelWidth" content="376.998901"/>
+    <meta name="mu-design-MoveCommand-PanelHeight" content="532.997894"/>
+    <meta name="mu-design-MoveCommand-MainListX" content="27"/>
+    <meta name="mu-design-MoveCommand-MainListY" content="89"/>
+    <meta name="mu-design-MoveCommand-FavoriteListY" content="362"/>
+    <meta name="mu-design-MoveCommand-ShowMapX" content="111"/>
+    <meta name="mu-design-MoveCommand-CloseX" content="192"/>
+    <meta name="mu-design-MoveCommand-TextButtonY" content="484"/>
+    <meta name="mu-design-MoveCommand-TextButtonWidth" content="75"/>
+    <meta name="mu-design-MoveCommand-TextButtonHeight" content="35"/>
+    <meta name="mu-design-MoveCommand-ScrollBarX" content="331.35"/>
+    <meta name="mu-design-MoveCommand-ScrollBarY" content="82"/>
+    <meta name="mu-design-MoveCommand-RowHeight" content="20"/>
+    <meta name="mu-design-MoveCommand-RowWidth" content="295.935713"/>
+    <meta name="mu-design-MoveCommand-CheckBoxX" content="262"/>
+    <meta name="mu-design-MoveCommand-CheckBoxWidth" content="42.600001"/>
+    <meta name="mu-design-MoveCommand-ScrollDownY" content="239.00032"/>
+    <meta name="mu-design-MoveCommand-ScrollTrackHeight" content="231.50032"/>
+    <meta name="mu-design-MoveCommand-RootY" content="50"/>
+    <meta name="mu-design-MoveCommand-ReferenceWidth" content="640"/>
+    <meta name="mu-design-MoveCommand-ReferenceHeight" content="480"/>
     <title>Reconstructed Move Command</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="move_command.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-hud-move-command">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+<div id="move-command" class="move-command">
+    <div id="move-command-outer" class="move-command-outer"/>
+    <div id="move-command-title" class="move-command-title"/>
+    <div id="move-command-strife-label" class="move-command-label strife"/>
+    <div id="move-command-map-label" class="move-command-label map"/>
+    <div id="move-command-level-label" class="move-command-label level"/>
+    <div id="move-command-zen-label" class="move-command-label zen"/>
+    <div id="move-command-favorite-label" class="move-command-label favorite"/>
+    <div id="move-command-main-list" class="move-command-list">
+<div id="move-command-main-row-0" class="move-command-row mu-button">
+<div id="move-command-main-row-art-0" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-0" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-0" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-0" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-0" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-1" class="move-command-row mu-button">
+<div id="move-command-main-row-art-1" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-1" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-1" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-1" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-1" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-2" class="move-command-row mu-button">
+<div id="move-command-main-row-art-2" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-2" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-2" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-2" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-2" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-3" class="move-command-row mu-button">
+<div id="move-command-main-row-art-3" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-3" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-3" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-3" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-3" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-4" class="move-command-row mu-button">
+<div id="move-command-main-row-art-4" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-4" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-4" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-4" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-4" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-5" class="move-command-row mu-button">
+<div id="move-command-main-row-art-5" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-5" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-5" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-5" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-5" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-6" class="move-command-row mu-button">
+<div id="move-command-main-row-art-6" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-6" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-6" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-6" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-6" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-7" class="move-command-row mu-button">
+<div id="move-command-main-row-art-7" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-7" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-7" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-7" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-7" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-8" class="move-command-row mu-button">
+<div id="move-command-main-row-art-8" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-8" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-8" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-8" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-8" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-9" class="move-command-row mu-button">
+<div id="move-command-main-row-art-9" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-9" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-9" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-9" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-9" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-10" class="move-command-row mu-button">
+<div id="move-command-main-row-art-10" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-10" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-10" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-10" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-10" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-main-row-11" class="move-command-row mu-button">
+<div id="move-command-main-row-art-11" class="move-command-row-art"/>
+<div id="move-command-main-row-strife-11" class="move-command-row-text strife"/>
+<div id="move-command-main-row-map-11" class="move-command-row-text map"/>
+<div id="move-command-main-row-level-11" class="move-command-row-text level"/>
+<div id="move-command-main-row-zen-11" class="move-command-row-text zen"/>
+</div>
+
+    </div>
+    <div id="move-command-favorite-title" class="move-command-title favorite-title"/>
+    <div id="move-command-favorite-list" class="move-command-list favorite-list">
+<div id="move-command-favorite-row-0" class="move-command-row mu-button">
+<div class="move-command-row-art favorite-marker"/>
+<div id="move-command-favorite-row-strife-0" class="move-command-row-text strife"/>
+<div id="move-command-favorite-row-map-0" class="move-command-row-text map"/>
+<div id="move-command-favorite-row-level-0" class="move-command-row-text level"/>
+<div id="move-command-favorite-row-zen-0" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-favorite-row-1" class="move-command-row mu-button">
+<div class="move-command-row-art favorite-marker"/>
+<div id="move-command-favorite-row-strife-1" class="move-command-row-text strife"/>
+<div id="move-command-favorite-row-map-1" class="move-command-row-text map"/>
+<div id="move-command-favorite-row-level-1" class="move-command-row-text level"/>
+<div id="move-command-favorite-row-zen-1" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-favorite-row-2" class="move-command-row mu-button">
+<div class="move-command-row-art favorite-marker"/>
+<div id="move-command-favorite-row-strife-2" class="move-command-row-text strife"/>
+<div id="move-command-favorite-row-map-2" class="move-command-row-text map"/>
+<div id="move-command-favorite-row-level-2" class="move-command-row-text level"/>
+<div id="move-command-favorite-row-zen-2" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-favorite-row-3" class="move-command-row mu-button">
+<div class="move-command-row-art favorite-marker"/>
+<div id="move-command-favorite-row-strife-3" class="move-command-row-text strife"/>
+<div id="move-command-favorite-row-map-3" class="move-command-row-text map"/>
+<div id="move-command-favorite-row-level-3" class="move-command-row-text level"/>
+<div id="move-command-favorite-row-zen-3" class="move-command-row-text zen"/>
+</div>
+<div id="move-command-favorite-row-4" class="move-command-row mu-button">
+<div class="move-command-row-art favorite-marker"/>
+<div id="move-command-favorite-row-strife-4" class="move-command-row-text strife"/>
+<div id="move-command-favorite-row-map-4" class="move-command-row-text map"/>
+<div id="move-command-favorite-row-level-4" class="move-command-row-text level"/>
+<div id="move-command-favorite-row-zen-4" class="move-command-row-text zen"/>
+</div>
+
+    </div>
+    <div id="move-command-scroll" class="mu-scrollbar move-command-scrollbar">
+        <div id="move-command-scroll-track" class="mu-scrollbar-track"/>
+        <div id="move-command-scroll-down" class="mu-scrollbar-button">v</div>
+        <div id="move-command-scroll-up" class="mu-scrollbar-button">^</div>
+        <div id="move-command-scroll-thumb" class="mu-scrollbar-thumb"/>
+    </div>
+    <div id="move-command-show-map" class="mu-button move-command-button">
+        <div id="move-command-show-map-label"/>
+    </div>
+    <div id="move-command-close" class="mu-button move-command-button">
+        <div id="move-command-close-label"/>
+    </div>
+</div>
 </body>
 </rml>

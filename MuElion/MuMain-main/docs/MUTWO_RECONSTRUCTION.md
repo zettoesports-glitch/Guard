@@ -209,3 +209,7 @@ and differential runtime tests succeed.
 - reconstructed `RmlServerMessageLayer` safe passive server-text overlay
 - reconstructed `RmlStoreLabelLayer` dynamic world names/store/chat layer
   with projected anchors and relationship/reputation presentation state
+
+- reconstructed `RmlMoveCommandPanel` with 12-row move list, five favorite
+  rows, recovered design geometry, scrollbar, favorite toggles and semantic
+  select/show-map/close actions while leaving warp/network checks game-side
