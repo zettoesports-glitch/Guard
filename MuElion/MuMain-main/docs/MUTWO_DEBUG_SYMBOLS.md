@@ -673,3 +673,59 @@ The consumption method updates the local current value and returns
 
 The reconstruction uses semantic public method names because private
 non-exported identifiers are not present in the executable.
+
+
+## RmlMuScrollBar reconstruction
+
+RTTI exposes `UI::Modern::RmlMuScrollBar::Listener`; its virtual
+`ProcessEvent(Event&)` forwards through the owner pointer stored at listener
+offset `+0x10`. The recovered scrollbar object begins with five element
+pointers:
+
+```text
++0x00 unique_ptr<Listener>
++0x08 root
++0x10 track
++0x18 increment/down
++0x20 decrement/up
++0x28 thumb
++0x30 current position (size_t)
++0x38 maximum position (size_t)
++0x40 visible/page fallback amount (size_t)
+...
++0x50 explicit page step (size_t)
+...
++0xa0 optional<size_t> requested position
++0xb0 drag scale
++0xb4 drag-start mouse_y
++0xb8 drag-start position
++0xc0 dragging
+```
+
+Binding verifies four children and assigns indices 0..3 to track, increment,
+decrement and thumb. It registers `click` on the first three and
+`dragstart`, `drag`, `dragend` on the thumb. Unbinding removes the same
+listeners.
+
+The event body is recovered directly:
+
+- decrement click requests `position - 1` when position > 0;
+- increment click requests `position + 1` when position < maximum;
+- track click reads `mouse_y`, compares against the thumb center, and moves by
+  the explicit page step or `max(1, visibleAmount)`;
+- dragstart stores `mouse_y` and the starting position;
+- drag converts vertical pixel movement into logical position movement and
+  clamps to `0..maximum`;
+- dragend clears the dragging latch;
+- handled events call `Event::StopPropagation()`.
+
+The private position setter writes a 16-byte optional-like object near +0xa0,
+showing that interaction requests are delivered separately from externally
+owned scrollbar state. The reconstruction therefore exposes
+`ConsumeRequestedPosition()` rather than mutating application state behind
+the owner's back.
+
+The recovered layout helpers also show proportional thumb sizing and position
+mapping. The reconstruction applies equivalent `top`, `height`, `display`
+and disabled/pointer-event state through RmlUi properties. Public method names
+are semantic reconstructions, not claims about stripped private identifiers.

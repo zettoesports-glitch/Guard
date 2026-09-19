@@ -111,6 +111,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   state and `left/top` CSS synchronization
 - reconstructed `RmlMuOptionStepper` with embedded previous/next buttons,
   exact key navigation and one-shot optional change delivery
+- reconstructed `RmlMuScrollBar` four-child binding, proportional thumb,
+  page clicks, drag navigation and one-shot position requests
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle
