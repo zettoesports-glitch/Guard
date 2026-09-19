@@ -105,6 +105,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - recovered `gfx-tint` decorator and nested SpriteDecorator, including
   Debug-matched base texture storage and rectangle/tint member layout
 - recovered `RmlUiDesign::Parser` for `mu-design-*` meta constants
+- reconstructed `RmlMuButton` listener, atomic click latch, visibility/
+  enabled state and CSS synchronization
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle

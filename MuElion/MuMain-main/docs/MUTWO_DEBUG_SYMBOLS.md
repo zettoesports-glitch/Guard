@@ -553,3 +553,45 @@ SpriteDecorator + 0x48 : Rml::Vector4f textureTint
 The reconstruction now follows this layout: texture ownership/reference is kept
 by the RmlUi Decorator base, followed only by the recovered rectangle and tint
 members.
+
+
+## RmlMuButton listener and state machine
+
+RTTI exposes `UI::Modern::RmlMuButton::Listener`. Its x64 object is 24 bytes:
+the RmlUi `EventListener` base occupies the leading portion and the owner
+pointer is stored at `+0x10`. `ProcessEvent` is a one-hop forwarder to the
+owner.
+
+The non-polymorphic `RmlMuButton` body is also 24 bytes in the x64 Debug
+build. Direct function-body analysis recovers this layout and behavior:
+
+```text
++0x00 unique_ptr<Listener>
++0x08 Rml::Element* bound element
++0x10 atomic<bool> enabled        (default true)
++0x11 atomic<bool> visible        (default true)
++0x12 atomic<bool> clicked        (default false)
++0x13 optional<bool> applied-enabled
++0x15 optional<bool> applied-visible
+```
+
+Binding first detaches any previous element, then attaches the listener to the
+exact event string `click`. Unbinding removes the same listener and clears the
+latched click. The click handler performs acquire loads of enabled/visible and
+sets the click latch with release ordering only when both are true. The
+consume operation uses an atomic exchange with acq_rel ordering.
+
+The recovered visual synchronization maps state to RmlUi as follows:
+
+```text
+visible=false -> class "mu-hidden" enabled
+enabled=false -> class "disabled" enabled
+enabled=true  -> pointer-events: auto
+enabled=false -> pointer-events: none
+```
+
+The Debug body also contains an ancestor walk which returns true only when the
+control is enabled+visible and the supplied element is the bound element or one
+of its descendants. The reconstruction exposes semantic method names for these
+non-exported functions; those names are not claimed to be the original private
+identifiers.
