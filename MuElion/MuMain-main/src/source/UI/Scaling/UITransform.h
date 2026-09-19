@@ -101,6 +101,12 @@ namespace UI::Scaling
     float ContentScaleFromMetrics(float displayScale, float pixelDensity);
     float GetWindowContentScale();
     void SetWindowContentScale(float contentScale);
+
+    // MuTwo public config exposes these as independent controls.
+    float GetControlUiScale();
+    void SetControlUiScalePercent(int percent);
+    float GetRmlUiScale();
+    void SetRmlUiScalePercent(int percent);
     Transform GetActiveTransform();
     void SetActiveTransform(const Transform& transform);
 }

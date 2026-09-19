@@ -33,6 +33,8 @@ constexpr int kFixedFontPointSize = 13;
 constexpr int kMaximumFixedFontPointSize = 18;
 // ponytail: one gameplay window; move scale into a window context if multi-window rendering is added.
 float g_windowContentScale = 1.0f;
+float g_controlUiScale = 1.0f;
+float g_rmlUiScale = 1.0f;
 
 struct FontPointRange
 {
@@ -74,8 +76,10 @@ float CappedUniformScale(int windowWidth, int windowHeight, float maximumScale)
 {
     const float widthScale = static_cast<float>(windowWidth) / kReferenceWidth;
     const float heightScale = static_cast<float>(windowHeight) / kReferenceHeight;
-    const float contentScale = UI::Scaling::GetWindowContentScale();
-    return std::clamp(std::min(widthScale, heightScale), kMinimumPanelScale * contentScale,
+    const float contentScale =
+        UI::Scaling::GetWindowContentScale() * UI::Scaling::GetControlUiScale();
+    return std::clamp(std::min(widthScale, heightScale),
+                      kMinimumPanelScale * contentScale,
                       maximumScale * contentScale);
 }
 
@@ -128,8 +132,9 @@ float UI::Scaling::BottomHudScale(int windowWidth, int windowHeight)
 {
     const float widthScale = static_cast<float>(windowWidth) / kReferenceWidth;
     const float heightScale = static_cast<float>(windowHeight) / kReferenceHeight;
-    const float contentScale = GetWindowContentScale();
-    return std::clamp(std::min(widthScale, heightScale), kMinimumHudScale * contentScale,
+    const float contentScale = GetWindowContentScale() * GetControlUiScale();
+    return std::clamp(std::min(widthScale, heightScale),
+                      kMinimumHudScale * contentScale,
                       kMaximumHudScale * contentScale);
 }
 
@@ -320,7 +325,9 @@ int UI::Scaling::MaximumFontPointSize(FontRole role)
 
 int UI::Scaling::CachedFontPointSize(FontRole role)
 {
-    return std::max(static_cast<int>(std::lround(MaximumFontPointSize(role) * GetWindowContentScale())), 1);
+    const float cacheScale = GetWindowContentScale() * GetControlUiScale();
+    return std::max(
+        static_cast<int>(std::lround(MaximumFontPointSize(role) * cacheScale)), 1);
 }
 
 int UI::Scaling::FontPointSize(FontRole role, const Transform& transform)
@@ -363,7 +370,30 @@ float UI::Scaling::GetWindowContentScale()
 
 void UI::Scaling::SetWindowContentScale(float contentScale)
 {
-    g_windowContentScale = std::isfinite(contentScale) && contentScale > 0.0f ? contentScale : 1.0f;
+    g_windowContentScale =
+        std::isfinite(contentScale) && contentScale > 0.0f ? contentScale : 1.0f;
+}
+
+float UI::Scaling::GetControlUiScale()
+{
+    return g_controlUiScale;
+}
+
+void UI::Scaling::SetControlUiScalePercent(int percent)
+{
+    g_controlUiScale =
+        static_cast<float>(std::clamp(percent, 100, 200)) / 100.0f;
+}
+
+float UI::Scaling::GetRmlUiScale()
+{
+    return g_rmlUiScale;
+}
+
+void UI::Scaling::SetRmlUiScalePercent(int percent)
+{
+    g_rmlUiScale =
+        static_cast<float>(std::clamp(percent, 100, 200)) / 100.0f;
 }
 
 UI::Scaling::Transform UI::Scaling::GetActiveTransform()

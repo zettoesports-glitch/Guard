@@ -2023,8 +2023,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     OpenglWindowWidth = WindowWidth;
     OpenglWindowHeight = WindowHeight;
 
-    const std::string selectedFontFamily = WideToUtf8(GameConfig::GetInstance().GetFontSelection());
-    const std::string rendererBackend = WideToUtf8(GameConfig::GetInstance().GetRendererBackend());
+    UI::Scaling::SetControlUiScalePercent(
+        GameConfig::GetInstance().GetControlUIScale());
+    UI::Scaling::SetRmlUiScalePercent(
+        GameConfig::GetInstance().GetRmlScale());
+
+    const std::string selectedFontFamily =
+        WideToUtf8(GameConfig::GetInstance().GetFontSelection());
+    const std::string rendererBackend =
+        WideToUtf8(GameConfig::GetInstance().GetRendererBackend());
     if (!rendererBackend.empty() && rendererBackend != "auto")
     {
         // SDL 3.2+ GPU hint. The public MuClient config uses "vulkan" and
@@ -2055,6 +2062,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
                         GameConfig::GetInstance().GetRenderPipelineEnabled() ? 1 : 0,
                         GameConfig::GetInstance().GetSessionWorkerCount(),
                         GameConfig::GetInstance().GetFpsLimit());
+    g_ErrorReport.Write(L"> UI scale: Rml=%d%%; Control=%d%%.\r\n",
+                        GameConfig::GetInstance().GetRmlScale(),
+                        GameConfig::GetInstance().GetControlUIScale());
 
 #ifdef _WIN32
     // Bridge SDL's native handles so the remaining Win32 code (IME, DirectSound,

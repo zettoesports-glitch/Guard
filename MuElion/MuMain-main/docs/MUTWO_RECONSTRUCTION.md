@@ -39,6 +39,19 @@ The debug executable also preserves the private source names
 - [x] SessionRender worker pipeline base
 - [ ] Feed real scene preparation jobs into SessionRender
 - [ ] Shared asset idle cache integration
-- [ ] RmlScale/ControlUIScale UI integration
+- [~] UI scale integration: ControlUIScale drives legacy scalable panels/HUD;
+      RmlScale is loaded as a separate factor awaiting the RmlUi layer
 - [ ] Binary-differential validation against x86/x64 Debug and Release
 - [ ] Vulkan/D3D12 shader/pipeline parity validation
+
+
+### UI scale contract
+
+`ControlUIScale` is now applied to the existing scalable control/panel/HUD
+transforms and font cache sizing. It intentionally does not multiply the raw
+640x480 screen-overlay transform, so input/world-overlay coordinates remain
+stable.
+
+`RmlScale` is loaded independently through `UI::Scaling::GetRmlUiScale()`.
+It is not applied to legacy controls; it is reserved for the RmlUi document
+layer, matching the separation exposed by the public MuClient config.
