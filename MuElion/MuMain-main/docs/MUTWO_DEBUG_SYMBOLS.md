@@ -42,6 +42,9 @@ Normal3(float,float,float) noexcept
 TexCoord2(float,float) noexcept
 EmitExpandedTriangles(LegacyPrimitive, span<RenderTapeVertex const>) noexcept
 EmitPrimitiveDraw(LegacyPrimitive, span<RenderTapeVertex const>) noexcept
+WriteTriangles(uint64,Writer) noexcept
+    // Debug preserves instantiations for BMD::RenderMesh,
+    // AddMeshShadowTriangles and AddClothesShadowTriangles lambdas
 WriteTriangleFan(uint64,Writer) noexcept
     // Debug preserves instantiations for RenderFace, RenderFaceAlpha,
     // RenderFaceBlend, RenderFace_After and RenderSpriteUV lambdas
@@ -380,3 +383,20 @@ the initial facade inventory:
 
 This closes every named LegacyRenderFacade/SessionRenderUnit method currently
 visible in the Debug signature-string inventory.
+
+
+## Exact template writer semantics from x64 disassembly
+
+Direct disassembly of the instantiated helpers corrected the earlier generic
+writer assumption:
+
+- `WriteTriangles(count, writer)` rejects counts not divisible by 3, returns
+  true for zero, reserves exactly `count` vertices and invokes the lambda once
+  with a 16-byte `std::span<RenderTapeVertex>`.
+- `WriteTriangleFan(count, writer)` returns true for zero, rejects 1/2, and
+  invokes the lambda once with `std::span<RenderTapeVertex>`.
+- The four-vertex fan has a private fast path that reserves 4 vertices + 6
+  indices and writes the exact index sequence `0,1,2,0,2,3`.
+
+The reconstruction now follows those semantics rather than invoking the writer
+once per vertex.

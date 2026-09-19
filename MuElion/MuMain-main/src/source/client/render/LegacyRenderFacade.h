@@ -52,45 +52,101 @@ public:
     [[nodiscard]] std::optional<IndexedTriangleReservation> ReserveIndexedTriangles(
         std::uint64_t vertexCount, std::uint64_t indexCount) noexcept;
 
-    // Recovered template helper used by SessionRenderUnit::RenderFace,
-    // RenderFaceAlpha, RenderFaceBlend, RenderFace_After and RenderSpriteUV.
-    // The Debug executable preserves the template instantiation names but not
-    // the lambda source. Support the three useful writer forms while keeping
-    // fan expansion centralized in EmitExpandedTriangles().
+    // Recovered template helpers. x64 disassembly confirms that the private
+    // lambdas are called once with a 16-byte std::span<RenderTapeVertex>.
+    // WriteTriangles requires vertexCount % 3 == 0. WriteTriangleFan accepts
+    // zero, rejects 1/2, and has a dedicated four-vertex indexed-quad path
+    // using indices 0,1,2,0,2,3.
+    template <typename Writer>
+    [[nodiscard]] bool WriteTriangles(std::uint64_t vertexCount, Writer&& writer) noexcept
+    {
+        if (vertexCount % 3u != 0u ||
+            vertexCount > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+            return false;
+        if (vertexCount == 0)
+            return true;
+
+        std::vector<RenderTapeVertex> vertices(static_cast<std::size_t>(vertexCount));
+        std::span<RenderTapeVertex> output(vertices);
+
+        if constexpr (std::is_invocable_r_v<bool, Writer&, std::span<RenderTapeVertex>>)
+        {
+            if (!std::invoke(writer, output))
+                return false;
+        }
+        else if constexpr (std::is_invocable_v<Writer&, std::span<RenderTapeVertex>>)
+        {
+            std::invoke(writer, output);
+        }
+        else
+        {
+            static_assert(std::is_invocable_v<Writer&, std::span<RenderTapeVertex>>,
+                          "WriteTriangles writer must accept span<RenderTapeVertex>");
+        }
+
+        return EmitPrimitiveDraw(LegacyPrimitive::Triangles, vertices);
+    }
+
     template <typename Writer>
     [[nodiscard]] bool WriteTriangleFan(std::uint64_t vertexCount, Writer&& writer) noexcept
     {
-        if (vertexCount < 3 ||
-            vertexCount > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+        if (vertexCount > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+            return false;
+        if (vertexCount == 0)
+            return true;
+        if (vertexCount < 3)
             return false;
 
-        std::vector<RenderTapeVertex> vertices(static_cast<std::size_t>(vertexCount));
-
-        for (std::uint64_t index = 0; index < vertexCount; ++index)
+        if (vertexCount == 4)
         {
-            auto& vertex = vertices[static_cast<std::size_t>(index)];
+            auto reservation = ReserveIndexedTriangles(4, 6);
+            if (!reservation)
+                return false;
 
-            if constexpr (std::is_invocable_r_v<bool, Writer&, std::uint64_t, RenderTapeVertex&>)
+            if constexpr (std::is_invocable_r_v<bool, Writer&, std::span<RenderTapeVertex>>)
             {
-                if (!std::invoke(writer, index, vertex))
+                if (!std::invoke(writer, reservation->vertices))
                     return false;
             }
-            else if constexpr (std::is_invocable_v<Writer&, std::uint64_t, RenderTapeVertex&>)
+            else if constexpr (std::is_invocable_v<Writer&, std::span<RenderTapeVertex>>)
             {
-                std::invoke(writer, index, vertex);
-            }
-            else if constexpr (std::is_invocable_r_v<RenderTapeVertex, Writer&, std::uint64_t>)
-            {
-                vertex = std::invoke(writer, index);
+                std::invoke(writer, reservation->vertices);
             }
             else
             {
-                static_assert(std::is_invocable_v<Writer&, std::uint64_t, RenderTapeVertex&>,
-                              "WriteTriangleFan writer must fill or return a RenderTapeVertex");
+                static_assert(std::is_invocable_v<Writer&, std::span<RenderTapeVertex>>,
+                              "WriteTriangleFan writer must accept span<RenderTapeVertex>");
             }
+
+            constexpr std::uint32_t quadIndices[6] = {0, 1, 2, 0, 2, 3};
+            std::copy(std::begin(quadIndices), std::end(quadIndices),
+                      reservation->indices.begin());
+
+            std::array<RenderTapeVertex, 6> expanded{};
+            for (std::size_t i = 0; i < expanded.size(); ++i)
+                expanded[i] = reservation->vertices[reservation->indices[i]];
+            return EmitPrimitiveDraw(LegacyPrimitive::Triangles, expanded);
         }
 
-        return EmitExpandedTriangles(LegacyPrimitive::TriangleFan, vertices);
+        std::vector<RenderTapeVertex> vertices(static_cast<std::size_t>(vertexCount));
+        std::span<RenderTapeVertex> output(vertices);
+
+        if constexpr (std::is_invocable_r_v<bool, Writer&, std::span<RenderTapeVertex>>)
+        {
+            if (!std::invoke(writer, output))
+                return false;
+        }
+        else if constexpr (std::is_invocable_v<Writer&, std::span<RenderTapeVertex>>)
+        {
+            std::invoke(writer, output);
+        }
+        else
+        {
+            static_assert(std::is_invocable_v<Writer&, std::span<RenderTapeVertex>>,
+                          "WriteTriangleFan writer must accept span<RenderTapeVertex>");
+        }
+
+        return EmitPrimitiveDraw(LegacyPrimitive::TriangleFan, vertices);
     }
 
     // Integration helpers for already-modernized MuMain paths. These keep direct
