@@ -28,6 +28,7 @@
 #include "client/render/LogicalRenderAssetTable.h"
 #ifdef MU_ENABLE_MODERN_UI
 #include "UI/Modern/RmlUiRuntime.h"
+#include "UI/Modern/PC/RmlPcUiHost.h"
 #endif
 #include "Engine/Object/ZzzOpenData.h"
 #include "Scenes/SceneCore.h"
@@ -178,6 +179,7 @@ void CheckHack()
 static void ShutdownRendererWindow()
 {
 #ifdef MU_ENABLE_MODERN_UI
+    UI::Modern::PC::GetRmlPcUiHost().Shutdown();
     UI::Modern::GetRmlUiRuntime().Shutdown();
 #endif
 
@@ -1055,7 +1057,10 @@ void HandleWindowResize(int width, int height)
     UpdateResolutionDependentSystems();
 #ifdef MU_ENABLE_MODERN_UI
     if (UI::Modern::GetRmlUiRuntime().IsInitialized())
+    {
         (void)UI::Modern::GetRmlUiRuntime().Resize(WindowWidth, WindowHeight);
+        UI::Modern::PC::GetRmlPcUiHost().Resize(WindowWidth, WindowHeight);
+    }
 #endif
     UpdateCursorClip();
 }
@@ -1529,6 +1534,11 @@ MSG MainLoop()
 #ifdef MU_ENABLE_MODERN_UI
                 if (UI::Modern::GetRmlUiRuntime().IsInitialized())
                 {
+                    // Presentation controllers update before Context::Update.
+                    // Unloaded panels are skipped, so legacy UI remains the
+                    // only visible surface until a bridge opts a panel in.
+                    (void)UI::Modern::PC::GetRmlPcUiHost().Update();
+
                     mu::session::SessionRenderUnit modernUiRenderUnit;
                     if (!modernUiRenderUnit.SubmitModernUiPreparation(
                             UI::Modern::GetRmlUiRuntime()))
@@ -2095,6 +2105,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     {
         g_ErrorReport.Write(
             L"WARNING: RmlUi modern runtime initialization failed; "
+            L"legacy UI remains available.\r\n");
+    }
+    else if (!UI::Modern::PC::GetRmlPcUiHost().Initialize(
+                 WindowWidth, WindowHeight))
+    {
+        g_ErrorReport.Write(
+            L"WARNING: RmlUi PC host initialization failed; "
             L"legacy UI remains available.\r\n");
     }
 #endif

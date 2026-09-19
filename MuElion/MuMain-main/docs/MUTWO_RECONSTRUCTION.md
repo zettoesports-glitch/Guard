@@ -97,6 +97,11 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 
 ### RmlUi
 
+- central `RmlPcUiHost` owns the reconstructed PC controllers and coordinates
+  initialize/update/resize/shutdown without auto-loading any document
+- Windows lifecycle updates the host before the RmlUi context update and
+  releases all document owners before `RmlUiRuntime::Shutdown`
+
 - RmlUi 6.3-compatible `TapeRenderInterface`
 - `RmlUiRuntime`
 - `MuSystemInterface`
