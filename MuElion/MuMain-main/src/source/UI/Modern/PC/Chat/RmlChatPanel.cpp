@@ -8,6 +8,7 @@
 #include "UI/Modern/RmlUiDesign.h"
 
 #include <RmlUi/Core/Core.h>
+#include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Element.h>
 #include <RmlUi/Core/ElementDocument.h>
 #include <RmlUi/Core/FileInterface.h>
@@ -672,16 +673,13 @@ private:
         const Rml::Vector2i dimensions =
             document_->GetContext() ? document_->GetContext()->GetDimensions()
                                    : Rml::Vector2i{};
-        const Rml::Vector2f offset =
-            blockedPanel_->GetAbsoluteOffset(Rml::BoxArea::Border);
-
         blockedMover_.SetMetrics(
             static_cast<float>(dimensions.x),
             static_cast<float>(dimensions.y),
             design_.blockedWidth,
             design_.blockedHeight,
-            offset.x,
-            offset.y);
+            0.0f,
+            0.0f);
     }
 
     [[nodiscard]] std::size_t VisibleMessageRows() const noexcept
