@@ -15,8 +15,10 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <initializer_list>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace UI::Modern::PC::HUD
@@ -185,6 +187,8 @@ public:
         }
 
         loadedVisible_ = show;
+        if (show)
+            state_.visible = true;
         stateDirty_ = true;
         return ApplyState(state_);
     }
@@ -197,7 +201,10 @@ public:
         loadedVisible_ = true;
         state_.visible = true;
         stateDirty_ = true;
-        return host_.Show();
+        const bool shown = host_.Show();
+        if (shown)
+            (void)ApplyState(state_);
+        return shown;
     }
 
     [[nodiscard]] bool Hide()
@@ -542,6 +549,24 @@ private:
                 "page-one", !state_.secondSkillPage);
             skillPageLabels_->SetClass(
                 "page-two", state_.secondSkillPage);
+
+            static constexpr std::array<const char*, 5> kPageOne{
+                "1", "2", "3", "4", "5"};
+            static constexpr std::array<const char*, 5> kPageTwo{
+                "6", "7", "8", "9", "0"};
+            const auto& labels =
+                state_.secondSkillPage ? kPageTwo : kPageOne;
+
+            const int count = std::min(
+                skillPageLabels_->GetNumChildren(),
+                static_cast<int>(labels.size()));
+            for (int index = 0; index < count; ++index)
+            {
+                if (Rml::Element* child =
+                        skillPageLabels_->GetChild(index))
+                    child->SetInnerRML(labels[
+                        static_cast<std::size_t>(index)]);
+            }
         }
 
         if (skillPageToggle_)

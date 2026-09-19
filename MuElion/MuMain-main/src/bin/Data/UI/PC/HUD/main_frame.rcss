@@ -259,11 +259,6 @@ body {
 .label-4 { left: 96px; }
 .label-5 { left: 127px; }
 
-.skill-page-labels.page-two .label-1::before { content: "6"; }
-.skill-page-labels.page-two .label-2::before { content: "7"; }
-.skill-page-labels.page-two .label-3::before { content: "8"; }
-.skill-page-labels.page-two .label-4::before { content: "9"; }
-.skill-page-labels.page-two .label-5::before { content: "0"; }
 
 .skill-page-toggle {
     left: 636px;
