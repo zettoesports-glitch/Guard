@@ -63,6 +63,7 @@ void HashWide(std::uint64_t& hash, const std::wstring& value) noexcept
     HashByte(hash, 0xffu);
 }
 
+#ifdef PBG_ADD_GENSRANKING
 std::uint64_t Fingerprint(
     const SEASON3B::GensRankingSnapshot& snapshot,
     int viewportWidth,
@@ -101,6 +102,7 @@ std::uint64_t Fingerprint(
 
     return hash;
 }
+#endif // PBG_ADD_GENSRANKING
 } // namespace
 
 bool RmlGensRankingLegacyBridge::Synchronize(

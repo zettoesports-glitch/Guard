@@ -511,6 +511,7 @@ int CNewUIGensRanking::GetImageIndex(BYTE rankIndex)
 #endif //PBG_ADD_GENSRANKING
 
 
+#ifdef PBG_ADD_GENSRANKING
 void SEASON3B::CNewUIGensRanking::BuildSnapshot(
     GensRankingSnapshot& snapshot) const
 {
@@ -554,3 +555,5 @@ void SEASON3B::CNewUIGensRanking::BuildSnapshot(
     snapshot.infoLines[1] =
         I18N::Game::GensRankingRewardsCanBeClaimed;
 }
+
+#endif // PBG_ADD_GENSRANKING
