@@ -102,7 +102,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - `MuSystemInterface`
 - `RmlHudMapViewport`
 - recovered `map-view` and `map-viewport` element aliases
-- recovered `gfx-tint` decorator and nested SpriteDecorator
+- recovered `gfx-tint` decorator and nested SpriteDecorator, including
+  Debug-matched base texture storage and rectangle/tint member layout
 - recovered `RmlUiDesign::Parser` for `mu-design-*` meta constants
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures

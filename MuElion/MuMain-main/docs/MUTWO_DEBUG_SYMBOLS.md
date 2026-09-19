@@ -533,3 +533,23 @@ and `HandleData` bodies are empty.
 The x64 deleting-destructor passes a private object size of `0x138`; the
 reconstruction does not claim identical STL container layout, but preserves
 the observable parsing contract.
+
+
+## Exact gfx-tint SpriteDecorator member layout
+
+A direct pass over the x64 Debug bodies corrects one detail from the first
+functional reconstruction. `SpriteDecorator` does not store an independent
+`Rml::Texture` member. Its constructor calls `Rml::Decorator::AddTexture`,
+and both `GenerateElementData` and `RenderElement` retrieve texture index 0
+through `Decorator::GetTexture`.
+
+The observed x64 member offsets are consistent with that base-class storage:
+
+```text
+SpriteDecorator + 0x38 : Rml::Rectanglef sprite rectangle
+SpriteDecorator + 0x48 : Rml::Vector4f textureTint
+```
+
+The reconstruction now follows this layout: texture ownership/reference is kept
+by the RmlUi Decorator base, followed only by the recovered rectangle and tint
+members.

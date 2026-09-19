@@ -37,27 +37,33 @@ class RmlGfxTintDecoratorInstancer::SpriteDecorator final
     : public Rml::Decorator
 {
 public:
-    SpriteDecorator(Rml::Texture texture,
-                    Rml::Rectanglef rectangle,
+    SpriteDecorator(const Rml::Sprite& sprite,
+                    Rml::Texture texture,
                     Rml::Vector4f tint) noexcept
-        : texture_(texture),
-          rectangle_(rectangle),
+        : rectangle_(sprite.rectangle),
           tint_(tint)
     {
+        // The Debug implementation stores the texture through the Decorator
+        // base class, not as a SpriteDecorator member.
+        (void)AddTexture(texture);
     }
 
     Rml::DecoratorDataHandle GenerateElementData(
         Rml::Element* element,
         Rml::BoxArea paintArea) const override
     {
-        if (!element || !texture_)
+        if (!element)
+            return INVALID_DECORATORDATAHANDLE;
+
+        const Rml::Texture texture = GetTexture();
+        if (!texture)
             return INVALID_DECORATORDATAHANDLE;
 
         Rml::RenderManager* renderManager = element->GetRenderManager();
         if (!renderManager)
             return INVALID_DECORATORDATAHANDLE;
 
-        const Rml::Vector2i textureDimensions = texture_.GetDimensions();
+        const Rml::Vector2i textureDimensions = texture.GetDimensions();
         if (textureDimensions.x <= 0 || textureDimensions.y <= 0)
             return INVALID_DECORATORDATAHANDLE;
 
@@ -122,12 +128,11 @@ public:
             reinterpret_cast<GfxTintElementData*>(elementData);
         data->geometry.Render(
             element->GetAbsoluteOffset(Rml::BoxArea::Border),
-            texture_,
+            GetTexture(),
             data->shader);
     }
 
 private:
-    Rml::Texture texture_;
     Rml::Rectanglef rectangle_;
     Rml::Vector4f tint_{1.0f, 0.0f, 0.0f, 0.0f};
 };
@@ -197,7 +202,7 @@ RmlGfxTintDecoratorInstancer::InstanceDecorator(
     };
 
     return Rml::MakeShared<SpriteDecorator>(
-        texture, sprite->rectangle, tint);
+        *sprite, texture, tint);
 }
 
 } // namespace UI::Modern
