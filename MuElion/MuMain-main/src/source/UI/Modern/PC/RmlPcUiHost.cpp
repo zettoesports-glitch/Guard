@@ -17,6 +17,7 @@
 #include "UI/Modern/PC/Inventory/RmlInventoryPanel.h"
 #include "UI/Modern/PC/Inventory/RmlInventoryLegacyBridge.h"
 #include "UI/Modern/PC/Inventory/RmlInventoryExtensionPanel.h"
+#include "UI/Modern/PC/Inventory/RmlInventoryExtensionLegacyBridge.h"
 #include "UI/Modern/PC/Inventory/RmlPrivateStorePanel.h"
 #include "UI/Modern/PC/Inventory/RmlStoragePanel.h"
 #include "UI/Modern/PC/Inventory/RmlStorageExtensionPanel.h"
@@ -135,7 +136,12 @@ public:
             changed |= inventoryLegacyBridge_.Synchronize(inventory_);
             changed |= inventory_.Update();
         }
-        if (inventoryExtension_.IsLoaded()) changed |= inventoryExtension_.Update();
+        if (inventoryExtension_.IsLoaded())
+        {
+            changed |= inventoryExtensionLegacyBridge_.Synchronize(
+                inventoryExtension_);
+            changed |= inventoryExtension_.Update();
+        }
         if (privateStore_.IsLoaded()) changed |= privateStore_.Update();
         if (storage_.IsLoaded()) changed |= storage_.Update();
         if (storageExtension_.IsLoaded()) changed |= storageExtension_.Update();
@@ -170,6 +176,8 @@ public:
     Inventory::RmlInventoryPanel inventory_;
     Inventory::RmlInventoryLegacyBridge inventoryLegacyBridge_;
     Inventory::RmlInventoryExtensionPanel inventoryExtension_;
+    Inventory::RmlInventoryExtensionLegacyBridge
+        inventoryExtensionLegacyBridge_;
     Inventory::RmlPrivateStorePanel privateStore_;
     Inventory::RmlStoragePanel storage_;
     Inventory::RmlStorageExtensionPanel storageExtension_;

@@ -101,6 +101,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - `RmlMainFrameLegacyBridge` feeds legacy HP/MP/SD/AG, exact EXP progress,
 - `RmlMuHelperLegacyBridge` maps the real `g_MuHelper.GetConfig()` state,
 - `RmlInventoryLegacyBridge` projects legacy visibility, repair/shop state,
+- `RmlInventoryExtensionLegacyBridge` maps the legacy 0–4 opened bags and
+  128 global-indexed extension slots by occupancy without retaining items
   64 inventory cells and 12 equipment slots into an explicitly loaded modern
   inventory without owning any `ITEM*`
   visibility, assigned attack/buff skills and extra-item filters into an

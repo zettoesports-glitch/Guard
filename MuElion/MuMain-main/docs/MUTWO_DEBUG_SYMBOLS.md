@@ -2015,3 +2015,25 @@ rendering remains a separate asset/render bridge.
 
 No item pointer ownership, movement, repair, drop, equip, personal-store or
 network logic is moved out of the legacy inventory.
+
+
+## Expanded Inventory legacy state bridge
+
+`RmlInventoryExtensionLegacyBridge` mirrors the public extension state only
+when the modern extension panel is already loaded.
+
+The legacy `CNewUIInventoryExtension::Create()` confirms four independently
+created 8x4 controls, each with
+`MAX_INVENTORY_EXT_ONE` slots and global index offsets beginning at
+`MAX_MY_INVENTORY_INDEX`. The bridge therefore maps:
+
+- visible state from `INTERFACE_INVENTORY_EXT`;
+- opened bag count from `CharacterAttribute->InventoryExtensions`, clamped
+  to the reconstructed four-bag contract;
+- 128 presentation slots, 32 per bag;
+- occupancy by calling the public
+  `CNewUIInventoryExtension::FindItem(globalIndex)`.
+
+Pointed-square/drag ownership is private to the individual extension controls,
+so the bridge does not guess a selected slot. No `ITEM*` is retained and no
+movement/network behavior is duplicated.
