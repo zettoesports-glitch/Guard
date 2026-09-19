@@ -239,3 +239,7 @@ and differential runtime tests succeed.
 - reconstructed `RmlInventoryExtensionPanel` with four 32-slot bag groups,
   recovered progressive heights/grid metrics, movable presentation and
   semantic slot/close actions while preserving legacy extension ownership
+
+- reconstructed `RmlPrivateStorePanel` with seller/buyer modes, 32-slot
+  grid, recovered drop colors, editable shop name and semantic open/close/
+  slot actions while keeping price validation and networking in legacy code

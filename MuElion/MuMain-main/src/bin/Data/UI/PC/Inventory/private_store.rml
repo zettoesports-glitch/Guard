@@ -3,67 +3,67 @@
     <meta name="mu-design-PrivateStore-DropAllowedColor" content="0.1 0.4 0.8"/>
     <meta name="mu-design-PrivateStore-DropBannedColor" content="1 0 0"/>
     <meta name="mu-design-PrivateStore-seller-GridRect" content="58.5 118.5 208 104"/>
+    <meta name="mu-design-PrivateStore-buyer-GridRect" content="58.5 118.5 208 104"/>
     <meta name="mu-design-PrivateStore-Width" content="327"/>
     <meta name="mu-design-PrivateStore-Height" content="289"/>
     <meta name="mu-design-PrivateStore-GridColumns" content="8"/>
     <meta name="mu-design-PrivateStore-GridRows" content="4"/>
-    <meta name="mu-design-PrivateStore-buyer-GridRect" content="58.5 118.5 208 104"/>
     <meta name="mu-design-PrivateStore-InitialX" content="21"/>
     <meta name="mu-design-PrivateStore-InitialY" content="40"/>
     <meta name="mu-design-PrivateStore-ReferenceWidth" content="640"/>
     <meta name="mu-design-PrivateStore-ReferenceHeight" content="480"/>
     <title>Reconstructed Private Store</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
     <link type="text/rcss" href="../ui_assets.rcss"/>
     <link type="text/rcss" href="private_store.rcss"/>
 </head>
 <body class="mu-modern-document">
     <div id="private-store" class="private-store seller">
-        <div id="private-store-background"></div>
-        <div id="private-store-title">Private Store</div>
-        <div id="private-store-name-label">Store name</div>
-        <input id="private-store-name" type="text" maxlength="25"/>
-        <div id="private-store-buyer-name"></div>
-        <div id="private-store-drag"></div>
-        <div id="private-store-open" class="mu-button private-store-action">
+        <div class="private-store-background"/>
+        <div id="private-store-title" class="private-store-title">Private Store</div>
+        <div id="private-store-name-label" class="private-store-name-label">Store</div>
+        <input id="private-store-name" class="mu-text-input private-store-name" type="text" maxlength="25"/>
+        <div id="private-store-buyer-name" class="private-store-buyer-name"/>
+        <div id="private-store-drag" class="private-store-drag"/>
+        <div id="private-store-open" class="mu-button private-store-button open">
             <span id="private-store-open-label">Open</span>
         </div>
-        <div id="private-store-close-shop" class="mu-button private-store-action">
+        <div id="private-store-close-shop" class="mu-button private-store-button close-shop">
             <span id="private-store-close-shop-label">Close Shop</span>
         </div>
-        <div id="private-store-close" class="mu-button">X</div>
-        <div id="private-store-grid-background"></div>
-        <div id="private-store-slot-0" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-1" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-2" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-3" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-4" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-5" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-6" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-7" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-8" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-9" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-10" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-11" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-12" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-13" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-14" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-15" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-16" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-17" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-18" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-19" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-20" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-21" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-22" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-23" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-24" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-25" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-26" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-27" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-28" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-29" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-30" class="mu-item-slot private-store-slot drop-neutral"></div>
-        <div id="private-store-slot-31" class="mu-item-slot private-store-slot drop-neutral"></div>
+        <div id="private-store-close" class="mu-button private-store-close">X</div>
+        <div id="private-store-slot-0" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-1" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-2" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-3" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-4" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-5" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-6" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-7" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-8" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-9" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-10" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-11" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-12" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-13" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-14" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-15" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-16" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-17" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-18" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-19" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-20" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-21" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-22" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-23" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-24" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-25" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-26" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-27" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-28" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-29" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-30" class="mu-item-slot private-store-slot"/>
+        <div id="private-store-slot-31" class="mu-item-slot private-store-slot"/>
     </div>
 </body>
 </rml>

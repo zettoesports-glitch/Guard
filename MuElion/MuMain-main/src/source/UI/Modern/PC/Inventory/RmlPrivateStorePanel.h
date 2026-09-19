@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -11,30 +12,67 @@ namespace UI::Modern::PC::Inventory
 class RmlPrivateStorePanel
 {
 public:
+    static constexpr std::size_t kSlotCount = 32;
+
     enum class Mode
     {
         Seller,
         Buyer,
     };
 
-    enum class Action
-    {
-        OpenStore,
-        CloseShop,
-        ClosePanel,
-    };
-
     enum class DropState
     {
-        Neutral,
+        None,
         Allowed,
         Banned,
     };
 
-    struct SlotRequest
+    struct SlotState
     {
+        bool visible = true;
+        bool enabled = true;
+        bool occupied = false;
+        bool selected = false;
+        int iconFrame = 0;
+        DropState dropState = DropState::None;
+    };
+
+    struct State
+    {
+        bool visible = false;
+        int viewportWidth = 0;
+        int viewportHeight = 0;
+
+        Mode mode = Mode::Seller;
+        bool shopOpen = false;
+
+        std::string title = "Private Store";
+        std::string storeName;
+        std::string buyerName;
+
+        std::string openLabel = "Open";
+        std::string closeShopLabel = "Close Shop";
+
+        bool openEnabled = true;
+        bool closeShopEnabled = true;
+
+        std::array<SlotState, kSlotCount> slots{};
+    };
+
+    enum class ActionType
+    {
+        CloseWindow,
+        OpenShop,
+        CloseShop,
+        SlotPrimary,
+        SlotSecondary,
+    };
+
+    struct Action
+    {
+        ActionType type = ActionType::CloseWindow;
         std::size_t index = 0;
-        bool secondary = false;
+        std::string text;
     };
 
     RmlPrivateStorePanel();
@@ -49,26 +87,11 @@ public:
     [[nodiscard]] bool Show();
     [[nodiscard]] bool Hide();
     void Release();
+
     [[nodiscard]] bool IsLoaded() const noexcept;
-
-    void SetMode(Mode mode);
-    [[nodiscard]] Mode GetMode() const noexcept;
-
-    void SetStoreName(std::string name);
-    [[nodiscard]] std::string GetStoreName() const;
-
-    void SetBuyerName(std::string name);
-    void SetTitle(std::string title);
-
-    void SetOpenEnabled(bool enabled);
-    void SetCloseShopEnabled(bool enabled);
-
-    void SetSlotFrame(std::size_t index, int frame);
-    void SetSlotDropState(std::size_t index, DropState state);
-
+    [[nodiscard]] bool ApplyState(const State& state);
     [[nodiscard]] bool Update();
     [[nodiscard]] std::optional<Action> ConsumeAction();
-    [[nodiscard]] std::optional<SlotRequest> ConsumeSlotRequest();
 
 private:
     class Impl;

@@ -1719,3 +1719,34 @@ unopened groups presentation-disabled.
 `RmlInventoryExtensionPanel` reconstructs that presentation boundary while
 leaving item movement, ownership, network requests, and empty-slot searches in
 the legacy extension controls.
+
+
+## Private Store design contract
+
+The x64 Debug executable preserves the full private-store design surface:
+
+```text
+PrivateStore-Width
+PrivateStore-Height
+PrivateStore-InitialX
+PrivateStore-InitialY
+PrivateStore-ReferenceWidth
+PrivateStore-ReferenceHeight
+PrivateStore-seller-GridRect
+PrivateStore-buyer-GridRect
+PrivateStore-GridColumns
+PrivateStore-GridRows
+PrivateStore-DropAllowedColor
+PrivateStore-DropBannedColor
+```
+
+It also exposes the exact DOM identifiers `private-store`,
+`private-store-drag`, title/name/open/close-shop controls, and the dynamic
+slot prefix `private-store-slot-`.
+
+The reconstructed `RmlPrivateStorePanel` supports seller/buyer presentation,
+32 slots (8x4), the authored drop-feedback colors, editable seller title
+(maxlength 25), open/close-shop/close-window intents, and primary/secondary
+slot requests. Legacy `CNewUIMyShopInventory` and
+`CNewUIPurchaseShopInventory` remain responsible for price dialogs, item
+eligibility, purchase/open/close packets and inventory ownership.
