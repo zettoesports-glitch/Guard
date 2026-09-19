@@ -6,6 +6,7 @@
 #include "ZzzTexture.h"
 #include "Render/Renderer/MuRenderer.h"
 #include "client/render/LegacyRenderFacade.h"
+#include "client/session/SessionRender.h"
 #include "Render/Renderer/RenderUtils.h"
 #include "Render/Models/ZzzBMD.h"
 #include "Engine/Object/ZzzInfomation.h"
@@ -156,11 +157,24 @@ bool DepthMaskEnable;
 bool AlphaTestEnable;
 int  AlphaBlendType;
 
+namespace
+{
+int s_worldTapeDepth = 0;
+int s_uiTapeDepth = 0;
+bool s_worldTapeOwnsPass = false;
+bool s_uiTapeOwnsPass = false;
+
+bool IsRenderTapePipelineEnabled()
+{
+    return mu::session::GetSessionRender().IsPipelineEnabled();
+}
+}
+
 void BindTexture(int tex)
 {
     // Always forward to the renderer. In the deferred SDL renderer this only
     // updates logical state, and caching can desync when callers bind directly.
-    mu::GetRenderer().BindTexture(tex);
+    mu::pipeline::GetLegacyRenderFacade().BindTextureId(static_cast<std::uint32_t>(tex));
 }
 
 bool TextureStream = false;
@@ -168,7 +182,7 @@ bool TextureStream = false;
 extern  int test;
 void BindTextureStream(int tex)
 {
-    mu::GetRenderer().BindTexture(tex);
+    mu::pipeline::GetLegacyRenderFacade().BindTextureId(static_cast<std::uint32_t>(tex));
     TextureStream = true;
 }
 
@@ -248,7 +262,7 @@ void EnableDepthTest()
     if (!DepthTestEnable)
     {
         DepthTestEnable = true;
-        mu::GetRenderer().SetDepthTest(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetDepthTestEnable(true);
     }
 }
 
@@ -257,7 +271,7 @@ void DisableDepthTest()
     if (DepthTestEnable)
     {
         DepthTestEnable = false;
-        mu::GetRenderer().SetDepthTest(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetDepthTestEnable(false);
     }
 }
 
@@ -266,7 +280,7 @@ void EnableDepthMask()
     if (!DepthMaskEnable)
     {
         DepthMaskEnable = true;
-        mu::GetRenderer().SetDepthMask(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetDepthWriteEnable(true);
     }
 }
 
@@ -275,7 +289,7 @@ void DisableDepthMask()
     if (DepthMaskEnable)
     {
         DepthMaskEnable = false;
-        mu::GetRenderer().SetDepthMask(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetDepthWriteEnable(false);
     }
 }
 
@@ -284,7 +298,7 @@ void EnableCullFace()
     if (!CullFaceEnable)
     {
         CullFaceEnable = true;
-        mu::GetRenderer().SetCullFace(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetCullEnable(true);
     }
 }
 
@@ -293,7 +307,7 @@ void DisableCullFace()
     if (CullFaceEnable)
     {
         CullFaceEnable = false;
-        mu::GetRenderer().SetCullFace(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetCullEnable(false);
     }
 }
 
@@ -305,7 +319,7 @@ void DisableTexture(bool AlphaTest)
         if (!AlphaTestEnable)
         {
             AlphaTestEnable = true;
-            mu::GetRenderer().SetAlphaTest(true);
+            (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(true);
         }
     }
     else
@@ -313,13 +327,13 @@ void DisableTexture(bool AlphaTest)
         if (AlphaTestEnable)
         {
             AlphaTestEnable = false;
-            mu::GetRenderer().SetAlphaTest(false);
+            (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
         }
     }
     if (TextureEnable)
     {
         TextureEnable = false;
-        mu::GetRenderer().SetTexture2D(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(false);
     }
 }
 
@@ -328,22 +342,22 @@ void DisableAlphaBlend()
     if (AlphaBlendType != 0)
     {
         AlphaBlendType = 0;
-        mu::GetRenderer().DisableBlend();
+        (void)mu::pipeline::GetLegacyRenderFacade().SetBlendEnable(false);
     }
     EnableCullFace();
     EnableDepthMask();
     if (AlphaTestEnable)
     {
         AlphaTestEnable = false;
-        mu::GetRenderer().SetAlphaTest(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
     }
     if (!TextureEnable)
     {
         TextureEnable = true;
-        mu::GetRenderer().SetTexture2D(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
     }
     if (FogEnable)
-        mu::GetRenderer().SetFogEnabled(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(true);
 }
 
 void EnableAlphaTest(bool DepthMask)
@@ -351,7 +365,9 @@ void EnableAlphaTest(bool DepthMask)
     if (AlphaBlendType != 2)
     {
         AlphaBlendType = 2;
-        mu::GetRenderer().SetBlendMode(mu::BlendMode::Alpha);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetBlendFunc(
+            mu::pipeline::RenderBlendFactor::SourceAlpha,
+            mu::pipeline::RenderBlendFactor::OneMinusSourceAlpha);
     }
     DisableCullFace();
     if (DepthMask)
@@ -359,15 +375,15 @@ void EnableAlphaTest(bool DepthMask)
     if (!AlphaTestEnable)
     {
         AlphaTestEnable = true;
-        mu::GetRenderer().SetAlphaTest(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(true);
     }
     if (!TextureEnable)
     {
         TextureEnable = true;
-        mu::GetRenderer().SetTexture2D(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
     }
     if (FogEnable)
-        mu::GetRenderer().SetFogEnabled(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(true);
 }
 
 void EnableAlphaBlend()
@@ -375,22 +391,24 @@ void EnableAlphaBlend()
     if (AlphaBlendType != 3)
     {
         AlphaBlendType = 3;
-        mu::GetRenderer().SetBlendMode(mu::BlendMode::Glow);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetBlendFunc(
+            mu::pipeline::RenderBlendFactor::One,
+            mu::pipeline::RenderBlendFactor::One);
     }
     DisableCullFace();
     DisableDepthMask();
     if (AlphaTestEnable)
     {
         AlphaTestEnable = false;
-        mu::GetRenderer().SetAlphaTest(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
     }
     if (!TextureEnable)
     {
         TextureEnable = true;
-        mu::GetRenderer().SetTexture2D(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
     }
     if (FogEnable)
-        mu::GetRenderer().SetFogEnabled(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(false);
 }
 
 void EnableAlphaBlendMinus()
@@ -398,22 +416,24 @@ void EnableAlphaBlendMinus()
     if (AlphaBlendType != 4)
     {
         AlphaBlendType = 4;
-        mu::GetRenderer().SetBlendMode(mu::BlendMode::Subtract);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetBlendFunc(
+            mu::pipeline::RenderBlendFactor::Zero,
+            mu::pipeline::RenderBlendFactor::OneMinusSourceColor);
     }
     DisableCullFace();
     DisableDepthMask();
     if (AlphaTestEnable)
     {
         AlphaTestEnable = false;
-        mu::GetRenderer().SetAlphaTest(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
     }
     if (!TextureEnable)
     {
         TextureEnable = true;
-        mu::GetRenderer().SetTexture2D(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
     }
     if (FogEnable)
-        mu::GetRenderer().SetFogEnabled(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(true);
 }
 
 void EnableAlphaBlend2()
@@ -421,22 +441,24 @@ void EnableAlphaBlend2()
     if (AlphaBlendType != 5)
     {
         AlphaBlendType = 5;
-        mu::GetRenderer().SetBlendMode(mu::BlendMode::Luminance);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetBlendFunc(
+            mu::pipeline::RenderBlendFactor::OneMinusSourceColor,
+            mu::pipeline::RenderBlendFactor::One);
     }
     DisableCullFace();
     DisableDepthMask();
     if (AlphaTestEnable)
     {
         AlphaTestEnable = false;
-        mu::GetRenderer().SetAlphaTest(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
     }
     if (!TextureEnable)
     {
         TextureEnable = true;
-        mu::GetRenderer().SetTexture2D(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
     }
     if (FogEnable)
-        mu::GetRenderer().SetFogEnabled(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(true);
 }
 
 void EnableAlphaBlend3()
@@ -444,22 +466,24 @@ void EnableAlphaBlend3()
     if (AlphaBlendType != 6)
     {
         AlphaBlendType = 6;
-        mu::GetRenderer().SetBlendMode(mu::BlendMode::Alpha);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetBlendFunc(
+            mu::pipeline::RenderBlendFactor::SourceAlpha,
+            mu::pipeline::RenderBlendFactor::OneMinusSourceAlpha);
     }
     DisableCullFace();
     DisableDepthMask();
     if (AlphaTestEnable)
     {
         AlphaTestEnable = false;
-        mu::GetRenderer().SetAlphaTest(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
     }
     if (!TextureEnable)
     {
         TextureEnable = true;
-        mu::GetRenderer().SetTexture2D(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
     }
     if (FogEnable)
-        mu::GetRenderer().SetFogEnabled(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(true);
 }
 
 void EnableAlphaBlend4()
@@ -467,22 +491,24 @@ void EnableAlphaBlend4()
     if (AlphaBlendType != 7)
     {
         AlphaBlendType = 7;
-        mu::GetRenderer().SetBlendMode(mu::BlendMode::Mixed);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetBlendFunc(
+            mu::pipeline::RenderBlendFactor::One,
+            mu::pipeline::RenderBlendFactor::OneMinusSourceAlpha);
     }
     DisableCullFace();
     DisableDepthMask();
     if (AlphaTestEnable)
     {
         AlphaTestEnable = false;
-        mu::GetRenderer().SetAlphaTest(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
     }
     if (!TextureEnable)
     {
         TextureEnable = true;
-        mu::GetRenderer().SetTexture2D(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
     }
     if (FogEnable)
-        mu::GetRenderer().SetFogEnabled(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(true);
 }
 
 void EnableLightMap()
@@ -490,22 +516,24 @@ void EnableLightMap()
     if (AlphaBlendType != 1)
     {
         AlphaBlendType = 1;
-        mu::GetRenderer().SetBlendMode(mu::BlendMode::LightMap);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetBlendFunc(
+            mu::pipeline::RenderBlendFactor::Zero,
+            mu::pipeline::RenderBlendFactor::SourceColor);
     }
     EnableCullFace();
     EnableDepthMask();
     if (AlphaTestEnable)
     {
         AlphaTestEnable = false;
-        mu::GetRenderer().SetAlphaTest(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
     }
     if (!TextureEnable)
     {
         TextureEnable = true;
-        mu::GetRenderer().SetTexture2D(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
     }
     if (FogEnable)
-        mu::GetRenderer().SetFogEnabled(true);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(true);
 }
 
 void SetRenderViewport(int x, int y, int Width, int Height)
@@ -601,9 +629,26 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
     width = std::max(width, 1);
     height = std::max(height, 1);
 
-    mu::GetRenderer().SetMatrixMode(GL_PROJECTION);
-    mu::GetRenderer().PushMatrix();
-    mu::GetRenderer().LoadIdentity();
+    ++s_worldTapeDepth;
+    if (s_worldTapeDepth == 1 && IsRenderTapePipelineEnabled())
+    {
+        mu::pipeline::SessionFogPassConstants passFog{};
+        passFog.enabled = FogEnable;
+        passFog.mode = mu::pipeline::RenderFogMode::Linear;
+        passFog.start = g_Camera.ViewFar * 1.00f;
+        passFog.end = g_Camera.ViewFar * 1.25f;
+        passFog.density = FogDensity;
+        passFog.color = {FogColor[0], FogColor[1], FogColor[2], FogColor[3]};
+
+        auto& tapeFacade = mu::pipeline::GetLegacyRenderFacade();
+        if (!tapeFacade.IsRecording())
+            s_worldTapeOwnsPass = tapeFacade.BeginPass(mu::pipeline::RenderTapePass::World, passFog);
+    }
+
+    auto& facade = mu::pipeline::GetLegacyRenderFacade();
+    (void)facade.MatrixMode(mu::pipeline::LegacyMatrixMode::Projection);
+    (void)facade.PushMatrix();
+    (void)facade.LoadIdentity();
     SetRenderViewport(x, y, width, height);
 
     // Calculate aspect ratio dynamically from viewport dimensions
@@ -614,28 +659,28 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
     // Apply RENDER_DISTANCE_MULTIPLIER for consistent rendering distance across all systems
     CameraProjection::SetupPerspective(g_Camera, g_Camera.FOV, aspectRatio, g_Camera.ViewNear, g_Camera.ViewFar * RENDER_DISTANCE_MULTIPLIER);
 
-    mu::GetRenderer().SetMatrixMode(GL_MODELVIEW);
-    mu::GetRenderer().PushMatrix();
-    mu::GetRenderer().LoadIdentity();
-    mu::GetRenderer().Rotate(g_Camera.Angle[1], 0.f, 1.f, 0.f);
+    (void)facade.MatrixMode(mu::pipeline::LegacyMatrixMode::ModelView);
+    (void)facade.PushMatrix();
+    (void)facade.LoadIdentity();
+    (void)facade.Rotate(g_Camera.Angle[1], 0.f, 1.f, 0.f);
     if (g_Camera.TopViewEnable == false)
-        mu::GetRenderer().Rotate(g_Camera.Angle[0], 1.f, 0.f, 0.f);
-    mu::GetRenderer().Rotate(g_Camera.Angle[2], 0.f, 0.f, 1.f);
-    mu::GetRenderer().Translate(-g_Camera.Position[0], -g_Camera.Position[1], -g_Camera.Position[2]);
+        (void)facade.Rotate(g_Camera.Angle[0], 1.f, 0.f, 0.f);
+    (void)facade.Rotate(g_Camera.Angle[2], 0.f, 0.f, 1.f);
+    (void)facade.Translate(-g_Camera.Position[0], -g_Camera.Position[1], -g_Camera.Position[2]);
 
-    mu::GetRenderer().SetAlphaTest(false);
-    mu::GetRenderer().SetTexture2D(true);
-    mu::GetRenderer().SetDepthTest(true);
-    mu::GetRenderer().SetCullFace(true);
-    mu::GetRenderer().SetDepthMask(true);
+    (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaTestEnable(false);
+    (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
+    (void)mu::pipeline::GetLegacyRenderFacade().SetDepthTestEnable(true);
+    (void)mu::pipeline::GetLegacyRenderFacade().SetCullEnable(true);
+    (void)mu::pipeline::GetLegacyRenderFacade().SetDepthWriteEnable(true);
 
     AlphaTestEnable = false;
     TextureEnable = true;
     DepthTestEnable = true;
     CullFaceEnable = true;
     DepthMaskEnable = true;
-    mu::GetRenderer().SetDepthFunc(GL_LEQUAL);
-    mu::GetRenderer().SetAlphaFunc(GL_GREATER, 0.25f);
+    (void)facade.SetDepthFunc(mu::pipeline::RenderCompareFunction::LessEqual);
+    (void)facade.SetAlphaFunc(mu::pipeline::RenderCompareFunction::Greater, 0.25f);
     if (FogEnable)
     {
         // Fog scales dynamically with view distance (g_Camera.ViewFar) so it
@@ -667,11 +712,15 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
         fogParams.color[1] = FogColor[1];
         fogParams.color[2] = FogColor[2];
         fogParams.color[3] = FogColor[3];
-        mu::GetRenderer().SetFog(fogParams);
+        (void)facade.SetFogMode(mu::pipeline::RenderFogMode::Linear);
+        (void)facade.SetFogRange(fogStart, fogEnd);
+        (void)facade.SetFogDensity(FogDensity);
+        (void)facade.SetFogColor({FogColor[0], FogColor[1], FogColor[2], FogColor[3]});
+        (void)facade.SetFogEnable(true);
     }
     else
     {
-        mu::GetRenderer().SetFogEnabled(false);
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogEnable(false);
     }
 
     CameraProjection::GetOpenGLMatrix(g_Camera.Matrix);
@@ -679,18 +728,27 @@ void BeginOpenglPhysical(int x, int y, int width, int height)
 
 void EndOpengl()
 {
-    mu::GetRenderer().SetMatrixMode(GL_MODELVIEW);
-    mu::GetRenderer().PopMatrix();
-    mu::GetRenderer().SetMatrixMode(GL_PROJECTION);
-    mu::GetRenderer().PopMatrix();
+    auto& facade = mu::pipeline::GetLegacyRenderFacade();
+    (void)facade.MatrixMode(mu::pipeline::LegacyMatrixMode::ModelView);
+    (void)facade.PopMatrix();
+    (void)facade.MatrixMode(mu::pipeline::LegacyMatrixMode::Projection);
+    (void)facade.PopMatrix();
+
+    if (s_worldTapeDepth > 0)
+        --s_worldTapeDepth;
+    if (s_worldTapeDepth == 0 && s_worldTapeOwnsPass)
+    {
+        (void)facade.EndPass();
+        s_worldTapeOwnsPass = false;
+    }
 }
 
 void UpdateMousePositionn()
 {
     vec3_t vPos;
 
-    mu::GetRenderer().LoadIdentity();
-    mu::GetRenderer().Translate(-g_Camera.Position[0], -g_Camera.Position[1], -g_Camera.Position[2]);
+    (void)facade.LoadIdentity();
+    (void)facade.Translate(-g_Camera.Position[0], -g_Camera.Position[1], -g_Camera.Position[2]);
     CameraProjection::GetOpenGLMatrix(g_Camera.Matrix);
 
     Vector(-g_Camera.Matrix[0][3], -g_Camera.Matrix[1][3], -g_Camera.Matrix[2][3], vPos);
@@ -858,13 +916,13 @@ void RenderPlane3D(float Width, float Height, float Matrix[3][4])
 
 void BeginSprite()
 {
-    mu::GetRenderer().PushMatrix();
-    mu::GetRenderer().LoadIdentity();
+    (void)facade.PushMatrix();
+    (void)facade.LoadIdentity();
 }
 
 void EndSprite()
 {
-    mu::GetRenderer().PopMatrix();
+    (void)facade.PopMatrix();
 }
 
 void RenderSprite(int Texture, vec3_t Position, float Width, float Height, vec3_t Light, float Rotation, float u, float v, float uWidth, float vHeight)
@@ -1037,13 +1095,37 @@ float RenderNumber2D(float x, float y, int Num, float Width, float Height, unsig
 
 void BeginBitmap()
 {
-    mu::GetRenderer().Begin2DPass();
+    ++s_uiTapeDepth;
+    if (s_uiTapeDepth == 1 && IsRenderTapePipelineEnabled())
+    {
+        mu::pipeline::SessionFogPassConstants passFog{};
+        passFog.enabled = false;
+
+        auto& facade = mu::pipeline::GetLegacyRenderFacade();
+        if (!facade.IsRecording())
+            s_uiTapeOwnsPass = facade.BeginPass(mu::pipeline::RenderTapePass::Ui, passFog);
+    }
+
+    if (!s_uiTapeOwnsPass)
+        mu::GetRenderer().Begin2DPass();
+
     DisableDepthTest();
 }
 
 void EndBitmap()
 {
-    mu::GetRenderer().End2DPass();
+    if (s_uiTapeDepth > 0)
+        --s_uiTapeDepth;
+
+    if (s_uiTapeDepth == 0 && s_uiTapeOwnsPass)
+    {
+        (void)mu::pipeline::GetLegacyRenderFacade().EndPass();
+        s_uiTapeOwnsPass = false;
+    }
+    else if (!s_uiTapeOwnsPass)
+    {
+        mu::GetRenderer().End2DPass();
+    }
 }
 
 namespace
@@ -1099,7 +1181,7 @@ void RenderColor(float x, float y, float Width, float Height, float Alpha, int F
 }
 void EndRenderColor()
 {
-    mu::GetRenderer().SetTexture2D(true);
+    (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnable(true);
 }
 
 static inline std::uint32_t ArgbToAbgr(unsigned int argb)
