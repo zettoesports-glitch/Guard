@@ -133,6 +133,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   element creation/id/class/inner-RML sequence and legacy chooser arrangement
 - reconstructed top-menu layer with exact document/DOM contract, nine design
   keys, independent option/action enable state and `start`/`stop` helper state
+- reconstructed `RmlTooltipLayer` with Debug-exact capacity/id binding,
+  line style maps, blank/bold generation, alignment/frame/min-width and position
 - reconstructed `RmlCharacterFramePanel` with seven design keys, general
   character fields, five stat sections/buttons, Pet/Master/Close intents and
   movable panel presentation

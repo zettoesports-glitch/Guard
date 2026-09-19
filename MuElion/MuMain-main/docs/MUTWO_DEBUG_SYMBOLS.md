@@ -1281,3 +1281,62 @@ wrappers, drag controller and close button. Its state supplies labels,
 visible/enabled status and optional selected command. User interaction is
 returned as one-shot `SelectCommand(index)` or `Close` intent; no network
 request or legacy command is executed by the modern panel.
+
+
+## RmlTooltipLayer reconstruction
+
+The Debug executable exposes the exact tooltip document path
+`Data/UI/PC/Common/tooltip.rml` and design keys:
+
+```text
+RmlTooltipLayer-TooltipCapacity
+RmlTooltipLayer-MinimumContentSize
+```
+
+The bind body at `0x140832470` loads the document and loops from zero to the
+configured tooltip capacity. It formats each id with the exact string
+`tooltip-%d`, resolves the element, stores it in a retained array/vector, and
+marks the layer bound only after every slot resolves. The observable asset
+capacity is 8.
+
+The presentation body recovers these exact property/class contracts:
+
+- `min-width` formatted with `%fpx`;
+- `text-align`: state 0 -> `left`, state 2 -> `right`, otherwise
+  `center`;
+- boolean CSS class `framed`;
+- tooltip position through `left` and `top`, each formatted `%fpx`.
+
+Line RML generation is also directly recoverable. Every line starts with
+`<div class="tooltip-line`. A line whose first character is newline, or
+whose content is exactly one space, receives class `blank` and no text body.
+Otherwise, the first style enum maps values 1..9 to:
+
+```text
+blue
+gray
+red
+yellow
+green
+purple
+red-purple
+violet
+orange
+```
+
+A second enum maps values 1..4 to:
+
+```text
+dark-red
+dark-blue
+dark-yellow
+green-blue
+```
+
+A boolean appends class `bold`. Nonblank text is encoded before insertion,
+and every generated row closes with `</div>`.
+
+The independently authored `RmlTooltipLayer` mirrors those observable
+contracts with eight retained tooltip slots, presentation-neutral line/style
+structures, exact class mappings, encoded text, frame/alignment/minimum-width
+state, and left/top positioning.

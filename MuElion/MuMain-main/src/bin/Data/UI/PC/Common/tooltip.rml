@@ -1,9 +1,19 @@
 <rml>
 <head>
-    <title>Reconstructed Tooltip</title>
+    <meta name="mu-design-RmlTooltipLayer-TooltipCapacity" content="8"/>
+    <meta name="mu-design-RmlTooltipLayer-MinimumContentSize" content="1"/>
+    <title>Reconstructed MU Tooltips</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="tooltip.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-common-tooltip">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="tooltip-0" class="mu-tooltip"/>
+    <div id="tooltip-1" class="mu-tooltip"/>
+    <div id="tooltip-2" class="mu-tooltip"/>
+    <div id="tooltip-3" class="mu-tooltip"/>
+    <div id="tooltip-4" class="mu-tooltip"/>
+    <div id="tooltip-5" class="mu-tooltip"/>
+    <div id="tooltip-6" class="mu-tooltip"/>
+    <div id="tooltip-7" class="mu-tooltip"/>
 </body>
 </rml>
