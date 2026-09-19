@@ -201,6 +201,12 @@ void SessionLegacyCalls::glFogi(unsigned int pname, int param) const
         (void)m_facade.SetFogMode(static_cast<mu::pipeline::RenderFogMode>(param));
 }
 
+void SessionLegacyCalls::glShadeModel(unsigned int mode) const
+{
+    (void)m_facade.SetShadeMode(
+        static_cast<mu::pipeline::RenderShadeMode>(mode));
+}
+
 void SessionLegacyCalls::glEnableClientState(unsigned int array) const { m_facade.EnableClientArray(ArraySemantic(array)); }
 void SessionLegacyCalls::glDisableClientState(unsigned int array) const { m_facade.DisableClientArray(ArraySemantic(array)); }
 

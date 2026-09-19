@@ -117,6 +117,7 @@ public:
     void glFogf(unsigned int pname, float param) const;
     void glFogfv(unsigned int pname, const float* params) const;
     void glFogi(unsigned int pname, int param) const;
+    void glShadeModel(unsigned int mode) const;
     void glEnableClientState(unsigned int array) const;
     void glDisableClientState(unsigned int array) const;
     void glDrawArrays(unsigned int mode, int first, int count) const;
