@@ -515,3 +515,21 @@ RmlUi CPU texture snapshot. This is mathematically equivalent for the recovered
 gfx-tint operation and leaves sampled alpha unchanged. Imported/captured
 textures without a CPU snapshot fall back to the untinted texture rather than
 disappearing.
+
+
+## RmlUiDesign metadata parser
+
+MSVC RTTI in the x64 Debug executable exposes
+`UI::Modern::RmlUiDesign::Parser` deriving from `Rml::BaseXMLParser`.
+The recovered vtable matches the RmlUi 6.3 base parser order:
+destructor, `HandleElementStart`, `HandleElementEnd`, and `HandleData`.
+
+Direct disassembly of `HandleElementStart` confirms the parser only handles
+`meta` elements. It reads the `name` attribute, requires the exact prefix
+`mu-design-`, strips that prefix, reads the `content` attribute, and stores
+the key/value pair in a parser-owned map. The recovered `HandleElementEnd`
+and `HandleData` bodies are empty.
+
+The x64 deleting-destructor passes a private object size of `0x138`; the
+reconstruction does not claim identical STL container layout, but preserves
+the observable parsing contract.
