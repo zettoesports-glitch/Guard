@@ -120,6 +120,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   scroll controls and blocked-chat presentation
 - Debug-matched chat `EventListener` inheritance, exact runtime maxlengths,
   dynamic row IDs, blocked/chat click dispatch and hover marquee transitions
+- recovered chat update-loop marquee dirty/deadline semantics and exact x64
+  private `RmlChatPanel::Impl` object size (0xA38)
 - read-only legacy chat snapshot bridge preserving `CNewUIChatLogWindow`
   ownership while feeding UTF-8 messages into the modern panel
 - reconstructed `RmlDocumentHost` lifecycle wrapper with runtime-dispatched

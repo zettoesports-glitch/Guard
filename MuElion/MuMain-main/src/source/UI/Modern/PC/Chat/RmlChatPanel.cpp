@@ -21,9 +21,11 @@
 #include <array>
 #include <cmath>
 #include <charconv>
+#include <chrono>
 #include <cstdio>
 #include <sstream>
 #include <span>
+#include <string_view>
 #include <utility>
 
 namespace UI::Modern::PC::Chat
@@ -344,7 +346,16 @@ public:
         }
 
         changed |= SyncControlClasses();
-        return changed;
+
+        // The recovered x64 Update body keeps the panel active while either
+        // the interaction-dirty latch is set or the marquee deadline has not
+        // expired. Main-x64-Debug uses a monotonic millisecond tick source;
+        // steady_clock preserves the same observable lifetime semantics.
+        const bool interactionDirty =
+            std::exchange(interactionDirty_, false);
+        const bool marqueeActive =
+            std::chrono::steady_clock::now() < marqueeDeadline_;
+        return changed || interactionDirty || marqueeActive;
     }
 
     [[nodiscard]] OutgoingMode GetOutgoingMode() const noexcept
@@ -611,6 +622,8 @@ private:
             line->SetProperty("transition", "none");
             shadow->RemoveProperty("left");
             line->RemoveProperty("left");
+            interactionDirty_ = true;
+            marqueeDeadline_ = {};
             return;
         }
 
@@ -631,6 +644,12 @@ private:
         shadow->SetProperty(
             "left", PixelValue(design_.shadowOffsetX - overflow));
         line->SetProperty("left", PixelValue(-overflow));
+
+        interactionDirty_ = true;
+        marqueeDeadline_ =
+            std::chrono::steady_clock::now() +
+            std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                std::chrono::duration<double>(seconds));
     }
 
     [[nodiscard]] bool PollButtons()
@@ -1028,6 +1047,11 @@ private:
     std::optional<std::string> whisperTargetRequest_;
     bool messagesDirty_ = true;
     bool blockedDirty_ = true;
+
+    // Correspond to the recovered +0x5f0 dirty latch and +0x5f8 monotonic
+    // deadline semantically. Exact STL/time_point layout is not claimed.
+    bool interactionDirty_ = false;
+    std::chrono::steady_clock::time_point marqueeDeadline_{};
 };
 
 RmlChatPanel::RmlChatPanel()

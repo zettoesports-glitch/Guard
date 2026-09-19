@@ -940,3 +940,32 @@ The bridge is intentionally not made the source of truth for `AddText`,
 filter commands or network submission. Those remain legacy-owned until the
 Debug ownership/callback graph for the higher-level chat host is fully
 recovered.
+
+
+### Chat update loop, dirty latch and exact Impl size
+
+The x64 deleting destructor for
+`UI::Modern::PC::Chat::RmlChatPanel::Impl` passes **0xA38** as the object
+size. This is the exact private object size in `Main-x64-Debug.exe`; the
+reconstruction does not force the same size because standard-library member
+layouts are implementation-specific.
+
+The recovered constructor initializes the retained-message/list state around
+`+0x580/+0x5a0`, clears state through `+0x5e8`, sets the blocked selection
+at `+0x5f4` to -1, clears the interaction dirty byte at `+0x5f0`, clears
+the monotonic deadline at `+0x5f8`, and null-initializes the DOM pointer
+range `+0x600..+0x680`.
+
+Direct disassembly of the private update body beginning at
+`0x140568260` gives the meaning of the last two fields:
+
+- `+0x5f0` is tested as a dirty/change latch;
+- `+0x5f8` is compared against the current monotonic millisecond tick;
+- even when no layout/message/control state changed, the update remains active
+  while `current_tick < deadline`.
+
+This matches the hover-marquee body, which writes a future deadline after
+starting the `left %.3fs linear` transition and clears the deadline on
+mouseout. The reconstruction now mirrors that observable behavior with an
+interaction dirty latch plus `std::chrono::steady_clock` deadline, without
+claiming the original private clock type.
