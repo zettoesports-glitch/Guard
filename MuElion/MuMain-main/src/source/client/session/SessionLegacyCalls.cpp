@@ -199,7 +199,22 @@ void SessionLegacyCalls::glFogi(unsigned int pname, int param) const
 
 void SessionLegacyCalls::glEnableClientState(unsigned int array) const { m_facade.EnableClientArray(ArraySemantic(array)); }
 void SessionLegacyCalls::glDisableClientState(unsigned int array) const { m_facade.DisableClientArray(ArraySemantic(array)); }
-void SessionLegacyCalls::glDrawArrays(unsigned int mode, int first, int count) const { (void)m_facade.DrawArrays(static_cast<mu::pipeline::LegacyPrimitive>(mode), first, count); }
+
+void SessionLegacyCalls::glDrawArrays(unsigned int mode, int first, int count) const
+{
+    if (first < 0 || count < 0)
+        return;
+
+    if (m_vertexPointer.pointer &&
+        !UploadPointer(m_vertexPointer, mu::pipeline::RenderClientArraySemantic::Vertex, first, count))
+        return;
+    if (m_colorPointer.pointer)
+        (void)UploadPointer(m_colorPointer, mu::pipeline::RenderClientArraySemantic::Color, first, count);
+    if (m_texCoordPointer.pointer)
+        (void)UploadPointer(m_texCoordPointer, mu::pipeline::RenderClientArraySemantic::TextureCoordinate, first, count);
+
+    (void)m_facade.DrawArrays(static_cast<mu::pipeline::LegacyPrimitive>(mode), first, count);
+}
 
 std::size_t SessionLegacyCalls::ScalarSize(unsigned int type) noexcept
 {
@@ -217,27 +232,50 @@ std::size_t SessionLegacyCalls::ScalarSize(unsigned int type) noexcept
     }
 }
 
-void SessionLegacyCalls::SetPointer(mu::pipeline::RenderClientArraySemantic semantic, int size, unsigned int type,
-                                    int stride, const void* pointer, bool normalized) const
+void SessionLegacyCalls::SetPointer(PointerDescriptor& descriptor, int size, unsigned int type,
+                                    int stride, const void* pointer, bool normalized) const noexcept
 {
-    const std::size_t scalar = ScalarSize(type);
-    if (!pointer || size <= 0 || scalar == 0)
+    if (!pointer || size <= 0 || ScalarSize(type) == 0)
+    {
+        descriptor = {};
         return;
+    }
 
-    // Legacy pointer APIs do not carry a byte length. Copying happens when
-    // glDrawArrays supplies the requested element count; the reconstructed
-    // facade therefore stores a conservative single-element descriptor here.
-    const std::size_t elementBytes = stride > 0 ? static_cast<std::size_t>(stride) : scalar * static_cast<std::size_t>(size);
-    const auto* bytes = static_cast<const std::byte*>(pointer);
-    (void)m_facade.SetClientArray(semantic, std::span<const std::byte>(bytes, elementBytes),
-                                  static_cast<std::uint32_t>(size),
-                                  static_cast<mu::pipeline::RenderClientArrayScalarType>(type),
-                                  stride, normalized);
+    descriptor.size = size;
+    descriptor.type = type;
+    descriptor.stride = stride;
+    descriptor.pointer = pointer;
+    descriptor.normalized = normalized;
 }
 
-void SessionLegacyCalls::glVertexPointer(int size, unsigned int type, int stride, const void* pointer) const { SetPointer(mu::pipeline::RenderClientArraySemantic::Vertex, size, type, stride, pointer, false); }
-void SessionLegacyCalls::glColorPointer(int size, unsigned int type, int stride, const void* pointer) const { SetPointer(mu::pipeline::RenderClientArraySemantic::Color, size, type, stride, pointer, type != static_cast<unsigned int>(mu::pipeline::RenderClientArrayScalarType::Float)); }
-void SessionLegacyCalls::glTexCoordPointer(int size, unsigned int type, int stride, const void* pointer) const { SetPointer(mu::pipeline::RenderClientArraySemantic::TextureCoordinate, size, type, stride, pointer, false); }
+bool SessionLegacyCalls::UploadPointer(const PointerDescriptor& descriptor,
+                                       mu::pipeline::RenderClientArraySemantic semantic,
+                                       int first, int count) const noexcept
+{
+    if (!descriptor.pointer || descriptor.size <= 0 || first < 0 || count < 0)
+        return false;
+    if (count == 0)
+        return true;
+
+    const std::size_t scalar = ScalarSize(descriptor.type);
+    const std::size_t elementBytes = scalar * static_cast<std::size_t>(descriptor.size);
+    const std::size_t stride = descriptor.stride > 0 ? static_cast<std::size_t>(descriptor.stride) : elementBytes;
+    const std::size_t last = static_cast<std::size_t>(first + count - 1);
+
+    if (last > (static_cast<std::size_t>(-1) - elementBytes) / stride)
+        return false;
+
+    const std::size_t totalBytes = last * stride + elementBytes;
+    const auto* bytes = static_cast<const std::byte*>(descriptor.pointer);
+    return m_facade.SetClientArray(semantic, std::span<const std::byte>(bytes, totalBytes),
+                                   static_cast<std::uint32_t>(descriptor.size),
+                                   static_cast<mu::pipeline::RenderClientArrayScalarType>(descriptor.type),
+                                   descriptor.stride, descriptor.normalized);
+}
+
+void SessionLegacyCalls::glVertexPointer(int size, unsigned int type, int stride, const void* pointer) const { SetPointer(m_vertexPointer, size, type, stride, pointer, false); }
+void SessionLegacyCalls::glColorPointer(int size, unsigned int type, int stride, const void* pointer) const { SetPointer(m_colorPointer, size, type, stride, pointer, type != static_cast<unsigned int>(mu::pipeline::RenderClientArrayScalarType::Float)); }
+void SessionLegacyCalls::glTexCoordPointer(int size, unsigned int type, int stride, const void* pointer) const { SetPointer(m_texCoordPointer, size, type, stride, pointer, false); }
 
 #pragma pop_macro("glTexCoordPointer")
 #pragma pop_macro("glColorPointer")

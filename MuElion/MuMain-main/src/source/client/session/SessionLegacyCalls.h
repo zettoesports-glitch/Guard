@@ -162,11 +162,26 @@ public:
 #pragma pop_macro("glBegin")
 
 private:
+    struct PointerDescriptor
+    {
+        int size = 0;
+        unsigned int type = 0;
+        int stride = 0;
+        const void* pointer = nullptr;
+        bool normalized = false;
+    };
+
     [[nodiscard]] static std::size_t ScalarSize(unsigned int type) noexcept;
-    void SetPointer(mu::pipeline::RenderClientArraySemantic semantic, int size, unsigned int type,
-                    int stride, const void* pointer, bool normalized) const;
+    void SetPointer(PointerDescriptor& descriptor, int size, unsigned int type,
+                    int stride, const void* pointer, bool normalized) const noexcept;
+    [[nodiscard]] bool UploadPointer(const PointerDescriptor& descriptor,
+                                     mu::pipeline::RenderClientArraySemantic semantic,
+                                     int first, int count) const noexcept;
 
     mu::pipeline::LegacyRenderFacade& m_facade;
+    mutable PointerDescriptor m_vertexPointer;
+    mutable PointerDescriptor m_colorPointer;
+    mutable PointerDescriptor m_texCoordPointer;
 };
 
 SessionLegacyCalls& GetSessionLegacyCalls();

@@ -44,7 +44,8 @@ std::size_t ScalarSize(RenderClientArrayScalarType type) noexcept
     }
 }
 
-bool ReadComponent(const LegacyRenderFacade::ClientArray& array, int index, std::uint32_t component, float& out) noexcept
+template <typename ClientArrayT>
+bool ReadComponent(const ClientArrayT& array, int index, std::uint32_t component, float& out) noexcept
 {
     const std::size_t scalarSize = ScalarSize(array.scalarType);
     if (scalarSize == 0 || component >= array.componentCount || index < 0)
