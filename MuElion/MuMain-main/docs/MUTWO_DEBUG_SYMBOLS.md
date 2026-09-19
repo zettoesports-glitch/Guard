@@ -1209,3 +1209,40 @@ pet/game state and does not mutate any legacy pet subsystem.
 Because the recovered design set contains no fixed initial X/Y pair, the
 reconstruction preserves the movable panel's current position by default.
 External code may request a position explicitly through the state snapshot.
+
+
+## RmlPetInfoPanel reconstruction
+
+The observable modern pet-information contract publishes the exact document
+path and eleven design inputs:
+
+```text
+Data/UI/PC/Character/pet_info.rml
+RmlPetInfoPanel-PanelWidth
+RmlPetInfoPanel-PanelHeight
+RmlPetInfoPanel-ReferenceWidth
+RmlPetInfoPanel-ReferenceHeight
+RmlPetInfoPanel-GfxStageWidth
+RmlPetInfoPanel-InitialX
+RmlPetInfoPanel-InitialY
+RmlPetInfoPanel-TabX
+RmlPetInfoPanel-TabY
+RmlPetInfoPanel-TabWidth
+RmlPetInfoPanel-TabHeight
+```
+
+The document contract exposes two tabs, five label/value rows, one progress
+bar, a missing-pet message state, leadership/command fields, four visible
+command-skill rows, one scrollbar, drag handle and close control.
+
+The legacy `CNewUIPetInfoWindow` remains the source of game-side rules. Its
+tab update calls `CalcDamage()`; rendering chooses Dark Horse or Dark Raven
+data from equipped `PET_INFO`; and close remains a legacy interface action.
+The modern reconstruction therefore exposes only two intents:
+`SelectTab(index)` and `Close`.
+
+`RmlPetInfoPanel` accepts presentation-neutral values, keeps four visible
+skill rows backed by an arbitrary retained skill vector, reuses the recovered
+`RmlMuScrollBar`, binds the movable panel, and applies the recovered authored
+327x639 size plus initial 339,55 position. Skill rows carry a presentation
+`data-skill-id` attribute but do not trigger pet commands themselves.

@@ -1,9 +1,68 @@
 <rml>
 <head>
-    <title>Reconstructed Pet Info</title>
+    <meta name="mu-design-RmlPetInfoPanel-PanelWidth" content="327"/>
+    <meta name="mu-design-RmlPetInfoPanel-PanelHeight" content="639"/>
+    <meta name="mu-design-RmlPetInfoPanel-ReferenceWidth" content="640"/>
+    <meta name="mu-design-RmlPetInfoPanel-ReferenceHeight" content="480"/>
+    <meta name="mu-design-RmlPetInfoPanel-GfxStageWidth" content="1024"/>
+    <meta name="mu-design-RmlPetInfoPanel-InitialX" content="339"/>
+    <meta name="mu-design-RmlPetInfoPanel-InitialY" content="55"/>
+    <meta name="mu-design-RmlPetInfoPanel-TabX" content="27 136"/>
+    <meta name="mu-design-RmlPetInfoPanel-TabY" content="85"/>
+    <meta name="mu-design-RmlPetInfoPanel-TabWidth" content="110"/>
+    <meta name="mu-design-RmlPetInfoPanel-TabHeight" content="31"/>
+    <title>Reconstructed Pet Information</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="pet_info.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-character-pet-info">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="pet-info" class="pet-info">
+        <div id="pet-info-background" class="pet-info-background"/>
+        <div id="pet-info-drag" class="pet-info-drag"/>
+        <div id="pet-info-close" class="mu-button close-button">X</div>
+        <div id="pet-info-title" class="pet-info-title"/>
+
+        <div id="pet-info-tab-0" class="mu-button pet-tab"><span id="pet-info-tab-label-0"/></div>
+        <div id="pet-info-tab-1" class="mu-button pet-tab"><span id="pet-info-tab-label-1"/></div>
+
+        <div id="pet-info-content" class="pet-info-content">
+            <div id="pet-info-label-0" class="pet-info-label row-0"/>
+            <div id="pet-info-value-0" class="pet-info-value row-0"/>
+            <div id="pet-info-label-1" class="pet-info-label row-1"/>
+            <div id="pet-info-value-1" class="pet-info-value row-1"/>
+            <div id="pet-info-label-2" class="pet-info-label row-2"/>
+            <div id="pet-info-value-2" class="pet-info-value row-2"/>
+            <div id="pet-info-label-3" class="pet-info-label row-3"/>
+            <div id="pet-info-value-3" class="pet-info-value row-3"/>
+            <div id="pet-info-label-4" class="pet-info-label row-4"/>
+            <div id="pet-info-value-4" class="pet-info-value row-4"/>
+
+            <div id="pet-info-progress" class="pet-info-progress">
+                <div id="pet-info-progress-fill" class="pet-info-progress-fill"/>
+            </div>
+
+            <div id="pet-info-commands" class="pet-info-commands">
+                <div id="pet-info-leadership-label" class="pet-info-label leadership"/>
+                <div id="pet-info-leadership" class="pet-info-value leadership"/>
+                <div id="pet-info-command-label" class="pet-info-command-label"/>
+
+                <div id="pet-info-skill-list" class="pet-info-skill-list">
+                    <div id="pet-info-skill-row-0" class="pet-info-skill-row row-0"><div id="pet-info-skill-slot-0" class="pet-info-skill-slot"/><span id="pet-info-skill-label-0"/></div>
+                    <div id="pet-info-skill-row-1" class="pet-info-skill-row row-1"><div id="pet-info-skill-slot-1" class="pet-info-skill-slot"/><span id="pet-info-skill-label-1"/></div>
+                    <div id="pet-info-skill-row-2" class="pet-info-skill-row row-2"><div id="pet-info-skill-slot-2" class="pet-info-skill-slot"/><span id="pet-info-skill-label-2"/></div>
+                    <div id="pet-info-skill-row-3" class="pet-info-skill-row row-3"><div id="pet-info-skill-slot-3" class="pet-info-skill-slot"/><span id="pet-info-skill-label-3"/></div>
+                </div>
+
+                <div id="pet-info-scroll" class="mu-scrollbar pet-info-scroll">
+                    <div class="mu-scrollbar-track"/>
+                    <div class="mu-scrollbar-button down">v</div>
+                    <div class="mu-scrollbar-button up">^</div>
+                    <div class="mu-scrollbar-thumb"/>
+                </div>
+            </div>
+        </div>
+
+        <div id="pet-info-missing" class="pet-info-missing"/>
+    </div>
 </body>
 </rml>
