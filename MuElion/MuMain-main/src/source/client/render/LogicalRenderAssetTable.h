@@ -24,6 +24,15 @@ struct LogicalRenderAssetMetadata
     RenderSamplerIntent sampler{};
 };
 
+// Reconstruction-local CPU snapshot used by the recovered RmlUi gfx-tint
+// shader adapter. Captured render targets intentionally do not fabricate a
+// CPU copy; only textures defined from CPU pixels expose this snapshot.
+struct LogicalRenderAssetRgba8Snapshot
+{
+    LogicalRenderAssetMetadata metadata{};
+    std::vector<std::uint8_t> pixels;
+};
+
 class LogicalRenderAssetTable
 {
 public:
@@ -44,6 +53,8 @@ public:
         RenderSamplerIntent sampler = {}) noexcept;
 
     [[nodiscard]] std::optional<LogicalRenderAssetMetadata> Resolve(LogicalRenderAssetRef ref) noexcept;
+    [[nodiscard]] std::optional<LogicalRenderAssetRgba8Snapshot> SnapshotRgba8(
+        LogicalRenderAssetRef ref) noexcept;
     void Touch(LogicalRenderAssetRef ref) noexcept;
     void Release(LogicalRenderAssetRef ref) noexcept;
     void ReleaseFrameOnly() noexcept;
@@ -56,6 +67,7 @@ private:
     struct Entry
     {
         LogicalRenderAssetMetadata metadata{};
+        std::vector<std::uint8_t> rgba8;
         std::chrono::steady_clock::time_point lastUsed{};
     };
 

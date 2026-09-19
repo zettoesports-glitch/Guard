@@ -102,6 +102,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - `MuSystemInterface`
 - `RmlHudMapViewport`
 - recovered `map-view` and `map-viewport` element aliases
+- recovered `gfx-tint` decorator and nested SpriteDecorator
+- RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
+- cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle
 - immediate-mode fallback when `RenderPipeline=0`
 - deterministic FreeType and LunaSVG build dependencies

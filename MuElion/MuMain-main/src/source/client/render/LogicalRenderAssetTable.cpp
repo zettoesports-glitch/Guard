@@ -123,6 +123,7 @@ bool LogicalRenderAssetTable::DefineTexture2D(LogicalRenderAssetRef ref,
     entry.metadata.height = height;
     entry.metadata.retention = retention;
     entry.metadata.sampler = sampler;
+    entry.rgba8 = std::move(rgba);
     entry.lastUsed = std::chrono::steady_clock::now();
     return true;
 }
@@ -147,6 +148,7 @@ bool LogicalRenderAssetTable::RegisterCapturedTexture(
     entry.metadata.height = height;
     entry.metadata.retention = retention;
     entry.metadata.sampler = sampler;
+    entry.rgba8.clear();
     entry.lastUsed = std::chrono::steady_clock::now();
     return true;
 }
@@ -172,6 +174,26 @@ std::optional<LogicalRenderAssetMetadata> LogicalRenderAssetTable::Resolve(Logic
 
     it->second.lastUsed = std::chrono::steady_clock::now();
     return it->second.metadata;
+}
+
+std::optional<LogicalRenderAssetRgba8Snapshot>
+LogicalRenderAssetTable::SnapshotRgba8(LogicalRenderAssetRef ref) noexcept
+{
+    if (!ref.IsValid())
+        return std::nullopt;
+
+    std::scoped_lock lock(m_mutex);
+    const auto it = m_entries.find(ref.id);
+    if (it == m_entries.end() ||
+        it->second.metadata.ref.revision != ref.revision ||
+        it->second.rgba8.empty())
+        return std::nullopt;
+
+    it->second.lastUsed = std::chrono::steady_clock::now();
+    return LogicalRenderAssetRgba8Snapshot{
+        it->second.metadata,
+        it->second.rgba8
+    };
 }
 
 void LogicalRenderAssetTable::Touch(LogicalRenderAssetRef ref) noexcept

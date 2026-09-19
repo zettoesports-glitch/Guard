@@ -3,6 +3,7 @@
 
 #include "UI/Modern/TapeRenderInterface.h"
 #include "UI/Modern/RmlHudMapViewport.h"
+#include "UI/Modern/RmlGfxTintDecorator.h"
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Core.h>
@@ -76,12 +77,18 @@ public:
         Rml::Factory::RegisterElementInstancer(
             "map-viewport", mapViewportInstancer_.get());
 
+        gfxTintDecoratorInstancer_ =
+            std::make_unique<RmlGfxTintDecoratorInstancer>();
+        Rml::Factory::RegisterDecoratorInstancer(
+            "gfx-tint", gfxTintDecoratorInstancer_.get());
+
         context_ = Rml::CreateContext(
             contextName_, {width, height}, &renderInterface_);
         if (!context_)
         {
-            mapViewportInstancer_.reset();
             Rml::Shutdown();
+            gfxTintDecoratorInstancer_.reset();
+            mapViewportInstancer_.reset();
             Rml::SetRenderInterface(nullptr);
             Rml::SetSystemInterface(nullptr);
             return false;
@@ -121,8 +128,9 @@ public:
             bootstrapDocument_ = nullptr;
         }
 
-        mapViewportInstancer_.reset();
         Rml::Shutdown();
+        gfxTintDecoratorInstancer_.reset();
+        mapViewportInstancer_.reset();
         Rml::SetRenderInterface(nullptr);
         Rml::SetSystemInterface(nullptr);
 
@@ -300,6 +308,8 @@ private:
     std::unordered_map<std::string, Rml::ElementDocument*> documents_;
     std::unique_ptr<Rml::ElementInstancerGeneric<RmlHudMapViewport>>
         mapViewportInstancer_;
+    std::unique_ptr<RmlGfxTintDecoratorInstancer>
+        gfxTintDecoratorInstancer_;
 };
 
 RmlUiRuntime::RmlUiRuntime()

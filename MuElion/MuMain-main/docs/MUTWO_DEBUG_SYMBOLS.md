@@ -483,3 +483,35 @@ The Debug executable preserves both literal element names `map-view` and
 `map-viewport` next to RTTI for `RmlHudMapViewport`. The reconstructed
 RmlUi runtime now registers the same viewport element instancer under both
 aliases.
+
+
+## Recovered gfx-tint decorator
+
+Further x64 Debug disassembly and RTTI expose:
+- `UI::Modern::RmlGfxTintDecoratorInstancer`,
+- nested `RmlGfxTintDecoratorInstancer::SpriteDecorator`,
+- decorator name `gfx-tint`,
+- properties `sprite, scale, red, green, blue`,
+- defaults `scale=1` and RGB offsets `0`,
+- `SpriteDecorator` compiling a RmlUi shader named `gfx-tint` with a
+  `Vector4f` parameter named `tint`.
+
+The embedded fragment shader confirms the exact color transform:
+
+```text
+rgb = clamp(sampled.rgb * textureTint.x + textureTint.yzw, 0, 1)
+alpha = sampled.a
+output = vertexColor * float4(rgb, alpha)
+```
+
+Property mapping is therefore `textureTint = (scale, red/255, green/255,
+blue/255)`.
+
+The reconstructed TapeRenderInterface now implements the same RmlUi
+`CompileShader / RenderShader / ReleaseShader` contract. Until the complete
+private fragment pipeline is ported to the checked-in SDL GPU shader blobs,
+`gfx-tint` materializes a cached derived RGBA8 texture from the retained
+RmlUi CPU texture snapshot. This is mathematically equivalent for the recovered
+gfx-tint operation and leaves sampled alpha unchanged. Imported/captured
+textures without a CPU snapshot fall back to the untinted texture rather than
+disappearing.

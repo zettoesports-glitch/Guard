@@ -36,6 +36,15 @@ public:
                                        Rml::Vector2i sourceDimensions) override;
     void ReleaseTexture(Rml::TextureHandle texture) override;
 
+    Rml::CompiledShaderHandle CompileShader(
+        const Rml::String& name,
+        const Rml::Dictionary& parameters) override;
+    void RenderShader(Rml::CompiledShaderHandle shader,
+                      Rml::CompiledGeometryHandle geometry,
+                      Rml::Vector2f translation,
+                      Rml::TextureHandle texture) override;
+    void ReleaseShader(Rml::CompiledShaderHandle shader) override;
+
     // Import an already-created Mu logical texture into RmlUi without taking
     // ownership of the underlying logical asset.
     [[nodiscard]] Rml::TextureHandle ImportLogicalTexture(
@@ -66,8 +75,21 @@ public:
     };
 
 private:
+    enum class CompiledShaderKind : std::uint8_t
+    {
+        GfxTint,
+    };
+
+    struct CompiledShaderState
+    {
+        CompiledShaderKind kind = CompiledShaderKind::GfxTint;
+        Rml::Vector4f tint{1.0f, 0.0f, 0.0f, 0.0f};
+        std::unordered_map<Rml::TextureHandle, Rml::TextureHandle> derivedTextures;
+    };
+
     [[nodiscard]] Rml::CompiledGeometryHandle AllocateGeometryHandle() noexcept;
     [[nodiscard]] Rml::TextureHandle AllocateTextureHandle() noexcept;
+    [[nodiscard]] Rml::CompiledShaderHandle AllocateShaderHandle() noexcept;
     [[nodiscard]] static std::uint32_t PackColor(
         const Rml::ColourbPremultiplied& color) noexcept;
     [[nodiscard]] static bool DecodeTga(
@@ -86,9 +108,12 @@ private:
                        std::shared_ptr<CompiledGeometry>> m_geometries;
     std::unordered_map<Rml::TextureHandle,
                        std::shared_ptr<LoadedTexture>> m_textures;
+    std::unordered_map<Rml::CompiledShaderHandle,
+                       std::shared_ptr<CompiledShaderState>> m_shaders;
 
     std::uintptr_t m_nextGeometryHandle = 1;
     std::uintptr_t m_nextTextureHandle = 1;
+    std::uintptr_t m_nextShaderHandle = 1;
     std::optional<Rml::Matrix4f> m_transform;
 };
 

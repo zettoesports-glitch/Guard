@@ -3,6 +3,7 @@
 
 #include <RmlUi/Core/Core.h>
 #include <RmlUi/Core/FileInterface.h>
+#include <RmlUi/Core/Variant.h>
 
 #include <algorithm>
 #include <array>
@@ -57,8 +58,9 @@ TapeRenderInterface::~TapeRenderInterface()
         std::scoped_lock lock(m_mutex);
         assets.reserve(m_textures.size());
         for (const auto& [_, texture] : m_textures)
-            if (texture)
+            if (texture && texture->ownsAsset)
                 assets.push_back(texture->asset);
+        m_shaders.clear();
         m_textures.clear();
         m_geometries.clear();
     }
@@ -83,6 +85,16 @@ Rml::TextureHandle TapeRenderInterface::AllocateTextureHandle() noexcept
     {
         const auto value = m_nextTextureHandle++;
         if (value != 0 && !m_textures.contains(value))
+            return value;
+    }
+}
+
+Rml::CompiledShaderHandle TapeRenderInterface::AllocateShaderHandle() noexcept
+{
+    for (;;)
+    {
+        const auto value = m_nextShaderHandle++;
+        if (value != 0 && !m_shaders.contains(value))
             return value;
     }
 }
@@ -455,6 +467,157 @@ void TapeRenderInterface::ReleaseTexture(Rml::TextureHandle textureHandle)
 
     if (texture && texture->ownsAsset)
         m_assets.Release(texture->asset);
+}
+
+Rml::CompiledShaderHandle TapeRenderInterface::CompileShader(
+    const Rml::String& name,
+    const Rml::Dictionary& parameters)
+{
+    // Main-x64-Debug.exe compiles the recovered SpriteDecorator through the
+    // RmlUi CompiledShader path with the exact name "gfx-tint" and a Vector4f
+    // parameter named "tint": x=scale, yzw=RGB offsets in normalized units.
+    if (name != "gfx-tint")
+        return 0;
+
+    const auto tintIt = parameters.find("tint");
+    if (tintIt == parameters.end())
+        return 0;
+
+    auto shader = std::make_shared<CompiledShaderState>();
+    shader->kind = CompiledShaderKind::GfxTint;
+    shader->tint = tintIt->second.Get<Rml::Vector4f>(
+        Rml::Vector4f(1.0f, 0.0f, 0.0f, 0.0f));
+
+    std::scoped_lock lock(m_mutex);
+    const auto handle = AllocateShaderHandle();
+    m_shaders.emplace(handle, std::move(shader));
+    return handle;
+}
+
+void TapeRenderInterface::RenderShader(
+    Rml::CompiledShaderHandle shaderHandle,
+    Rml::CompiledGeometryHandle geometryHandle,
+    Rml::Vector2f translation,
+    Rml::TextureHandle textureHandle)
+{
+    if (shaderHandle == 0 || geometryHandle == 0 || textureHandle == 0)
+        return;
+
+    std::shared_ptr<CompiledShaderState> shader;
+    std::shared_ptr<LoadedTexture> sourceTexture;
+    Rml::TextureHandle derivedTexture = 0;
+
+    {
+        std::scoped_lock lock(m_mutex);
+        const auto shaderIt = m_shaders.find(shaderHandle);
+        const auto textureIt = m_textures.find(textureHandle);
+        if (shaderIt == m_shaders.end() || textureIt == m_textures.end())
+            return;
+
+        shader = shaderIt->second;
+        sourceTexture = textureIt->second;
+        if (!shader || !sourceTexture ||
+            shader->kind != CompiledShaderKind::GfxTint)
+            return;
+
+        if (const auto cached = shader->derivedTextures.find(textureHandle);
+            cached != shader->derivedTextures.end())
+            derivedTexture = cached->second;
+    }
+
+    if (derivedTexture == 0)
+    {
+        const auto source = m_assets.SnapshotRgba8(sourceTexture->asset);
+        if (!source)
+        {
+            // Imported/captured logical textures may not have a CPU snapshot.
+            // Preserve visibility rather than dropping the decorator entirely.
+            RenderGeometry(geometryHandle, translation, textureHandle);
+            return;
+        }
+
+        std::vector<Rml::byte> tinted(
+            source->pixels.begin(), source->pixels.end());
+        const float scale = shader->tint.x;
+        const std::array<float, 3> offsets{
+            shader->tint.y, shader->tint.z, shader->tint.w
+        };
+
+        for (std::size_t pixel = 0; pixel + 3u < tinted.size(); pixel += 4u)
+        {
+            for (std::size_t channel = 0; channel < 3u; ++channel)
+            {
+                const float sourceValue =
+                    static_cast<float>(tinted[pixel + channel]) / 255.0f;
+                const float transformed = std::clamp(
+                    sourceValue * scale + offsets[channel], 0.0f, 1.0f);
+                tinted[pixel + channel] = static_cast<Rml::byte>(
+                    transformed * 255.0f + 0.5f);
+            }
+            // Alpha is intentionally unchanged, matching the recovered
+            // fragment shader's float4(tintedRgb, sampledAlpha).
+        }
+
+        const Rml::TextureHandle generated = GenerateTexture(
+            tinted,
+            {static_cast<int>(source->metadata.width),
+             static_cast<int>(source->metadata.height)});
+        if (generated == 0)
+            return;
+
+        Rml::TextureHandle duplicate = 0;
+        {
+            std::scoped_lock lock(m_mutex);
+            const auto shaderIt = m_shaders.find(shaderHandle);
+            if (shaderIt == m_shaders.end() || shaderIt->second != shader)
+            {
+                duplicate = generated;
+            }
+            else
+            {
+                const auto [cacheIt, inserted] =
+                    shader->derivedTextures.emplace(textureHandle, generated);
+                if (inserted)
+                    derivedTexture = generated;
+                else
+                {
+                    derivedTexture = cacheIt->second;
+                    duplicate = generated;
+                }
+            }
+        }
+
+        if (duplicate != 0)
+            ReleaseTexture(duplicate);
+        if (derivedTexture == 0)
+            return;
+    }
+
+    RenderGeometry(geometryHandle, translation, derivedTexture);
+}
+
+void TapeRenderInterface::ReleaseShader(Rml::CompiledShaderHandle shaderHandle)
+{
+    std::vector<Rml::TextureHandle> derivedTextures;
+    {
+        std::scoped_lock lock(m_mutex);
+        const auto it = m_shaders.find(shaderHandle);
+        if (it == m_shaders.end())
+            return;
+
+        if (it->second)
+        {
+            derivedTextures.reserve(it->second->derivedTextures.size());
+            for (const auto& [_, texture] : it->second->derivedTextures)
+                if (texture != 0)
+                    derivedTextures.push_back(texture);
+        }
+
+        m_shaders.erase(it);
+    }
+
+    for (const Rml::TextureHandle texture : derivedTextures)
+        ReleaseTexture(texture);
 }
 
 void TapeRenderInterface::EnableScissorRegion(bool enable)
