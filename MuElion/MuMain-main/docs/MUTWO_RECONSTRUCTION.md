@@ -116,6 +116,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - reconstructed `RmlMuSlot` as a `RmlMuButton` derivative with secondary
   mouse latch and exact `icon-frame-N` CSS switching
 - reconstructed `RmlChatPanel::Impl` controller with exact document path,
+- reconstructed `RmlFriendPanel` main/chat/write/read presentation with
+  recovered design metrics, movable windows, rows, scrollbar and semantic
+  one-shot actions while preserving legacy `CUIWindowMgr` ownership
   21 design keys, recovered message-class switch, retained message rows,
   scroll controls and blocked-chat presentation
 - Debug-matched chat `EventListener` inheritance, exact runtime maxlengths,

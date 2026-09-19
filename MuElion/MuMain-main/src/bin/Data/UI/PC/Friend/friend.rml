@@ -1,9 +1,105 @@
 <rml>
 <head>
+    <meta name="mu-design-RmlFriendPanel-PanelMainWidth" content="540"/>
+    <meta name="mu-design-RmlFriendPanel-PanelMainHeight" content="381"/>
+    <meta name="mu-design-RmlFriendPanel-PanelChatWidth" content="553"/>
+    <meta name="mu-design-RmlFriendPanel-PanelChatCollapsedWidth" content="425"/>
+    <meta name="mu-design-RmlFriendPanel-PanelChatHeight" content="282"/>
+    <meta name="mu-design-RmlFriendPanel-PanelWriteWidth" content="429"/>
+    <meta name="mu-design-RmlFriendPanel-PanelWriteHeight" content="282"/>
+    <meta name="mu-design-RmlFriendPanel-PanelReadWidth" content="425"/>
+    <meta name="mu-design-RmlFriendPanel-PanelReadHeight" content="278"/>
+    <meta name="mu-design-RmlFriendPanel-PanelMainVisibleRows" content="5"/>
+    <meta name="mu-design-RmlFriendPanel-PanelVisibleRows" content="8"/>
+    <meta name="mu-design-RmlFriendPanel-InitialX" content="50"/>
+    <meta name="mu-design-RmlFriendPanel-InitialY" content="50"/>
+    <meta name="mu-design-RmlFriendPanel-ChatVisibleLines" content="11"/>
     <title>Reconstructed Friend</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="friend.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-friend-friend">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="friend-main" class="friend-panel friend-main">
+        <div id="friend-main-drag" class="friend-drag"/>
+        <div id="friend-main-title" class="friend-title"/>
+        <div id="friend-main-close" class="mu-button friend-close">X</div>
+        <div id="friend-tab-0" class="mu-button friend-tab"><span id="friend-tab-label-0"/></div>
+        <div id="friend-tab-1" class="mu-button friend-tab"><span id="friend-tab-label-1"/></div>
+        <div id="friend-tab-2" class="mu-button friend-tab"><span id="friend-tab-label-2"/></div>
+        <div id="friend-refuse" class="mu-button friend-refuse"><input id="friend-refuse-mark" type="checkbox"/><span>Refuse</span></div>
+        <div class="friend-grid-title">
+            <div id="friend-header-check" class="mu-button friend-header-check"><input id="friend-header-check-mark" type="checkbox"/></div>
+            <div id="friend-header-0" class="friend-header"/>
+            <div id="friend-header-1" class="friend-header"/>
+            <div id="friend-header-2" class="friend-header"/>
+            <div id="friend-header-3" class="friend-header"/>
+        </div>
+        <div id="friend-rows" class="friend-rows">
+            <div id="friend-row-0" class="mu-button friend-row"><span class="data-grid-field-0"/><span class="data-grid-field-1"/><span class="data-grid-field-2"/><span class="data-grid-field-3"/><input type="checkbox"/><i class="friend-mail-icon"/></div>
+            <div id="friend-row-1" class="mu-button friend-row"><span class="data-grid-field-0"/><span class="data-grid-field-1"/><span class="data-grid-field-2"/><span class="data-grid-field-3"/><input type="checkbox"/><i class="friend-mail-icon"/></div>
+            <div id="friend-row-2" class="mu-button friend-row"><span class="data-grid-field-0"/><span class="data-grid-field-1"/><span class="data-grid-field-2"/><span class="data-grid-field-3"/><input type="checkbox"/><i class="friend-mail-icon"/></div>
+            <div id="friend-row-3" class="mu-button friend-row"><span class="data-grid-field-0"/><span class="data-grid-field-1"/><span class="data-grid-field-2"/><span class="data-grid-field-3"/><input type="checkbox"/><i class="friend-mail-icon"/></div>
+            <div id="friend-row-4" class="mu-button friend-row"><span class="data-grid-field-0"/><span class="data-grid-field-1"/><span class="data-grid-field-2"/><span class="data-grid-field-3"/><input type="checkbox"/><i class="friend-mail-icon"/></div>
+            <div id="friend-row-5" class="mu-button friend-row"><span class="data-grid-field-0"/><span class="data-grid-field-1"/><span class="data-grid-field-2"/><span class="data-grid-field-3"/><input type="checkbox"/><i class="friend-mail-icon"/></div>
+            <div id="friend-row-6" class="mu-button friend-row"><span class="data-grid-field-0"/><span class="data-grid-field-1"/><span class="data-grid-field-2"/><span class="data-grid-field-3"/><input type="checkbox"/><i class="friend-mail-icon"/></div>
+            <div id="friend-row-7" class="mu-button friend-row"><span class="data-grid-field-0"/><span class="data-grid-field-1"/><span class="data-grid-field-2"/><span class="data-grid-field-3"/><input type="checkbox"/><i class="friend-mail-icon"/></div>
+        </div>
+        <div id="friend-scroll" class="mu-scrollbar friend-scroll"><div class="mu-scrollbar-track"/><div class="mu-scrollbar-button">v</div><div class="mu-scrollbar-button">^</div><div class="mu-scrollbar-thumb"/></div>
+        <div id="friend-action-0" class="mu-button friend-main-action"><span id="friend-action-label-0"/></div>
+        <div id="friend-action-1" class="mu-button friend-main-action"><span id="friend-action-label-1"/></div>
+        <div id="friend-action-2" class="mu-button friend-main-action"><span id="friend-action-label-2"/></div>
+        <div id="friend-action-3" class="mu-button friend-main-action"><span id="friend-action-label-3"/></div>
+    </div>
+
+    <div id="friend-chat" class="friend-panel friend-chat">
+        <div id="friend-chat-drag" class="friend-popup-drag"/>
+        <div id="friend-chat-title" class="friend-popup-title"/>
+        <div id="friend-chat-minimize" class="mu-button friend-minimize">_</div>
+        <div id="friend-chat-close" class="mu-button friend-popup-close">X</div>
+        <div id="friend-chat-messages" class="friend-chat-messages"/>
+        <div id="friend-chat-members" class="friend-chat-members"/>
+        <input id="friend-chat-input" class="mu-text-input friend-chat-input" type="text" maxlength="89"/>
+        <div id="friend-chat-toggle" class="mu-button friend-popup-action"><span id="friend-chat-toggle-label"/></div>
+        <div class="friend-chat-invite-rows">
+            <div id="friend-chat-invite-row-0" class="mu-button friend-chat-invite-row"/>
+            <div id="friend-chat-invite-row-1" class="mu-button friend-chat-invite-row"/>
+            <div id="friend-chat-invite-row-2" class="mu-button friend-chat-invite-row"/>
+            <div id="friend-chat-invite-row-3" class="mu-button friend-chat-invite-row"/>
+            <div id="friend-chat-invite-row-4" class="mu-button friend-chat-invite-row"/>
+            <div id="friend-chat-invite-row-5" class="mu-button friend-chat-invite-row"/>
+            <div id="friend-chat-invite-row-6" class="mu-button friend-chat-invite-row"/>
+            <div id="friend-chat-invite-row-7" class="mu-button friend-chat-invite-row"/>
+        </div>
+        <div id="friend-chat-invite" class="mu-button friend-popup-action"><span id="friend-chat-invite-label"/></div>
+    </div>
+
+    <div id="friend-write" class="friend-panel friend-write">
+        <div id="friend-write-drag" class="friend-popup-drag"/>
+        <div id="friend-write-title" class="friend-popup-title"/>
+        <div id="friend-write-minimize" class="mu-button friend-minimize">_</div>
+        <div id="friend-write-close-top" class="mu-button friend-popup-close">X</div>
+        <div id="friend-write-receiver-label" class="friend-form-label"/>
+        <div id="friend-write-subject-label" class="friend-form-label"/>
+        <input id="friend-write-receiver" class="mu-text-input friend-write-receiver" type="text" maxlength="10"/>
+        <input id="friend-write-subject" class="mu-text-input friend-write-subject" type="text" maxlength="31"/>
+        <textarea id="friend-write-body" class="mu-text-input friend-write-body" maxlength="1000"/>
+        <div id="friend-write-send" class="mu-button friend-popup-action"><span id="friend-write-send-label"/></div>
+        <div id="friend-write-close" class="mu-button friend-popup-action"><span id="friend-write-close-label"/></div>
+    </div>
+
+    <div id="friend-read" class="friend-panel friend-read">
+        <div id="friend-read-drag" class="friend-popup-drag"/>
+        <div id="friend-read-title" class="friend-popup-title"/>
+        <div id="friend-read-minimize" class="mu-button friend-minimize">_</div>
+        <div id="friend-read-close-top" class="mu-button friend-popup-close">X</div>
+        <div id="friend-read-sender-label" class="friend-form-label"/>
+        <div id="friend-read-sender" class="friend-read-sender"/>
+        <div id="friend-read-body" class="friend-read-body"/>
+        <div id="friend-read-action-0" class="mu-button friend-popup-action"><span class="mu-overflow-label"/></div>
+        <div id="friend-read-action-1" class="mu-button friend-popup-action"><span class="mu-overflow-label"/></div>
+        <div id="friend-read-action-2" class="mu-button friend-popup-action"><span class="mu-overflow-label"/></div>
+        <div id="friend-read-action-3" class="mu-button friend-popup-action"><span class="mu-overflow-label"/></div>
+        <div id="friend-read-action-4" class="mu-button friend-popup-action"><span class="mu-overflow-label"/></div>
+    </div>
 </body>
 </rml>

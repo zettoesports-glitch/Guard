@@ -1340,3 +1340,43 @@ The independently authored `RmlTooltipLayer` mirrors those observable
 contracts with eight retained tooltip slots, presentation-neutral line/style
 structures, exact class mappings, encoded text, frame/alignment/minimum-width
 state, and left/top positioning.
+
+
+## RmlFriendPanel reconstruction
+
+The public MuClient friend document exposes a presentation contract with four
+independent windows inside `Data/UI/PC/Friend/friend.rml`: the main friend
+window, chat room window, write-letter window, and read-letter window. The
+recovered design metadata is:
+
+```text
+RmlFriendPanel-PanelMainWidth = 540
+RmlFriendPanel-PanelMainHeight = 381
+RmlFriendPanel-PanelChatWidth = 553
+RmlFriendPanel-PanelChatCollapsedWidth = 425
+RmlFriendPanel-PanelChatHeight = 282
+RmlFriendPanel-PanelWriteWidth = 429
+RmlFriendPanel-PanelWriteHeight = 282
+RmlFriendPanel-PanelReadWidth = 425
+RmlFriendPanel-PanelReadHeight = 278
+RmlFriendPanel-PanelMainVisibleRows = 5
+RmlFriendPanel-PanelVisibleRows = 8
+RmlFriendPanel-InitialX = 50
+RmlFriendPanel-InitialY = 50
+RmlFriendPanel-ChatVisibleLines = 11
+```
+
+The legacy MuMain side confirms that `CNewUIFriendWindow` is only an adapter
+around `CUIWindowMgr`, with separate `CFriendList`, `CLetterList`, main
+friend tabs, chat windows and letter read/write windows. Therefore the modern
+reconstruction deliberately keeps protocol/window-manager ownership outside the
+RmlUi presentation.
+
+`RmlFriendPanel` now provides four independent visible states rather than a
+single exclusive mode, matching the legacy manager's ability to keep the main
+window and secondary chat/mail windows alive simultaneously. It binds the
+observable DOM IDs, three tabs, eight list slots, four main actions, list
+scrollbar, chat/invite controls, write/read forms, and movable panel behavior.
+
+All user interaction is surfaced as a one-shot semantic `Action`; no network
+packet, `CUIWindowMgr` command number, or private callback is invented.
