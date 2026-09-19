@@ -1,0 +1,30 @@
+<rml>
+<head>
+    <title>Reconstructed Storage Keypad</title>
+    <meta name="mu-design-Menu-Size" content="310.001495 372.999298"/>
+    <meta name="mu-design-Menu-Reference" content="640 480"/>
+    <link type="text/rcss" href="../Common/common.rcss"/>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="storage_security.rcss"/>
+</head>
+<body class="storage-keypad">
+    <div id="menu" class="security-menu keypad-menu">
+        <div id="tfNumTitle" class="security-title">Vault PIN</div>
+        <input id="tfInput" class="mu-text-input security-input" type="password" readonly="readonly" maxlength="4"/>
+        <div id="taNumMent" class="security-prompt"/>
+        <div id="btnNum1" class="mu-button digit d1">1</div>
+        <div id="btnNum2" class="mu-button digit d2">2</div>
+        <div id="btnNum3" class="mu-button digit d3">3</div>
+        <div id="btnNum4" class="mu-button digit d4">4</div>
+        <div id="btnNum5" class="mu-button digit d5">5</div>
+        <div id="btnNum6" class="mu-button digit d6">6</div>
+        <div id="btnNum7" class="mu-button digit d7">7</div>
+        <div id="btnNum8" class="mu-button digit d8">8</div>
+        <div id="btnNum9" class="mu-button digit d9">9</div>
+        <div id="btnNum0" class="mu-button digit d0">0</div>
+        <div id="btnBackSpace" class="mu-button digit back">Back</div>
+        <div id="btnPassOk" class="mu-button security-action ok">OK</div>
+        <div id="btnPassCancel" class="mu-button security-action cancel">Cancel</div>
+    </div>
+</body>
+</rml>

@@ -19,6 +19,7 @@
 #include "UI/Modern/PC/Inventory/RmlPrivateStorePanel.h"
 #include "UI/Modern/PC/Inventory/RmlStoragePanel.h"
 #include "UI/Modern/PC/Inventory/RmlStorageExtensionPanel.h"
+#include "UI/Modern/PC/Inventory/RmlStorageSecurityPanel.h"
 #include "UI/Modern/PC/Login/RmlLoginPanel.h"
 #include "UI/Modern/PC/MuHelper/RmlMuHelperPanel.h"
 #include "UI/Modern/PC/Option/RmlOptionPanel.h"
@@ -56,6 +57,7 @@ public:
         tooltip_.Release();
         messageBox_.Release();
 
+        storageSecurity_.Release();
         storageExtension_.Release();
         storage_.Release();
         privateStore_.Release();
@@ -129,6 +131,7 @@ public:
         if (privateStore_.IsLoaded()) changed |= privateStore_.Update();
         if (storage_.IsLoaded()) changed |= storage_.Update();
         if (storageExtension_.IsLoaded()) changed |= storageExtension_.Update();
+        if (storageSecurity_.IsLoaded()) changed |= storageSecurity_.Update();
         if (muHelper_.IsLoaded()) changed |= muHelper_.Update();
         if (login_.IsLoaded()) changed |= login_.Update();
 
@@ -160,6 +163,7 @@ public:
     Inventory::RmlPrivateStorePanel privateStore_;
     Inventory::RmlStoragePanel storage_;
     Inventory::RmlStorageExtensionPanel storageExtension_;
+    Inventory::RmlStorageSecurityPanel storageSecurity_;
     Login::RmlLoginPanel login_;
     MuHelper::RmlMuHelperPanel muHelper_;
     Option::RmlOptionPanel option_;
@@ -230,6 +234,7 @@ MU_PC_UI_GETTER(InventoryExtension, inventoryExtension_, Inventory::RmlInventory
 MU_PC_UI_GETTER(PrivateStore, privateStore_, Inventory::RmlPrivateStorePanel)
 MU_PC_UI_GETTER(Storage, storage_, Inventory::RmlStoragePanel)
 MU_PC_UI_GETTER(StorageExtension, storageExtension_, Inventory::RmlStorageExtensionPanel)
+MU_PC_UI_GETTER(StorageSecurity, storageSecurity_, Inventory::RmlStorageSecurityPanel)
 MU_PC_UI_GETTER(Login, login_, Login::RmlLoginPanel)
 MU_PC_UI_GETTER(MuHelper, muHelper_, MuHelper::RmlMuHelperPanel)
 MU_PC_UI_GETTER(Option, option_, Option::RmlOptionPanel)

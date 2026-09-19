@@ -1921,3 +1921,21 @@ hidden instead of inferring a private boolean from mouse state.
 
 This remains a read-only bridge. Modern main-frame button actions are not yet
 forwarded into legacy window/game commands.
+
+
+### Storage keypad/password security flow
+
+The Debug basenames `storage_keypad.rml` and `storage_password.rml` map
+cleanly to the existing legacy `CNewUIKeyPadMsgBox` and password-input
+layouts. The legacy keypad defaults to a 4-digit input limit, maintains ten
+button positions with a randomized `m_iKeyPadMapping[]`, supports delete,
+and exposes OK/Cancel callbacks. Storage lock/unlock layouts then send the
+result through `SendUnlockVault`, `SendSetVaultPin`, or
+`SendRemoveVaultPin` depending on the higher-level flow.
+
+`RmlStorageSecurityPanel` reconstructs only the modal presentation and input
+contract. Its state accepts the ten-position digit mapping, applies the 4-digit
+limit, masks the displayed PIN, supports backspace and returns one-shot
+SubmitPin/SubmitPassword/Cancel intents. It never validates the account
+password and never sends vault packets; those responsibilities remain in the
+legacy message-box/network path.

@@ -1,0 +1,100 @@
+body {
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial;
+}
+
+.security-menu,
+.security-menu div,
+.security-menu input {
+    position: absolute;
+    box-sizing: border-box;
+}
+
+.security-menu {
+    background-color: #11151df2;
+    border-width: 1px;
+    border-color: #675f45;
+    pointer-events: auto;
+}
+
+.security-title {
+    left: 30px;
+    top: 25px;
+    right: 30px;
+    height: 25px;
+    line-height: 25px;
+    text-align: center;
+    color: #f2d88d;
+}
+
+.security-prompt {
+    left: 28px;
+    top: 62px;
+    right: 28px;
+    height: 42px;
+    text-align: center;
+    color: #ccc4ae;
+    white-space: normal;
+}
+
+.security-input {
+    left: 91px;
+    top: 108px;
+    width: 128px;
+    height: 24px;
+    text-align: center;
+}
+
+.digit {
+    width: 50px;
+    height: 42px;
+    line-height: 42px;
+    text-align: center;
+    background-color: #2c2b27;
+    border-width: 1px;
+    border-color: #615a47;
+    color: #e8dfc7;
+    pointer-events: auto;
+}
+
+.d1 { left: 62px; top: 150px; }
+.d2 { left: 130px; top: 150px; }
+.d3 { left: 198px; top: 150px; }
+.d4 { left: 62px; top: 198px; }
+.d5 { left: 130px; top: 198px; }
+.d6 { left: 198px; top: 198px; }
+.d7 { left: 62px; top: 246px; }
+.d8 { left: 130px; top: 246px; }
+.d9 { left: 198px; top: 246px; }
+.d0 { left: 130px; top: 294px; }
+.back { left: 198px; top: 294px; width: 65px; }
+
+.security-action {
+    bottom: 16px;
+    width: 84px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    pointer-events: auto;
+}
+
+.keypad-menu .security-action {
+    bottom: 10px;
+}
+
+.security-action.ok { left: 62px; }
+.security-action.cancel { right: 62px; }
+
+.password-menu .security-prompt {
+    top: 48px;
+}
+
+.password-input {
+    left: 58px;
+    top: 92px;
+    width: 190px;
+    height: 24px;
+}

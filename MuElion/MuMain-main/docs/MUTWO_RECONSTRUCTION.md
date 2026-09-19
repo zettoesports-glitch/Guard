@@ -270,3 +270,8 @@ and differential runtime tests succeed.
 - reconstructed `RmlStorageExtensionPanel` as the second 120-slot vault
   surface with recovered right-side initial placement and central-host
   lifecycle; global index offset and item movement remain legacy-owned
+
+- reconstructed `RmlStorageSecurityPanel` for storage keypad/password
+  documents with externally supplied randomized digit mapping, four-digit PIN,
+  masked input, backspace and submit/cancel intents; all validation/network
+  ownership remains in legacy vault message-box code
