@@ -361,3 +361,18 @@ void SEASON3B::CNewUIQuickCommandWindow::SetSelectedCharacterIndex(int iIndex)
 {
     m_iSelectedCharacterIndex = iIndex;
 }
+
+void SEASON3B::CNewUIQuickCommandWindow::BuildSnapshot(
+    QuickCommandSnapshot& snapshot) const
+{
+    snapshot = {};
+    snapshot.visible =
+        g_pNewUISystem &&
+        g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_QUICK_COMMAND);
+    snapshot.viewportWidth = WindowWidth;
+    snapshot.viewportHeight = WindowHeight;
+    snapshot.x = m_Pos.x;
+    snapshot.y = m_Pos.y;
+    snapshot.selectedCharacterIndex = m_iSelectedCharacterIndex;
+    snapshot.targetId = m_strID;
+}

@@ -12,6 +12,15 @@
 
 namespace SEASON3B
 {
+    struct WindowMenuSnapshot
+    {
+        bool visible = false;
+        int viewportWidth = 0;
+        int viewportHeight = 0;
+        int x = 0;
+        int y = 0;
+    };
+
     class CNewUIWindowMenu : public CNewUIObj
     {
     public:
@@ -53,6 +62,7 @@ namespace SEASON3B
 
         void OpenningProcess();
         void ClosingProcess();
+        void BuildSnapshot(WindowMenuSnapshot& snapshot) const;
 
     private:
         void LoadImages();

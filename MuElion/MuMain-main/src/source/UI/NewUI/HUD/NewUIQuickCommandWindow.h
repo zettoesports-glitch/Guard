@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "UI/NewUI/NewUIManager.h"
 #include "UI/NewUI/Dialogs/NewUIWindowMenu.h"
 #include "Render/Models/ZzzBMD.h"
@@ -13,6 +15,17 @@
 
 namespace SEASON3B
 {
+    struct QuickCommandSnapshot
+    {
+        bool visible = false;
+        int viewportWidth = 0;
+        int viewportHeight = 0;
+        int x = 0;
+        int y = 0;
+        int selectedCharacterIndex = -1;
+        std::wstring targetId;
+    };
+
     class CNewUIQuickCommandWindow : public CNewUIObj
     {
         enum IMAGE_LIST
@@ -49,6 +62,7 @@ namespace SEASON3B
         void CloseQuickCommand();
         void SetID(const wchar_t* strID);
         void SetSelectedCharacterIndex(int iIndex);
+        void BuildSnapshot(QuickCommandSnapshot& snapshot) const;
 
     private:
         void LoadImages();

@@ -293,3 +293,17 @@ void SEASON3B::CNewUIWindowMenu::UnloadImages()
     DeleteBitmap(IMAGE_WINDOW_MENU_ARROWL);
     DeleteBitmap(IMAGE_WINDOW_MENU_ARROWR);
 }
+
+
+void SEASON3B::CNewUIWindowMenu::BuildSnapshot(
+    WindowMenuSnapshot& snapshot) const
+{
+    snapshot = {};
+    snapshot.visible =
+        g_pNewUISystem &&
+        g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_WINDOW_MENU);
+    snapshot.viewportWidth = WindowWidth;
+    snapshot.viewportHeight = WindowHeight;
+    snapshot.x = m_Pos.x;
+    snapshot.y = m_Pos.y;
+}
