@@ -1,9 +1,50 @@
 <rml>
 <head>
+    <meta name="mu-design-Option-Width" content="390"/>
+    <meta name="mu-design-Option-Height" content="580"/>
     <title>Reconstructed Option</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="option.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-option-option">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+<div id="option-panel">
+    <div class="option-back"/>
+    <div id="title"/>
+    <div class="title-divider"/>
+
+    <input id="automatic-check" class="option-check automatic-check" type="checkbox"/>
+    <label id="automatic-label" class="row-label automatic-row" for="automatic-check"/>
+    <input id="whisper-check" class="option-check whisper-check" type="checkbox"/>
+    <label id="whisper-label" class="row-label whisper-row" for="whisper-check"/>
+    <input id="name-display-check" class="option-check name-display-check" type="checkbox"/>
+    <label id="name-display-label" class="row-label name-display-row" for="name-display-check"/>
+
+    <div id="sound-label" class="row-label sound-label"/>
+    <div class="volume-row sound-volume"><input id="sound-0" class="volume-speaker" type="radio" name="sound-volume" value="0"/><input id="sound-1" class="volume-cell" type="radio" name="sound-volume" value="1"/><input id="sound-2" class="volume-cell" type="radio" name="sound-volume" value="2"/><input id="sound-3" class="volume-cell" type="radio" name="sound-volume" value="3"/><input id="sound-4" class="volume-cell" type="radio" name="sound-volume" value="4"/><input id="sound-5" class="volume-cell" type="radio" name="sound-volume" value="5"/><input id="sound-6" class="volume-cell" type="radio" name="sound-volume" value="6"/><input id="sound-7" class="volume-cell" type="radio" name="sound-volume" value="7"/><input id="sound-8" class="volume-cell" type="radio" name="sound-volume" value="8"/><input id="sound-9" class="volume-cell" type="radio" name="sound-volume" value="9"/><input id="sound-10" class="volume-cell" type="radio" name="sound-volume" value="10"/></div>
+    <div id="music-label" class="row-label music-label"/>
+    <div class="volume-row music-volume"><input id="music-0" class="volume-speaker" type="radio" name="music-volume" value="0"/><input id="music-1" class="volume-cell" type="radio" name="music-volume" value="1"/><input id="music-2" class="volume-cell" type="radio" name="music-volume" value="2"/><input id="music-3" class="volume-cell" type="radio" name="music-volume" value="3"/><input id="music-4" class="volume-cell" type="radio" name="music-volume" value="4"/><input id="music-5" class="volume-cell" type="radio" name="music-volume" value="5"/><input id="music-6" class="volume-cell" type="radio" name="music-volume" value="6"/><input id="music-7" class="volume-cell" type="radio" name="music-volume" value="7"/><input id="music-8" class="volume-cell" type="radio" name="music-volume" value="8"/><input id="music-9" class="volume-cell" type="radio" name="music-volume" value="9"/><input id="music-10" class="volume-cell" type="radio" name="music-volume" value="10"/></div>
+
+    <input id="slide-check" class="option-check slide-check" type="checkbox"/>
+    <label id="slide-label" class="row-label slide-row" for="slide-check"/>
+
+    <div id="effect-label" class="row-label effect-label"/>
+    <div class="effect-row"><label class="effect-option"><input id="effect-0" class="effect-choice" type="radio" name="effect-level" value="0"/><span>5</span></label><label class="effect-option"><input id="effect-1" class="effect-choice" type="radio" name="effect-level" value="1"/><span>7</span></label><label class="effect-option"><input id="effect-2" class="effect-choice" type="radio" name="effect-level" value="2"/><span>9</span></label><label class="effect-option"><input id="effect-3" class="effect-choice" type="radio" name="effect-level" value="3"/><span>11</span></label><label class="effect-option"><input id="effect-4" class="effect-choice" type="radio" name="effect-level" value="4"/><span>13</span></label></div>
+
+    <input id="render-check" class="option-check render-check" type="checkbox"/>
+    <label id="render-label" class="row-label render-row" for="render-check"/>
+
+    <div id="font-label" class="row-label font-label"/>
+    <select id="font-select" class="option-select font-select"/>
+    <div id="language-label" class="row-label language-label"/>
+    <select id="language-select" class="option-select language-select"/>
+    <div id="resolution-label" class="row-label resolution-label"/>
+    <select id="resolution-select" class="option-select resolution-select"/>
+
+    <input id="windowed-check" class="option-check windowed-check" type="checkbox"/>
+    <label id="windowed-label" class="row-label windowed-row" for="windowed-check"/>
+
+    <div class="bottom-divider"/>
+    <button id="close-button" class="mu-button option-close"><span id="close-label"/></button>
+</div>
 </body>
 </rml>

@@ -218,3 +218,8 @@ and differential runtime tests succeed.
   panel/reference metadata, legacy-derived group/rank/column fallback geometry,
   drag/close/EXP controls and semantic upgrade requests while preserving
   master-skill eligibility/confirmation game-side
+
+- reconstructed `RmlOptionPanel` with checkbox/radio/select controls for
+  legacy and modern options, 0..10 volume meters, 0..4 effect level and typed
+  immediate-change actions while keeping GameConfig/SDL/audio/font side effects
+  outside RmlUi

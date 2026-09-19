@@ -1525,3 +1525,23 @@ category/step geometry and scaled into the recovered 925.9x711.9 panel.
 Clicking an enabled slot emits only `UpgradeSkill(skillId)`; the existing
 game-side master-skill system remains responsible for confirmation and packet
 submission.
+
+
+## RmlOptionPanel reconstruction
+
+The modern option document exposes a 390x580 panel and controls for automatic
+attack, whisper sound, name display, sound/music levels 0..10, slide help,
+effect level 0..4, render-all-effects, font, language, resolution, windowed
+mode, and close.
+
+The existing `CNewUIOptionWindow` confirms that most option changes are
+applied immediately rather than staged behind an Apply button. In particular,
+sound/music write live audio state and `GameConfig`; resolution/window mode
+flow through `MuApplyWindowResolution`; font changes reinitialize fonts; and
+language changes update the active localization.
+
+`RmlOptionPanel` therefore emits one typed action per user change instead of
+owning those side effects. Checkbox/radio controls carry boolean or integer
+values; font/language/resolution selects emit their selected index; Escape and
+the Close button emit Close. The game-side owner remains responsible for
+persisting config and applying SDL/audio/localization/font changes.
