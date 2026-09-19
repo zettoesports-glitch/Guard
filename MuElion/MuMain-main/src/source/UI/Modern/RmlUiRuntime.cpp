@@ -275,6 +275,31 @@ public:
         return executed && hidden;
     }
 
+    [[nodiscard]] bool ReleaseDocument(const char* path)
+    {
+        if (path == nullptr || *path == '\0')
+            return false;
+
+        std::scoped_lock lock(mutex_);
+        if (!initialized_ || !context_)
+            return false;
+
+        const auto existing = documents_.find(path);
+        if (existing == documents_.end() || existing->second == nullptr)
+            return false;
+
+        Rml::ElementDocument* document = existing->second;
+        documents_.erase(existing);
+
+        if (document == bootstrapDocument_)
+            bootstrapDocument_ = nullptr;
+
+        // ElementDocument::Close() delegates unloading to its owning context.
+        // Destruction itself is deferred by RmlUi until Context::Update().
+        document->Close();
+        return true;
+    }
+
     [[nodiscard]] Rml::ElementDocument* GetDocument(const char* path) noexcept
     {
         if (path == nullptr || *path == '\0')
@@ -384,6 +409,11 @@ bool RmlUiRuntime::ShowDocument(const char* path)
 bool RmlUiRuntime::HideDocument(const char* path)
 {
     return m_impl && m_impl->HideDocument(path);
+}
+
+bool RmlUiRuntime::ReleaseDocument(const char* path)
+{
+    return m_impl && m_impl->ReleaseDocument(path);
 }
 
 Rml::ElementDocument* RmlUiRuntime::GetDocument(const char* path) noexcept

@@ -56,6 +56,10 @@ public:
         const char* path, bool show = false);
     [[nodiscard]] bool ShowDocument(const char* path);
     [[nodiscard]] bool HideDocument(const char* path);
+    // Closes and removes a lazily loaded document. RmlUi defers the actual
+    // destruction until Context::Update(), so callers must discard pointers
+    // after this succeeds.
+    [[nodiscard]] bool ReleaseDocument(const char* path);
     [[nodiscard]] Rml::ElementDocument* GetDocument(const char* path) noexcept;
 
 private:

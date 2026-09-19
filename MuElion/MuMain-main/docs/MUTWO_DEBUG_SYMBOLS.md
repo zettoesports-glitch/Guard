@@ -761,3 +761,33 @@ stores the new integer at +0x2c, and applies the new class when nonzero.
 The reconstruction exposes this as `ConsumeSecondaryClicked()` and
 `SetIconFrame()`; these semantic names are not claimed to be the stripped
 private source identifiers.
+
+
+## RmlDocumentHost reconstruction
+
+The Debug executable preserves the exact types
+`UI::Modern::RmlDocumentHost`, nested `RmlDocumentHost::Impl`, and a
+concrete lambda type created inside `RmlDocumentHost::Impl::Release()`. That
+lambda is wrapped by `std::_Func_impl_no_alloc<..., void>`, providing strong
+evidence that release work is dispatched through the already recovered
+`RmlUiRuntime::Impl::Execute(std::function<void()>)` execution boundary.
+
+Private field names and the full host method inventory are not preserved, so
+the reconstruction does not claim an exact private layout. It implements the
+observable document lifecycle needed by the recovered panel architecture:
+
+- own a document path and non-owning `ElementDocument*`;
+- lazy load through `RmlUiRuntime`;
+- show/hide by path;
+- release on the runtime execution boundary;
+- discard the pointer immediately after release.
+
+RmlUi 6.3 confirms that `ElementDocument::Close()` unloads the document and
+defers actual destruction until the next `Context::Update()`. The runtime now
+adds `ReleaseDocument(path)`, erasing the host map entry before calling
+`Close()` so no stale pointer can be returned by later lookup.
+
+The lambda is deliberately located in the reconstructed
+`RmlDocumentHost::Impl::Release()`, matching the RTTI evidence. This is an
+architectural/behavioral reconstruction; unknown private identifiers and
+memory offsets are not invented.
