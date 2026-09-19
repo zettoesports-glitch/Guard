@@ -6,6 +6,7 @@
 #include "UI/Modern/PC/Character/RmlCharacterFramePanel.h"
 #include "Character/CharMakeWin.h"
 #include "UI/Legacy/UIMng.h"
+#include "UI/NewUI/NewUISystem.h"
 #include "UI/Modern/PC/Character/RmlPetFrameLayer.h"
 #include "UI/Modern/PC/Character/RmlPetInfoPanel.h"
 #include "UI/Modern/PC/Chat/RmlChatPanel.h"
