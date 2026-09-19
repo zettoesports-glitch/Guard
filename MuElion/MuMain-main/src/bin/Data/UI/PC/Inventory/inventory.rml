@@ -1,9 +1,122 @@
 <rml>
 <head>
+    <meta name="mu-design-Inventory-Size" content="327 639"/>
+    <meta name="mu-design-Inventory-Grid" content="60 370 26 26"/>
+    <meta name="mu-design-Inventory-Equipment0" content="28 147 52 78"/>
+    <meta name="mu-design-Inventory-Equipment1" content="247 147 52 78"/>
+    <meta name="mu-design-Inventory-Equipment2" content="137 85 52 52"/>
+    <meta name="mu-design-Inventory-Equipment3" content="138 147 52 78"/>
+    <meta name="mu-design-Inventory-Equipment4" content="138 235 52 52"/>
+    <meta name="mu-design-Inventory-Equipment5" content="28 235 52 52"/>
+    <meta name="mu-design-Inventory-Equipment6" content="247 235 52 52"/>
+    <meta name="mu-design-Inventory-Equipment7" content="210 85 89.000092 52.000397"/>
+    <meta name="mu-design-Inventory-Equipment8" content="28 85 52 52"/>
+    <meta name="mu-design-Inventory-Equipment9" content="92 104 32.999878 32.999878"/>
+    <meta name="mu-design-Inventory-Equipment10" content="93 254 32.999878 32.999878"/>
+    <meta name="mu-design-Inventory-Equipment11" content="202 254 32.999878 32.999878"/>
+    <meta name="mu-design-Inventory-Reference" content="640 480"/>
+    <meta name="mu-design-Inventory-InitialPosition" content="360 40"/>
+    <meta name="mu-design-Inventory-Button0" content="272 42 19 19"/>
+    <meta name="mu-design-Inventory-Button1" content="160 323 70 30"/>
+    <meta name="mu-design-Inventory-Button2" content="160 587 70 30"/>
+    <meta name="mu-design-Inventory-Button3" content="228 587 70 30"/>
+    <meta name="mu-design-Inventory-Button4" content="91 323 70 30"/>
+    <meta name="mu-design-Inventory-Button5" content="22 323 70 30"/>
     <title>Reconstructed Inventory</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="inventory.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-inventory-inventory">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="inventory">
+        <div id="inventory-background"></div>
+        <div id="tfTitle" class="inventory-label title">Inventory</div>
+        <div id="tfZen" class="inventory-label zen"></div>
+        <div id="btnDrag" class="inventory-drag"></div>
+        <div id="btnClose" class="mu-button close-button">X</div>
+        <div id="btnSocketOption" class="mu-button action-button socket">Socket</div>
+        <div id="btnSetOption" class="mu-button action-button set">Set</div>
+        <div id="btnRepair" class="mu-button action-button repair">Repair</div>
+        <div id="btnPrivateStore" class="mu-button action-button store">Store</div>
+        <div id="btnExtensionBag" class="mu-button action-button extension">Bag</div>
+        <div id="slot_weapon_right" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_weapon_left" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_helm" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_armor" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_pants" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_gloves" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_boots" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_wing" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_helper" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_amulet" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_ring_left" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_ring_right" class="mu-item-slot equipment-slot"></div>
+        <div id="slot_pentagram" class="mu-item-slot equipment-slot"></div>
+        <div id="inventory-grid">
+        <div id="isSlot0" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot1" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot2" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot3" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot4" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot5" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot6" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot7" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot8" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot9" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot10" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot11" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot12" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot13" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot14" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot15" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot16" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot17" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot18" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot19" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot20" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot21" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot22" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot23" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot24" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot25" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot26" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot27" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot28" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot29" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot30" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot31" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot32" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot33" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot34" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot35" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot36" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot37" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot38" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot39" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot40" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot41" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot42" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot43" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot44" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot45" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot46" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot47" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot48" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot49" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot50" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot51" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot52" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot53" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot54" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot55" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot56" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot57" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot58" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot59" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot60" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot61" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot62" class="mu-item-slot inventory-grid-slot"></div>
+        <div id="isSlot63" class="mu-item-slot inventory-grid-slot"></div>
+        </div>
+    </div>
 </body>
 </rml>

@@ -1,0 +1,99 @@
+body { margin: 0px; width: 100%; height: 100%; overflow: hidden; font-family: Arial; }
+#inventory, #inventory div { position: absolute; box-sizing: border-box; }
+#inventory { left: 360px; top: 40px; width: 327px; height: 639px; pointer-events: auto; }
+#inventory-background { left:0px; top:0px; width:327px; height:639px; background-color:#171a20f0; border-width:1px; border-color:#6b6048; pointer-events:none; }
+.inventory-label { color:#ddd2af; font-size:12px; line-height:18px; white-space:nowrap; overflow:hidden; pointer-events:none; }
+.title { left:60px; top:42px; width:190px; text-align:center; }
+.zen { left:60px; top:338px; width:205px; text-align:right; color:#f4cc64; }
+.inventory-drag { left:20px; top:25px; width:270px; height:50px; drag:drag; cursor:move; pointer-events:auto; }
+.mu-button { pointer-events:auto; border-width:1px; border-color:#665b43; background-color:#282c34; color:#d8d8d8; text-align:center; }
+.mu-button:hover { border-color:#9a8659; color:#fff0c0; }
+.close-button { left:272px; top:42px; width:19px; height:19px; line-height:19px; }
+.action-button { width:70px; height:30px; line-height:30px; font-size:10px; }
+.action-button.socket { left:160px; top:323px; }
+.action-button.set { left:160px; top:587px; }
+.action-button.repair { left:228px; top:587px; }
+.action-button.store { left:91px; top:323px; }
+.action-button.extension { left:22px; top:323px; }
+.mu-item-slot { pointer-events:auto; border-width:1px; border-color:#4e493e; background-color:#11151b; }
+.mu-item-slot:hover { border-color:#b39a63; }
+.mu-item-slot.disabled { opacity:.45; pointer-events:none; }
+#inventory-grid { left:60px; top:370px; width:208px; height:208px; pointer-events:none; }
+.inventory-grid-slot { width:26px; height:26px; }
+#isSlot0 { left:0px; top:0px; }
+#isSlot1 { left:26px; top:0px; }
+#isSlot2 { left:52px; top:0px; }
+#isSlot3 { left:78px; top:0px; }
+#isSlot4 { left:104px; top:0px; }
+#isSlot5 { left:130px; top:0px; }
+#isSlot6 { left:156px; top:0px; }
+#isSlot7 { left:182px; top:0px; }
+#isSlot8 { left:0px; top:26px; }
+#isSlot9 { left:26px; top:26px; }
+#isSlot10 { left:52px; top:26px; }
+#isSlot11 { left:78px; top:26px; }
+#isSlot12 { left:104px; top:26px; }
+#isSlot13 { left:130px; top:26px; }
+#isSlot14 { left:156px; top:26px; }
+#isSlot15 { left:182px; top:26px; }
+#isSlot16 { left:0px; top:52px; }
+#isSlot17 { left:26px; top:52px; }
+#isSlot18 { left:52px; top:52px; }
+#isSlot19 { left:78px; top:52px; }
+#isSlot20 { left:104px; top:52px; }
+#isSlot21 { left:130px; top:52px; }
+#isSlot22 { left:156px; top:52px; }
+#isSlot23 { left:182px; top:52px; }
+#isSlot24 { left:0px; top:78px; }
+#isSlot25 { left:26px; top:78px; }
+#isSlot26 { left:52px; top:78px; }
+#isSlot27 { left:78px; top:78px; }
+#isSlot28 { left:104px; top:78px; }
+#isSlot29 { left:130px; top:78px; }
+#isSlot30 { left:156px; top:78px; }
+#isSlot31 { left:182px; top:78px; }
+#isSlot32 { left:0px; top:104px; }
+#isSlot33 { left:26px; top:104px; }
+#isSlot34 { left:52px; top:104px; }
+#isSlot35 { left:78px; top:104px; }
+#isSlot36 { left:104px; top:104px; }
+#isSlot37 { left:130px; top:104px; }
+#isSlot38 { left:156px; top:104px; }
+#isSlot39 { left:182px; top:104px; }
+#isSlot40 { left:0px; top:130px; }
+#isSlot41 { left:26px; top:130px; }
+#isSlot42 { left:52px; top:130px; }
+#isSlot43 { left:78px; top:130px; }
+#isSlot44 { left:104px; top:130px; }
+#isSlot45 { left:130px; top:130px; }
+#isSlot46 { left:156px; top:130px; }
+#isSlot47 { left:182px; top:130px; }
+#isSlot48 { left:0px; top:156px; }
+#isSlot49 { left:26px; top:156px; }
+#isSlot50 { left:52px; top:156px; }
+#isSlot51 { left:78px; top:156px; }
+#isSlot52 { left:104px; top:156px; }
+#isSlot53 { left:130px; top:156px; }
+#isSlot54 { left:156px; top:156px; }
+#isSlot55 { left:182px; top:156px; }
+#isSlot56 { left:0px; top:182px; }
+#isSlot57 { left:26px; top:182px; }
+#isSlot58 { left:52px; top:182px; }
+#isSlot59 { left:78px; top:182px; }
+#isSlot60 { left:104px; top:182px; }
+#isSlot61 { left:130px; top:182px; }
+#isSlot62 { left:156px; top:182px; }
+#isSlot63 { left:182px; top:182px; }
+#slot_weapon_right { left:28px; top:147px; width:52px; height:78px; }
+#slot_weapon_left { left:247px; top:147px; width:52px; height:78px; }
+#slot_helm { left:137px; top:85px; width:52px; height:52px; }
+#slot_armor { left:138px; top:147px; width:52px; height:78px; }
+#slot_pants { left:138px; top:235px; width:52px; height:52px; }
+#slot_gloves { left:28px; top:235px; width:52px; height:52px; }
+#slot_boots { left:247px; top:235px; width:52px; height:52px; }
+#slot_wing { left:210px; top:85px; width:89px; height:52px; }
+#slot_helper { left:28px; top:85px; width:52px; height:52px; }
+#slot_amulet { left:92px; top:104px; width:33px; height:33px; }
+#slot_ring_left { left:93px; top:254px; width:33px; height:33px; }
+#slot_ring_right { left:202px; top:254px; width:33px; height:33px; }
+#slot_pentagram { left:108px; top:302px; width:52px; height:52px; }

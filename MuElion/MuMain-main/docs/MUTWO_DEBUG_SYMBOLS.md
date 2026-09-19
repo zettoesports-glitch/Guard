@@ -1560,3 +1560,53 @@ behavioral classes used throughout the reconstructed panels: buttons,
 checkbox rows, meter cells, scrollbars, selects, text inputs, overflow labels,
 window/divider bases and text areas. It intentionally does not copy the
 upstream generated skin/decorator catalog.
+
+
+## Inventory / expanded inventory presentation reconstruction
+
+The x64 Debug executable preserves the exact document paths
+`Data/UI/PC/Inventory/inventory.rml` and
+`Data/UI/PC/Inventory/inventory_extension.rml` together with the complete
+design-key contract below:
+
+```text
+Inventory-Size
+Inventory-Grid
+Inventory-Equipment0..11
+Inventory-Reference
+Inventory-InitialPosition
+Inventory-Button0..5
+
+Extension-Width
+Extension-Heights
+Extension-GridX
+Extension-GridY
+Extension-PitchX
+Extension-PitchY
+Extension-Reference
+Extension-InitialPosition
+```
+
+The Debug string inventory also preserves the observable DOM/semantic names
+`inventory`, `inventory-extension-`, equipment/grid terminology and the
+expanded-inventory user-facing strings.
+
+No RTTI name for a dedicated modern Inventory controller is present in the
+current Debug evidence. Therefore the local type name
+`UI::Modern::PC::Inventory::RmlInventoryPanel` is explicitly a semantic
+reconstruction name, not a claim about the original private source identifier.
+
+The reconstructed controller keeps the existing legacy inventory as source of
+truth. It owns only RmlUi presentation state:
+
+- lazy hosts for base and expanded inventory documents;
+- recovered initial positions and dimensions;
+- six action buttons;
+- 64 base inventory slots;
+- 13 named equipment/pentagram presentation slots;
+- 128 expanded slots (32 per unlocked bag, up to four bags);
+- drag controllers and one-shot primary/secondary slot requests.
+
+Item ownership, validation, equip/use rules, repair logic, private-store rules
+and network requests remain in the legacy inventory system until their exact
+modern ownership/callback graph is recovered.

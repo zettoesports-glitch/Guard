@@ -185,7 +185,7 @@ a license file, so UI documents are reconstructed independently.
       recovered
 - [ ] Replace the remaining neutral RML skeletons screen-by-screen with
       behaviorally reconstructed UI from observable behavior and the existing
-      MuMain UI (Chat, Main Frame, Top Menu, Character/Pet panels and Command Window are now materialized functionally)
+      MuMain UI (Inventory + Expanded Inventory are now materialized) (Chat, Main Frame, Top Menu, Character/Pet panels and Command Window are now materialized functionally)
 
 ## Current confidence boundary
 
@@ -220,6 +220,9 @@ and differential runtime tests succeed.
   master-skill eligibility/confirmation game-side
 
 - reconstructed `RmlOptionPanel` with checkbox/radio/select controls for
+- reconstructed Inventory/Expanded Inventory presentation with Debug-derived
+  dimensions, grid/equipment contracts, 64 base slots, 128 extension slots,
+  drag/button controls and one-shot requests; legacy item ownership preserved
   legacy and modern options, 0..10 volume meters, 0..4 effect level and typed
   immediate-change actions while keeping GameConfig/SDL/audio/font side effects
   outside RmlUi
