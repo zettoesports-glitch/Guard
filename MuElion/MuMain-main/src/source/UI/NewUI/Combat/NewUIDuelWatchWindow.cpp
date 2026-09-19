@@ -263,3 +263,29 @@ bool CNewUIDuelWatchWindow::BtnProcess()
 
     return false;
 }
+
+
+void SEASON3B::CNewUIDuelWatchWindow::BuildSnapshot(
+    DuelWatchSnapshot& snapshot) const
+{
+    snapshot = {};
+    snapshot.visible =
+        g_pNewUISystem &&
+        g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_DUELWATCH);
+    snapshot.viewportWidth = WindowWidth;
+    snapshot.viewportHeight = WindowHeight;
+    snapshot.x = m_Pos.x;
+    snapshot.y = m_Pos.y;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        auto& out = snapshot.channels[static_cast<std::size_t>(i)];
+        out.enabled = g_DuelMgr.IsDuelChannelEnabled(i) != FALSE;
+        out.joinable = g_DuelMgr.IsDuelChannelJoinable(i) != FALSE;
+        if (out.enabled)
+        {
+            out.user1 = g_DuelMgr.GetDuelChannelUserID1(i);
+            out.user2 = g_DuelMgr.GetDuelChannelUserID2(i);
+        }
+    }
+}

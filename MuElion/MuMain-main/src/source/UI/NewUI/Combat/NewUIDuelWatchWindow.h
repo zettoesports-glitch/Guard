@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <array>
+#include <string>
+
 #include "UI/NewUI/NewUIBase.h"
 #include "UI/NewUI/Widgets/NewUIButton.h"
 #include "UI/NewUI/Dialogs/NewUIMessageBox.h"
@@ -11,6 +14,24 @@
 
 namespace SEASON3B
 {
+    struct DuelWatchChannelSnapshot
+    {
+        bool enabled = false;
+        bool joinable = false;
+        std::wstring user1;
+        std::wstring user2;
+    };
+
+    struct DuelWatchSnapshot
+    {
+        bool visible = false;
+        int viewportWidth = 0;
+        int viewportHeight = 0;
+        int x = 0;
+        int y = 0;
+        std::array<DuelWatchChannelSnapshot, 4> channels{};
+    };
+
     class CNewUIDuelWatchWindow : public CNewUIObj
     {
     public:
@@ -52,6 +73,7 @@ namespace SEASON3B
 
         void OpeningProcess();
         void ClosingProcess();
+        void BuildSnapshot(DuelWatchSnapshot& snapshot) const;
 
         float GetLayerDepth();	//. 5.0f
 
