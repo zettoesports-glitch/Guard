@@ -10,6 +10,7 @@ namespace CfgSections
     inline constexpr wchar_t CfgSectionConnectionSettings[] = L"CONNECTION SETTINGS";
     inline constexpr wchar_t CfgSectionCamera[] = L"Camera";
     inline constexpr wchar_t CfgSectionRender[] = L"Render";
+    inline constexpr wchar_t CfgSectionPerformance[] = L"Performance";
 }
 
 namespace CfgKeys
@@ -37,6 +38,8 @@ namespace CfgKeys
     // UI
     inline constexpr wchar_t CfgKeyUILocale[] = L"Locale";
     inline constexpr wchar_t CfgKeyFont[]     = L"Font";
+    inline constexpr wchar_t CfgKeyRmlScale[] = L"RmlScale";
+    inline constexpr wchar_t CfgKeyControlUIScale[] = L"ControlUIScale";
 
     // Camera
     inline constexpr wchar_t CfgKeyZoom[] = L"Zoom";
@@ -46,6 +49,13 @@ namespace CfgKeys
     inline constexpr wchar_t CfgKeyCoreProfile[] = L"CoreProfile";
     inline constexpr wchar_t CfgKeySortParticleDraws[] = L"SortParticleDraws";
     inline constexpr wchar_t CfgKeyVSync[] = L"VSync";
+
+    // Performance contract from VDraven/MuClient.
+    inline constexpr wchar_t CfgKeyRendererBackend[] = L"RendererBackend";
+    inline constexpr wchar_t CfgKeyRenderPipeline[] = L"RenderPipeline";
+    inline constexpr wchar_t CfgKeyFpsLimit[] = L"FpsLimit";
+    inline constexpr wchar_t CfgKeySessionWorkerCount[] = L"SessionWorkerCount";
+    inline constexpr wchar_t CfgKeySharedAssetIdleSeconds[] = L"SharedAssetIdleSeconds";
 }
 
 namespace CfgDefaults
@@ -81,5 +91,14 @@ namespace CfgDefaults
 
     // Opt-in until real effects have been visually checked on target hardware.
     inline constexpr bool CfgDefaultSortParticleDraws = false;
-    inline constexpr bool CfgDefaultVSync = true;
+
+    // MuTwo/MuClient defaults (September 2026 public runtime package).
+    inline constexpr wchar_t CfgDefaultRendererBackend[] = L"auto";
+    inline constexpr bool CfgDefaultVSync = false;
+    inline constexpr int CfgDefaultRenderPipeline = 1;
+    inline constexpr int CfgDefaultFpsLimit = 0; // 0 = unlimited
+    inline constexpr int CfgDefaultSessionWorkerCount = 8;
+    inline constexpr int CfgDefaultSharedAssetIdleSeconds = 1;
+    inline constexpr int CfgDefaultRmlScale = 160;
+    inline constexpr int CfgDefaultControlUIScale = 120;
 }

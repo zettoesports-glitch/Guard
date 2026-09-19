@@ -24,6 +24,7 @@
 #include "Render/Textures/ZzzOpenglUtil.h"
 #include "Render/Textures/ZzzTexture.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/session/SessionRender.h"
 #include "Engine/Object/ZzzOpenData.h"
 #include "Scenes/SceneCore.h"
 #include "Scenes/SceneManager.h"
@@ -172,6 +173,9 @@ void CheckHack()
 
 static void ShutdownRendererWindow()
 {
+    // Session workers must stop before renderer resources disappear.
+    mu::session::GetSessionRender().Shutdown();
+
     // Release the bridged GDI DC obtained from the SDL window.
     if (g_hDC)
     {
@@ -260,27 +264,12 @@ static void ConsumeDiagnosticFrameCapture()
                         static_cast<unsigned long long>(capture.targetFrame), pixels.width, pixels.height, path);
 }
 
-// Monitor refresh rate (Hz) for the display the window is on, via SDL instead
-// of the Win32 GetDeviceCaps(VREFRESH) (issue #442). Falls back to 60.
+// MuTwo performance contract: FpsLimit=0 means uncapped. SetTargetFps already
+// uses a negative target to represent the uncapped/present-driven path.
 int GetFPSLimit()
 {
-    constexpr int DEFAULT_REFRESH_HZ = 60;
-    if (g_sdlWindow)
-    {
-        // Before the window is mapped to a display, SDL_GetDisplayForWindow
-        // returns 0; fall back to the primary display so a high-refresh monitor
-        // isn't capped at the default 60 Hz.
-        SDL_DisplayID displayID = SDL_GetDisplayForWindow(g_sdlWindow);
-        if (displayID == 0)
-            displayID = SDL_GetPrimaryDisplay();
-        if (displayID != 0)
-        {
-            const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(displayID);
-            if (mode && mode->refresh_rate > 0.0f)
-                return static_cast<int>(mode->refresh_rate + 0.5f);
-        }
-    }
-    return DEFAULT_REFRESH_HZ;
+    const int configuredLimit = GameConfig::GetInstance().GetFpsLimit();
+    return configuredLimit <= 0 ? -1 : configuredLimit;
 }
 
 namespace
@@ -1518,9 +1507,14 @@ MSG MainLoop()
 
                 RequestDiagnosticFrameCapture();
                 ApplyPendingVSyncPreference();
+
+                auto& sessionRender = mu::session::GetSessionRender();
+                sessionRender.BeginFrame();
                 mu::GetRenderer().BeginFrame();
                 RenderScene(g_hDC);
                 mu::GetRenderer().EndFrame();
+                sessionRender.EndFrame();
+
                 ConsumeDiagnosticFrameCapture();
             }
         }
@@ -2023,6 +2017,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     OpenglWindowHeight = WindowHeight;
 
     const std::string selectedFontFamily = WideToUtf8(GameConfig::GetInstance().GetFontSelection());
+    const std::string rendererBackend = WideToUtf8(GameConfig::GetInstance().GetRendererBackend());
+    if (!rendererBackend.empty() && rendererBackend != "auto")
+    {
+        // SDL 3.2+ GPU hint. The public MuClient config uses "vulkan" and
+        // "direct3d12"; "auto" intentionally leaves SDL's normal selection.
+        SDL_SetHint("SDL_GPU_DRIVER", rendererBackend.c_str());
+    }
+
     const FontSizes initialFontSizes = CalculateFontSizes();
     if (!mu::InitSDLGpuRenderer(g_sdlWindow, selectedFontFamily, static_cast<float>(initialFontSizes.normal),
                                 static_cast<float>(initialFontSizes.big),
@@ -2034,6 +2036,16 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
                    MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
+
+    mu::session::GetSessionRender().Configure(
+        GameConfig::GetInstance().GetRenderPipelineEnabled(),
+        static_cast<std::size_t>(GameConfig::GetInstance().GetSessionWorkerCount()));
+    g_ErrorReport.Write(L"> Renderer backend requested: %hs; active: %hs.\r\n",
+                        rendererBackend.c_str(), mu::GetRenderer().GetGPUDriverName());
+    g_ErrorReport.Write(L"> Render pipeline: %d; session workers: %d; FPS limit: %d.\r\n",
+                        GameConfig::GetInstance().GetRenderPipelineEnabled() ? 1 : 0,
+                        GameConfig::GetInstance().GetSessionWorkerCount(),
+                        GameConfig::GetInstance().GetFpsLimit());
 
 #ifdef _WIN32
     // Bridge SDL's native handles so the remaining Win32 code (IME, DirectSound,

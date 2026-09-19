@@ -56,6 +56,10 @@ void GameConfig::Load()
     using namespace CfgKeys;
     using namespace CfgDefaults;
 
+    const auto clampInt = [](int value, int minimum, int maximum) {
+        return value < minimum ? minimum : (value > maximum ? maximum : value);
+    };
+
     m_windowWidth  = ReadInt(CfgSectionWindow, CfgKeyWidth, CfgDefaultWindowWidth);
     m_windowHeight = ReadInt(CfgSectionWindow, CfgKeyHeight, CfgDefaultWindowHeight);
     m_windowMode   = ReadBool(CfgSectionWindow, CfgKeyWindowed, CfgDefaultWindowed);
@@ -79,10 +83,34 @@ void GameConfig::Load()
 
     m_uiLocale = ReadString(CfgSectionUI, CfgKeyUILocale, CfgDefaultUILocale);
     m_fontSelection = ReadString(CfgSectionUI, CfgKeyFont, CfgDefaultFont);
+    m_rmlScale = clampInt(ReadInt(CfgSectionUI, CfgKeyRmlScale, CfgDefaultRmlScale), 100, 200);
+    m_controlUIScale =
+        clampInt(ReadInt(CfgSectionUI, CfgKeyControlUIScale, CfgDefaultControlUIScale), 100, 200);
 
     m_zoom = ReadInt(CfgSectionCamera, CfgKeyZoom, CfgDefaultZoom);
     m_sortParticleDraws = ReadBool(CfgSectionRender, CfgKeySortParticleDraws, CfgDefaultSortParticleDraws);
-    m_vsyncEnabled = ReadBool(CfgSectionRender, CfgKeyVSync, CfgDefaultVSync);
+
+    // Keep compatibility with older MuMain configs that stored VSync in [Render].
+    const bool legacyVSync = ReadBool(CfgSectionRender, CfgKeyVSync, CfgDefaultVSync);
+    m_vsyncEnabled = ReadBool(CfgSectionPerformance, CfgKeyVSync, legacyVSync);
+
+    m_rendererBackend = ReadString(CfgSectionPerformance, CfgKeyRendererBackend, CfgDefaultRendererBackend);
+    if (m_rendererBackend != L"auto" && m_rendererBackend != L"vulkan" &&
+        m_rendererBackend != L"direct3d12")
+    {
+        m_rendererBackend = CfgDefaultRendererBackend;
+    }
+
+    m_renderPipeline = clampInt(ReadInt(CfgSectionPerformance, CfgKeyRenderPipeline,
+                                        CfgDefaultRenderPipeline),
+                                0, 1);
+    m_fpsLimit = clampInt(ReadInt(CfgSectionPerformance, CfgKeyFpsLimit, CfgDefaultFpsLimit), 0, 1000);
+    m_sessionWorkerCount =
+        clampInt(ReadInt(CfgSectionPerformance, CfgKeySessionWorkerCount, CfgDefaultSessionWorkerCount), 2, 64);
+    m_sharedAssetIdleSeconds =
+        clampInt(ReadInt(CfgSectionPerformance, CfgKeySharedAssetIdleSeconds,
+                         CfgDefaultSharedAssetIdleSeconds),
+                 0, 3600);
 
     // Strip keys/sections we used to write but no longer use, so user config
     // files don't accumulate orphans. Append one line per retired key — no
@@ -96,6 +124,9 @@ void GameConfig::Load()
     RemoveObsoleteKey(CfgSectionLogin,    L"TestVersion");    // launcher metadata, never read by client
     RemoveObsoleteSection(CfgSectionGraphics);                // empty after RenderTextType + ColorDepth removal
     RemoveObsoleteSection(L"PARTITION");                      // launcher metadata, never read by client
+
+    // VSync moved to [Performance] in the reconstructed MuTwo contract.
+    RemoveObsoleteKey(CfgSectionRender, CfgKeyVSync);
 }
 
 void GameConfig::Save()
@@ -124,9 +155,17 @@ void GameConfig::Save()
 
     WriteString(CfgSectionUI, CfgKeyUILocale, m_uiLocale);
     WriteString(CfgSectionUI, CfgKeyFont, m_fontSelection);
+    WriteInt(CfgSectionUI, CfgKeyRmlScale, m_rmlScale);
+    WriteInt(CfgSectionUI, CfgKeyControlUIScale, m_controlUIScale);
 
     WriteInt(CfgSectionCamera, CfgKeyZoom, m_zoom);
-    WriteBool(CfgSectionRender, CfgKeyVSync, m_vsyncEnabled);
+
+    WriteString(CfgSectionPerformance, CfgKeyRendererBackend, m_rendererBackend);
+    WriteBool(CfgSectionPerformance, CfgKeyVSync, m_vsyncEnabled);
+    WriteInt(CfgSectionPerformance, CfgKeyRenderPipeline, m_renderPipeline);
+    WriteInt(CfgSectionPerformance, CfgKeyFpsLimit, m_fpsLimit);
+    WriteInt(CfgSectionPerformance, CfgKeySessionWorkerCount, m_sessionWorkerCount);
+    WriteInt(CfgSectionPerformance, CfgKeySharedAssetIdleSeconds, m_sharedAssetIdleSeconds);
 }
 
 std::vector<std::wstring> GameConfig::ReadStringList(const wchar_t* section, const wchar_t* keyPrefix)

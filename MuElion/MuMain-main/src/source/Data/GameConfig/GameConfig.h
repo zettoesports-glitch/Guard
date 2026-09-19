@@ -87,10 +87,20 @@ public:
     int GetZoom() const { return m_zoom; }
     void SetZoom(int zoom);
 
-    // Render
+    // Render / performance
     bool GetSortParticleDraws() const { return m_sortParticleDraws; }
     bool GetVSyncEnabled() const { return m_vsyncEnabled; }
     void SetVSyncEnabled(bool enabled);
+
+    std::wstring GetRendererBackend() const { return m_rendererBackend; }
+    bool GetRenderPipelineEnabled() const { return m_renderPipeline != 0; }
+    int GetFpsLimit() const { return m_fpsLimit; }
+    int GetSessionWorkerCount() const { return m_sessionWorkerCount; }
+    int GetSharedAssetIdleSeconds() const { return m_sharedAssetIdleSeconds; }
+
+    // Modern UI scaling contract recovered from the MuTwo/MuClient runtime.
+    int GetRmlScale() const { return m_rmlScale; }
+    int GetControlUIScale() const { return m_controlUIScale; }
 
     // Helpers
     static std::wstring BinaryToHex(const BYTE* data, DWORD size);
@@ -131,6 +141,14 @@ private:
     int m_zoom;
     bool m_sortParticleDraws;
     bool m_vsyncEnabled;
+
+    std::wstring m_rendererBackend;
+    int m_renderPipeline;
+    int m_fpsLimit;
+    int m_sessionWorkerCount;
+    int m_sharedAssetIdleSeconds;
+    int m_rmlScale;
+    int m_controlUIScale;
 
     int ReadInt(const wchar_t* section, const wchar_t* key, int defaultValue);
     void WriteInt(const wchar_t* section, const wchar_t* key, int value);
