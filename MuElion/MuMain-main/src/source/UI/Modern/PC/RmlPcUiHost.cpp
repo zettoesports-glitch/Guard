@@ -14,6 +14,7 @@
 #include "UI/Modern/PC/HUD/RmlMoveCommandPanel.h"
 #include "UI/Modern/PC/HUD/RmlTopMenuLayer.h"
 #include "UI/Modern/PC/Inventory/RmlInventoryPanel.h"
+#include "UI/Modern/PC/Inventory/RmlInventoryExtensionPanel.h"
 #include "UI/Modern/PC/Inventory/RmlPrivateStorePanel.h"
 #include "UI/Modern/PC/Login/RmlLoginPanel.h"
 #include "UI/Modern/PC/MuHelper/RmlMuHelperPanel.h"
@@ -53,6 +54,7 @@ public:
         messageBox_.Release();
 
         privateStore_.Release();
+        inventoryExtension_.Release();
         inventory_.Release();
         muHelper_.Release();
         option_.Release();
@@ -114,6 +116,7 @@ public:
         if (systemMenu_.IsLoaded()) changed |= systemMenu_.Update();
 
         if (inventory_.IsLoaded()) changed |= inventory_.Update();
+        if (inventoryExtension_.IsLoaded()) changed |= inventoryExtension_.Update();
         if (privateStore_.IsLoaded()) changed |= privateStore_.Update();
         if (muHelper_.IsLoaded()) changed |= muHelper_.Update();
         if (login_.IsLoaded()) changed |= login_.Update();
@@ -141,6 +144,7 @@ public:
     HUD::RmlMoveCommandPanel moveCommand_;
     HUD::RmlTopMenuLayer topMenu_;
     Inventory::RmlInventoryPanel inventory_;
+    Inventory::RmlInventoryExtensionPanel inventoryExtension_;
     Inventory::RmlPrivateStorePanel privateStore_;
     Login::RmlLoginPanel login_;
     MuHelper::RmlMuHelperPanel muHelper_;
@@ -208,6 +212,7 @@ MU_PC_UI_GETTER(MasterTree, masterTree_, HUD::RmlMasterTreePanel)
 MU_PC_UI_GETTER(MoveCommand, moveCommand_, HUD::RmlMoveCommandPanel)
 MU_PC_UI_GETTER(TopMenu, topMenu_, HUD::RmlTopMenuLayer)
 MU_PC_UI_GETTER(Inventory, inventory_, Inventory::RmlInventoryPanel)
+MU_PC_UI_GETTER(InventoryExtension, inventoryExtension_, Inventory::RmlInventoryExtensionPanel)
 MU_PC_UI_GETTER(PrivateStore, privateStore_, Inventory::RmlPrivateStorePanel)
 MU_PC_UI_GETTER(Login, login_, Login::RmlLoginPanel)
 MU_PC_UI_GETTER(MuHelper, muHelper_, MuHelper::RmlMuHelperPanel)

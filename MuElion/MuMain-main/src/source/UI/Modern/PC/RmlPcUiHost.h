@@ -29,6 +29,7 @@ class RmlTopMenuLayer;
 namespace Inventory
 {
 class RmlInventoryPanel;
+class RmlInventoryExtensionPanel;
 class RmlPrivateStorePanel;
 }
 namespace Login { class RmlLoginPanel; }
@@ -67,6 +68,7 @@ public:
     [[nodiscard]] HUD::RmlMoveCommandPanel& MoveCommand() noexcept;
     [[nodiscard]] HUD::RmlTopMenuLayer& TopMenu() noexcept;
     [[nodiscard]] Inventory::RmlInventoryPanel& Inventory() noexcept;
+    [[nodiscard]] Inventory::RmlInventoryExtensionPanel& InventoryExtension() noexcept;
     [[nodiscard]] Inventory::RmlPrivateStorePanel& PrivateStore() noexcept;
     [[nodiscard]] Login::RmlLoginPanel& Login() noexcept;
     [[nodiscard]] MuHelper::RmlMuHelperPanel& MuHelper() noexcept;
