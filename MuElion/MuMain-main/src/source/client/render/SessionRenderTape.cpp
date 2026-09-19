@@ -94,6 +94,22 @@ bool ReplayDraw(const RenderTapeDraw& draw) noexcept
     const std::uint32_t textureId = state.textureEnabled ? draw.textureId : 0u;
     renderer.BindTexture(static_cast<int>(textureId));
 
+    if (draw.screenSpace2D)
+    {
+        std::vector<mu::Vertex2D> vertices2D;
+        vertices2D.reserve(draw.vertices.size());
+        for (const auto& vertex : draw.vertices)
+        {
+            vertices2D.push_back({vertex.position[0], vertex.position[1],
+                                  vertex.texCoord[0], vertex.texCoord[1],
+                                  PackColor(vertex.color)});
+        }
+        if (vertices2D.size() % 4 != 0)
+            return false;
+        renderer.RenderQuad2D(vertices2D, textureId);
+        return true;
+    }
+
     std::vector<mu::Vertex3D> vertices;
     vertices.reserve(draw.vertices.size());
     for (const auto& vertex : draw.vertices)

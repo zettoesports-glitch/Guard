@@ -87,6 +87,7 @@ struct RenderTapeState
 struct RenderTapeDraw
 {
     LegacyPrimitive primitive = LegacyPrimitive::Triangles;
+    bool screenSpace2D = false;
     std::uint32_t textureId = 0;
     RenderTapeState state{};
     std::vector<RenderTapeVertex> vertices;
