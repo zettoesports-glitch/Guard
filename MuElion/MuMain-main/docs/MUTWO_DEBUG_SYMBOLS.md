@@ -1872,3 +1872,17 @@ The reconstructed `RmlStoragePanel` therefore owns only presentation state:
 one-shot close/deposit/withdraw/lock/extend/Zen-info/slot actions. It is owned
 by the central `RmlPcUiHost` but remains unloaded by default so the legacy
 storage stays the active surface until explicitly bridged.
+
+
+### Expanded storage presentation
+
+The legacy `CNewUIStorageInventoryExt` creates a second vault
+`CNewUIInventoryCtrl` with the same 8x15 geometry and an index offset of
+`MAX_SHOP_INVENTORY`. The public observable `storage_extension.rml`
+reuses the same `Panel-Size`, `Panel-Grids`, and `Panel-Reference`
+contract, but starts at `Panel-Initial = 360 40`.
+
+`RmlStorageExtensionPanel` mirrors the second 120-slot presentation and emits
+only close/exit/primary/secondary-slot intents. The global vault index offset,
+auto-move and request packets remain in `CNewUIStorageInventoryExt` and the
+main storage controller.

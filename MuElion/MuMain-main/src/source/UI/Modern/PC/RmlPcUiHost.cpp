@@ -17,6 +17,7 @@
 #include "UI/Modern/PC/Inventory/RmlInventoryExtensionPanel.h"
 #include "UI/Modern/PC/Inventory/RmlPrivateStorePanel.h"
 #include "UI/Modern/PC/Inventory/RmlStoragePanel.h"
+#include "UI/Modern/PC/Inventory/RmlStorageExtensionPanel.h"
 #include "UI/Modern/PC/Login/RmlLoginPanel.h"
 #include "UI/Modern/PC/MuHelper/RmlMuHelperPanel.h"
 #include "UI/Modern/PC/Option/RmlOptionPanel.h"
@@ -54,6 +55,7 @@ public:
         tooltip_.Release();
         messageBox_.Release();
 
+        storageExtension_.Release();
         storage_.Release();
         privateStore_.Release();
         inventoryExtension_.Release();
@@ -121,6 +123,7 @@ public:
         if (inventoryExtension_.IsLoaded()) changed |= inventoryExtension_.Update();
         if (privateStore_.IsLoaded()) changed |= privateStore_.Update();
         if (storage_.IsLoaded()) changed |= storage_.Update();
+        if (storageExtension_.IsLoaded()) changed |= storageExtension_.Update();
         if (muHelper_.IsLoaded()) changed |= muHelper_.Update();
         if (login_.IsLoaded()) changed |= login_.Update();
 
@@ -150,6 +153,7 @@ public:
     Inventory::RmlInventoryExtensionPanel inventoryExtension_;
     Inventory::RmlPrivateStorePanel privateStore_;
     Inventory::RmlStoragePanel storage_;
+    Inventory::RmlStorageExtensionPanel storageExtension_;
     Login::RmlLoginPanel login_;
     MuHelper::RmlMuHelperPanel muHelper_;
     Option::RmlOptionPanel option_;
@@ -219,6 +223,7 @@ MU_PC_UI_GETTER(Inventory, inventory_, Inventory::RmlInventoryPanel)
 MU_PC_UI_GETTER(InventoryExtension, inventoryExtension_, Inventory::RmlInventoryExtensionPanel)
 MU_PC_UI_GETTER(PrivateStore, privateStore_, Inventory::RmlPrivateStorePanel)
 MU_PC_UI_GETTER(Storage, storage_, Inventory::RmlStoragePanel)
+MU_PC_UI_GETTER(StorageExtension, storageExtension_, Inventory::RmlStorageExtensionPanel)
 MU_PC_UI_GETTER(Login, login_, Login::RmlLoginPanel)
 MU_PC_UI_GETTER(MuHelper, muHelper_, MuHelper::RmlMuHelperPanel)
 MU_PC_UI_GETTER(Option, option_, Option::RmlOptionPanel)

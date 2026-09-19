@@ -32,6 +32,7 @@ class RmlInventoryPanel;
 class RmlInventoryExtensionPanel;
 class RmlPrivateStorePanel;
 class RmlStoragePanel;
+class RmlStorageExtensionPanel;
 }
 namespace Login { class RmlLoginPanel; }
 namespace MuHelper { class RmlMuHelperPanel; }
@@ -72,6 +73,7 @@ public:
     [[nodiscard]] Inventory::RmlInventoryExtensionPanel& InventoryExtension() noexcept;
     [[nodiscard]] Inventory::RmlPrivateStorePanel& PrivateStore() noexcept;
     [[nodiscard]] Inventory::RmlStoragePanel& Storage() noexcept;
+    [[nodiscard]] Inventory::RmlStorageExtensionPanel& StorageExtension() noexcept;
     [[nodiscard]] Login::RmlLoginPanel& Login() noexcept;
     [[nodiscard]] MuHelper::RmlMuHelperPanel& MuHelper() noexcept;
     [[nodiscard]] Option::RmlOptionPanel& Option() noexcept;

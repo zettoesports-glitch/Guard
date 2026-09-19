@@ -263,3 +263,7 @@ and differential runtime tests succeed.
   panel geometry, Zen/fee/period presentation, lock/extend state and semantic
   vault actions; central host owns it while legacy storage keeps network,
   password and item-movement authority
+
+- reconstructed `RmlStorageExtensionPanel` as the second 120-slot vault
+  surface with recovered right-side initial placement and central-host
+  lifecycle; global index offset and item movement remain legacy-owned

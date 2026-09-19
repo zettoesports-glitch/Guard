@@ -1,0 +1,22 @@
+<rml>
+<head>
+    <meta name="mu-design-Panel-Size" content="327 639"/>
+    <meta name="mu-design-Panel-Grids" content="60 102 26 26"/>
+    <meta name="mu-design-Panel-Reference" content="640 480"/>
+    <meta name="mu-design-Panel-Initial" content="360 40"/>
+    <title>Reconstructed Expanded Storage</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="storage.rcss"/>
+</head>
+<body class="mu-modern-document">
+    <div id="panel" class="storage-panel storage-extension-panel">
+        <div class="storage-background"/>
+        <div id="tfTitle" class="storage-title">Expanded Storage</div>
+        <div id="btnDrag" class="storage-drag"/>
+        <div id="btnClose" class="mu-button storage-close">X</div>
+        <div id="storage-grid" class="storage-grid"/>
+        <div id="btnExit" class="mu-button storage-exit">Exit</div>
+    </div>
+</body>
+</rml>
