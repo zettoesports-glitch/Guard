@@ -33,6 +33,7 @@ namespace Friend { class RmlFriendPanel; }
 namespace Help
 {
 class RmlHelpPanel;
+class RmlLongNoticeLayer;
 }
 namespace HUD
 {
@@ -100,6 +101,7 @@ public:
     [[nodiscard]] Common::RmlTooltipLayer& Tooltip() noexcept;
     [[nodiscard]] Friend::RmlFriendPanel& Friend() noexcept;
     [[nodiscard]] Help::RmlHelpPanel& Help() noexcept;
+    [[nodiscard]] Help::RmlLongNoticeLayer& LongNotice() noexcept;
     [[nodiscard]] HUD::RmlBuffListLayer& BuffList() noexcept;
     [[nodiscard]] HUD::RmlMainFrameLayer& MainFrame() noexcept;
     [[nodiscard]] HUD::RmlMiniMapLayer& MiniMap() noexcept;

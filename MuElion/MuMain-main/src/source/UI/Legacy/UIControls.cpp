@@ -3838,6 +3838,45 @@ BOOL CUISlideHelp::HaveText()
     return (m_pszSlideText[0] == '\0' || (int)wcslen(m_pszSlideText) < m_iCutLength);
 }
 
+void CUISlideHelp::BuildSnapshot(SlideRenderSnapshot& snapshot) const
+{
+    snapshot.text =
+        (m_pszSlideText != nullptr) ? m_pszSlideText : L"";
+    snapshot.referenceX = m_fMovePosition;
+    snapshot.referenceY = static_cast<float>(m_iPos_y);
+    snapshot.moveSpeed = m_fMoveSpeed;
+    snapshot.maxMoveSpeed = m_fMaxMoveSpeed;
+    snapshot.alphaRate =
+        std::clamp(m_iAlphaRate, 0.0f, 205.0f);
+    snapshot.textColor = m_dwSlideTextColor;
+    snapshot.blink = (m_bBlink != FALSE);
+    snapshot.idle =
+        m_pszSlideText == nullptr ||
+        m_pszSlideText[0] == L'\0' ||
+        static_cast<int>(wcslen(m_pszSlideText)) < m_iCutLength;
+
+    const float renderAlpha =
+        snapshot.alphaRate > 180.0f
+            ? snapshot.alphaRate
+            : std::max(0.0f, snapshot.alphaRate - 25.0f);
+    const BYTE sourceAlpha =
+        static_cast<BYTE>(m_dwSlideTextColor >> 24u);
+    float effective =
+        static_cast<float>(sourceAlpha) *
+        (renderAlpha + 50.0f) / 255.0f;
+
+    if (snapshot.blink)
+    {
+        const auto fraction =
+            WorldTime - static_cast<long>(WorldTime);
+        if (fraction < 0.5)
+            effective *= 0.5f;
+    }
+
+    snapshot.textAlpha = static_cast<BYTE>(
+        std::clamp(effective, 0.0f, 255.0f));
+}
+
 int g_iNoticeInverse = 0;
 
 void CUISlideHelp::Render(BOOL bForceFadeOut)
@@ -4267,6 +4306,13 @@ void CSlideHelpMgr::ManageSlide()
 BOOL CSlideHelpMgr::IsIdle()
 {
     return (m_NoticeSlide.HaveText() && m_HelpSlide.HaveText());
+}
+
+void CSlideHelpMgr::BuildSnapshot(
+    SlideHelpManagerSnapshot& snapshot) const
+{
+    m_HelpSlide.BuildSnapshot(snapshot.help);
+    m_NoticeSlide.BuildSnapshot(snapshot.notice);
 }
 
 CUIGuildNoticeListBox::CUIGuildNoticeListBox()

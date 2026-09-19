@@ -1312,6 +1312,26 @@ struct SLIDE_QUEUE_DATA
 
 typedef std::multimap<DWORD, SLIDE_QUEUE_DATA, std::less<DWORD>> SLIDE_QUEUE;
 
+struct SlideRenderSnapshot
+{
+    std::wstring text;
+    float referenceX = 0.0f;
+    float referenceY = 0.0f;
+    float moveSpeed = 0.0f;
+    float maxMoveSpeed = 0.0f;
+    float alphaRate = 0.0f;
+    BYTE textAlpha = 0;
+    DWORD textColor = 0;
+    bool blink = false;
+    bool idle = true;
+};
+
+struct SlideHelpManagerSnapshot
+{
+    SlideRenderSnapshot help;
+    SlideRenderSnapshot notice;
+};
+
 class CUISlideHelp : public CUIControl
 {
 public:
@@ -1329,6 +1349,7 @@ public:
         return m_iAlphaRate;
     }
     BOOL HaveText();
+    void BuildSnapshot(SlideRenderSnapshot& snapshot) const;
 
     void AddSlide(int iLoopCount, int iLoopDelay, const wchar_t* pszText, int iType, float fSpeed, DWORD dwTextColor);
     void CheckTime();
@@ -1385,6 +1406,7 @@ public:
                   DWORD dwTextColor = (255u << 24) + (200u << 16) + (220u << 8) + 230u);
     void ManageSlide();
     BOOL IsIdle();
+    void BuildSnapshot(SlideHelpManagerSnapshot& snapshot) const;
 
 protected:
     CUISlideHelp m_HelpSlide;

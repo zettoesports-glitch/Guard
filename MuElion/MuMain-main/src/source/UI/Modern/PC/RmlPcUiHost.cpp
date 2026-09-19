@@ -22,6 +22,8 @@
 #include "UI/Modern/PC/Friend/RmlFriendPanel.h"
 #include "UI/Modern/PC/Help/RmlHelpPanel.h"
 #include "UI/Modern/PC/Help/RmlHelpLegacyBridge.h"
+#include "UI/Modern/PC/Help/RmlLongNoticeLayer.h"
+#include "UI/Modern/PC/Help/RmlLongNoticeLegacyBridge.h"
 #include "UI/Modern/PC/HUD/RmlBuffListLayer.h"
 #include "UI/Modern/PC/HUD/RmlBuffListLegacyBridge.h"
 #include "UI/Modern/PC/HUD/RmlMainFrameLayer.h"
@@ -109,6 +111,7 @@ public:
         moveCommand_.Release();
         quickCommand_.Release();
         commandWindow_.Release();
+        longNotice_.Release();
         help_.Release();
         friend_.Release();
         petInfo_.Release();
@@ -197,6 +200,13 @@ public:
                 *g_pHelp, help_, viewportWidth_, viewportHeight_);
             changed |= help_.Update();
         }
+        if (longNotice_.IsLoaded() && g_pSlideHelpMgr)
+        {
+            changed |= longNoticeLegacyBridge_.Synchronize(
+                *g_pSlideHelpMgr, longNotice_,
+                viewportWidth_, viewportHeight_);
+            changed |= longNotice_.Update();
+        }
         if (commandWindow_.IsLoaded()) changed |= commandWindow_.Update();
         if (quickCommand_.IsLoaded() && g_pQuickCommand)
         {
@@ -273,6 +283,8 @@ public:
     Friend::RmlFriendPanel friend_;
     Help::RmlHelpPanel help_;
     Help::RmlHelpLegacyBridge helpLegacyBridge_;
+    Help::RmlLongNoticeLayer longNotice_;
+    Help::RmlLongNoticeLegacyBridge longNoticeLegacyBridge_;
     HUD::RmlBuffListLayer buffList_;
     HUD::RmlBuffListLegacyBridge buffListLegacyBridge_;
     HUD::RmlMainFrameLayer mainFrame_;
@@ -366,6 +378,7 @@ MU_PC_UI_GETTER(MessageBox, messageBox_, Common::RmlMessageBoxPanel)
 MU_PC_UI_GETTER(Tooltip, tooltip_, Common::RmlTooltipLayer)
 MU_PC_UI_GETTER(Friend, friend_, Friend::RmlFriendPanel)
 MU_PC_UI_GETTER(Help, help_, Help::RmlHelpPanel)
+MU_PC_UI_GETTER(LongNotice, longNotice_, Help::RmlLongNoticeLayer)
 MU_PC_UI_GETTER(BuffList, buffList_, HUD::RmlBuffListLayer)
 MU_PC_UI_GETTER(MainFrame, mainFrame_, HUD::RmlMainFrameLayer)
 MU_PC_UI_GETTER(MiniMap, miniMap_, HUD::RmlMiniMapLayer)

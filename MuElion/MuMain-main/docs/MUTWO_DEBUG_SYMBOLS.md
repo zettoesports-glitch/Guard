@@ -2162,3 +2162,33 @@ converts those wide strings to UTF-8 and feeds `RmlHelpPanel`.
 The reconstructed panel owns no legacy side effects. Close/tab clicks are
 returned as one-shot semantic actions; the legacy NewUI system remains
 authoritative for actually hiding or changing the legacy window.
+
+
+## Long notice / slide bridge
+
+The neutral `Data/UI/PC/Help/long_notice.rml` path corresponds to the
+existing `CNewUISlideWindow` / `CSlideHelpMgr` system, not the unrelated
+multi-line `UI::Notices` HUD queue.
+
+The legacy slide manager owns two `CUISlideHelp` instances: normal Help and
+higher-priority Notice. Observable state includes current wide text,
+reference-space X/Y, current/max speed, alpha rate, ARGB text color, blink
+state and the inverted historical `HaveText()` idle test.
+
+The legacy render priority is preserved:
+
+1. an active Notice forces Help to fade out;
+2. Notice renders once Help alpha reaches zero;
+3. otherwise Help renders while Notice is idle;
+4. queued slides, speed acceleration, hover deceleration and timers remain
+   entirely legacy-owned.
+
+Read-only `SlideRenderSnapshot` / `SlideHelpManagerSnapshot` projections
+now expose that presentation state. `CNewUISlideWindow::BuildSnapshot`
+delegates to its manager, and `RmlLongNoticeLegacyBridge` selects the
+currently renderable strip without consuming queue entries.
+
+The modern `RmlLongNoticeLayer` uses the public design contract
+`Menu-Size=1024 37`, `Menu-Reference=640 480`, and
+`Notice-HoldMilliseconds=2000`; position, text RGB and effective alpha come
+from the authoritative legacy frame.

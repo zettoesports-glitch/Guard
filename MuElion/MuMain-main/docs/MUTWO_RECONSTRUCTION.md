@@ -365,3 +365,10 @@ and differential runtime tests succeed.
 - added read-only `CNewUIHelpWindow::BuildSnapshot` and
   `RmlHelpLegacyBridge`; legacy F1/Escape visibility and localized I18N text
   remain authoritative while the modern panel does not issue NewUI side effects
+
+
+- reconstructed `RmlLongNoticeLayer` over the public long-notice contract
+  and added a read-only bridge over `CNewUISlideWindow/CSlideHelpMgr`
+- slide queues, random level help selection, timers, acceleration, hover
+  slowdown and Help-vs-Notice priority remain legacy-authoritative; RmlUi only
+  mirrors the currently renderable text/position/color/alpha state

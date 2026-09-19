@@ -67,3 +67,10 @@ float SEASON3B::CNewUISlideWindow::GetLayerDepth()
 {
     return 1.91f;
 }
+void SEASON3B::CNewUISlideWindow::BuildSnapshot(
+    SlideHelpManagerSnapshot& snapshot) const
+{
+    snapshot = {};
+    if (m_pSlideMgr)
+        m_pSlideMgr->BuildSnapshot(snapshot);
+}

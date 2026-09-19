@@ -32,6 +32,9 @@ namespace SEASON3B
             m_pSlideMgr->AddSlide(iLoopCount, iLoopDelay, strText, iType, fSpeed, dwTextColor);
         }
 
+        // Read-only state projection for the modern long-notice layer.
+        void BuildSnapshot(SlideHelpManagerSnapshot& snapshot) const;
+
     private:
         CSlideHelpMgr* m_pSlideMgr;
     };
