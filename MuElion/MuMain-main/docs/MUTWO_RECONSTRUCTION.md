@@ -258,3 +258,8 @@ and differential runtime tests succeed.
   range selectors, major helper toggles, six assigned skills, ten available
   skill choices, extra-item list/scroll and reset/save/close/configure intents
   while preserving legacy MUHelper serialization and game-side behavior
+
+- reconstructed `RmlStoragePanel` with 120-slot 8x15 vault grid, recovered
+  panel geometry, Zen/fee/period presentation, lock/extend state and semantic
+  vault actions; central host owns it while legacy storage keeps network,
+  password and item-movement authority

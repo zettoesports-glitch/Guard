@@ -1849,3 +1849,26 @@ and exposes semantic actions for the primary tabs, ranges, major boolean
 options, skill-slot selection, extra-item add/delete and advanced configuration
 entry points. It deliberately does not serialize packets or replace the
 existing `ConfigDataSerDe` path.
+
+
+## Storage presentation contract
+
+The x64 Debug executable preserves the basenames
+`storage.rml`, `storage_extension.rml`,
+`storage_keypad.rml`, and `storage_password.rml`. The public observable
+storage document exposes the generic authored panel keys
+`Panel-Size`, `Panel-Grids`, `Panel-Reference`, and
+`Panel-Initial`, plus stable DOM identifiers for title/drag/close, Zen
+controls, extension control, period-storage fields, and the exact dynamic
+`isSlotN` slot convention.
+
+The existing legacy `CNewUIStorageInventory` confirms the main vault grid as
+8 columns x 15 rows (120 slots), and remains authoritative for vault lock
+status, password validation, deposit/withdraw dialogs, item auto-move and all
+network requests.
+
+The reconstructed `RmlStoragePanel` therefore owns only presentation state:
+120 RmlUi slots, stored-Zen/fee/period text, locked/unlocked styling and
+one-shot close/deposit/withdraw/lock/extend/Zen-info/slot actions. It is owned
+by the central `RmlPcUiHost` but remains unloaded by default so the legacy
+storage stays the active surface until explicitly bridged.

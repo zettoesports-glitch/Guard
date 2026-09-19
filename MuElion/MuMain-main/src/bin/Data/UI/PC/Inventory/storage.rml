@@ -1,0 +1,43 @@
+<rml>
+<head>
+    <meta name="mu-design-Panel-Size" content="327 639"/>
+    <meta name="mu-design-Panel-Grids" content="60 102 26 26"/>
+    <meta name="mu-design-Panel-Reference" content="640 480"/>
+    <meta name="mu-design-Panel-Initial" content="21 40"/>
+    <title>Reconstructed Storage</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="storage.rcss"/>
+</head>
+<body class="mu-modern-document">
+    <div id="panel" class="storage-panel">
+        <div class="storage-background"/>
+        <div id="tfTitle" class="storage-title">Storage</div>
+        <div id="btnDrag" class="storage-drag"/>
+        <div id="btnClose" class="mu-button storage-close">X</div>
+        <div id="storage-grid" class="storage-grid"/>
+
+        <div id="mcCharge" class="storage-charge">
+            <div class="storage-label keep-label">Stored Zen</div>
+            <div id="tfKeepZenValue" class="storage-value keep-value"/>
+            <div class="storage-label charge-label">Storage fee</div>
+            <div id="tfChargeValue" class="storage-value charge-value"/>
+
+            <div id="btnDeposit" class="mu-button storage-action deposit">Deposit</div>
+            <div id="btnWithDraw" class="mu-button storage-action withdraw">Withdraw</div>
+            <div id="btnLift" class="mu-button storage-action lock">
+                <span id="btnLift-label">Lock</span>
+            </div>
+            <div id="btnExtend" class="mu-button storage-action extend">Extend</div>
+            <div id="btnZenInfo" class="mu-button storage-zen-info">?</div>
+        </div>
+
+        <div id="mcPeriodStorage" class="storage-period">
+            <div class="storage-label period-label">Remaining</div>
+            <div id="tfRemainTime" class="storage-value period-value"/>
+        </div>
+
+        <div id="btnExit" class="mu-button storage-exit">Exit</div>
+    </div>
+</body>
+</rml>
