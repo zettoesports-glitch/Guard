@@ -22,6 +22,7 @@
 #include "UI/Modern/PC/Inventory/RmlStorageSecurityPanel.h"
 #include "UI/Modern/PC/Login/RmlLoginPanel.h"
 #include "UI/Modern/PC/MuHelper/RmlMuHelperPanel.h"
+#include "UI/Modern/PC/MuHelper/RmlMuHelperLegacyBridge.h"
 #include "UI/Modern/PC/Option/RmlOptionPanel.h"
 #include "UI/Modern/PC/Party/RmlPartyFrameLayer.h"
 #include "UI/Modern/PC/ServerMessage/RmlServerMessageLayer.h"
@@ -166,6 +167,7 @@ public:
     Inventory::RmlStorageSecurityPanel storageSecurity_;
     Login::RmlLoginPanel login_;
     MuHelper::RmlMuHelperPanel muHelper_;
+    MuHelper::RmlMuHelperLegacyBridge muHelperLegacyBridge_;
     Option::RmlOptionPanel option_;
     Party::RmlPartyFrameLayer party_;
     ServerMessage::RmlServerMessageLayer serverMessage_;

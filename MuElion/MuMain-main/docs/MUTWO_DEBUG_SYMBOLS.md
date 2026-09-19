@@ -1939,3 +1939,29 @@ limit, masks the displayed PIN, supports backspace and returns one-shot
 SubmitPin/SubmitPassword/Cancel intents. It never validates the account
 password and never sends vault packets; those responsibilities remain in the
 legacy message-box/network path.
+
+
+## MuHelper legacy state bridge
+
+`RmlMuHelperLegacyBridge` is now the read-only adapter between the existing
+helper domain and the modern presentation. It is executed only when the modern
+MuHelper panel has already been explicitly loaded.
+
+The bridge reads:
+
+- visibility through `CNewUISystem::IsVisible(INTERFACE_MUHELPER)`;
+- `MUHelper::g_MuHelper.GetConfig()`;
+- hunting and obtaining ranges;
+- return-position/time, potion, combo, Dark Raven, support/heal/drain/buff;
+- repair and all item-pick filters;
+- auto-accept friend/guild, self-defense and fallback-basic-attack local bits;
+- three configured attack skills plus three configured buff skills;
+- the extra-item `std::set<std::wstring>`, converted to UTF-8.
+
+The legacy UI does not expose its current main tab or which attack/buff skill
+chooser subwindow is active. The bridge therefore does not guess those private
+presentation fields and leaves the available-skill chooser empty until that
+state is recovered.
+
+Save/start/stop/network ownership remains in `MUHelper::CMuHelper` and the
+legacy UI. This bridge performs no packet transmission and no legacy mutation.
