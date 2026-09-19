@@ -53,6 +53,8 @@ mu::pipeline::RenderClientArraySemantic ArraySemantic(unsigned int array)
 #pragma push_macro("glMatrixMode")
 #pragma push_macro("glLoadMatrixf")
 #pragma push_macro("glMultMatrixf")
+#pragma push_macro("glPushAttrib")
+#pragma push_macro("glPushClientAttrib")
 #pragma push_macro("glViewport")
 #pragma push_macro("glScissor")
 #pragma push_macro("glClear")
@@ -88,6 +90,8 @@ mu::pipeline::RenderClientArraySemantic ArraySemantic(unsigned int array)
 #undef glMatrixMode
 #undef glLoadMatrixf
 #undef glMultMatrixf
+#undef glPushAttrib
+#undef glPushClientAttrib
 #undef glViewport
 #undef glScissor
 #undef glClear
@@ -293,6 +297,8 @@ void SessionLegacyCalls::glTexCoordPointer(int size, unsigned int type, int stri
 #pragma pop_macro("glClear")
 #pragma pop_macro("glScissor")
 #pragma pop_macro("glViewport")
+#pragma pop_macro("glPushClientAttrib")
+#pragma pop_macro("glPushAttrib")
 #pragma pop_macro("glMultMatrixf")
 #pragma pop_macro("glLoadMatrixf")
 #pragma pop_macro("glMatrixMode")

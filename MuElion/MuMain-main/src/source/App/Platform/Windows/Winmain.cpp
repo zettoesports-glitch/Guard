@@ -25,6 +25,7 @@
 #include "Render/Textures/ZzzTexture.h"
 #include "Render/Renderer/MuRenderer.h"
 #include "client/session/SessionRender.h"
+#include "client/render/LogicalRenderAssetTable.h"
 #include "Engine/Object/ZzzOpenData.h"
 #include "Scenes/SceneCore.h"
 #include "Scenes/SceneManager.h"
@@ -173,8 +174,9 @@ void CheckHack()
 
 static void ShutdownRendererWindow()
 {
-    // Session workers must stop before renderer resources disappear.
+    // Session workers and logical assets must stop/release before renderer resources disappear.
     mu::session::GetSessionRender().Shutdown();
+    mu::pipeline::GetLogicalRenderAssetTable().Clear();
 
     // Release the bridged GDI DC obtained from the SDL window.
     if (g_hDC)
@@ -1515,6 +1517,10 @@ MSG MainLoop()
                 mu::GetRenderer().EndFrame();
                 sessionRender.EndFrame();
 
+                auto& logicalAssets = mu::pipeline::GetLogicalRenderAssetTable();
+                logicalAssets.ReleaseFrameOnly();
+                logicalAssets.CollectIdle();
+
                 ConsumeDiagnosticFrameCapture();
             }
         }
@@ -2040,6 +2046,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     mu::session::GetSessionRender().Configure(
         GameConfig::GetInstance().GetRenderPipelineEnabled(),
         static_cast<std::size_t>(GameConfig::GetInstance().GetSessionWorkerCount()));
+    mu::pipeline::GetLogicalRenderAssetTable().ConfigureSharedIdleSeconds(
+        static_cast<std::uint32_t>(GameConfig::GetInstance().GetSharedAssetIdleSeconds()));
     g_ErrorReport.Write(L"> Renderer backend requested: %hs; active: %hs.\r\n",
                         rendererBackend.c_str(), mu::GetRenderer().GetGPUDriverName());
     g_ErrorReport.Write(L"> Render pipeline: %d; session workers: %d; FPS limit: %d.\r\n",
