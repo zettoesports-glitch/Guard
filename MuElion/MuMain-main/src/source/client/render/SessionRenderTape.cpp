@@ -1,0 +1,175 @@
+#include "stdafx.h"
+#include "client/render/SessionRenderTape.h"
+
+#include "Render/Renderer/MuRenderer.h"
+
+#include <algorithm>
+
+namespace mu::pipeline
+{
+
+namespace
+{
+bool ApplyBlend(RenderBlendFactor source, RenderBlendFactor destination) noexcept
+{
+    auto& renderer = mu::GetRenderer();
+    if (source == RenderBlendFactor::SourceAlpha && destination == RenderBlendFactor::OneMinusSourceAlpha)
+        renderer.SetBlendMode(mu::BlendMode::Alpha);
+    else if (source == RenderBlendFactor::SourceAlpha && destination == RenderBlendFactor::One)
+        renderer.SetBlendMode(mu::BlendMode::Additive);
+    else if (source == RenderBlendFactor::Zero && destination == RenderBlendFactor::OneMinusSourceColor)
+        renderer.SetBlendMode(mu::BlendMode::Subtract);
+    else if (source == RenderBlendFactor::OneMinusDestinationColor && destination == RenderBlendFactor::Zero)
+        renderer.SetBlendMode(mu::BlendMode::InverseColor);
+    else if (source == RenderBlendFactor::One && destination == RenderBlendFactor::OneMinusSourceAlpha)
+        renderer.SetBlendMode(mu::BlendMode::Mixed);
+    else if (source == RenderBlendFactor::Zero && destination == RenderBlendFactor::SourceColor)
+        renderer.SetBlendMode(mu::BlendMode::LightMap);
+    else if (source == RenderBlendFactor::One && destination == RenderBlendFactor::One)
+        renderer.SetBlendMode(mu::BlendMode::Glow);
+    else
+        return false;
+    return true;
+}
+
+std::uint32_t PackColor(const std::array<float, 4>& color) noexcept
+{
+    const auto byte = [](float value) {
+        return static_cast<std::uint32_t>(std::clamp(value, 0.0f, 1.0f) * 255.0f + 0.5f);
+    };
+    return (byte(color[3]) << 24u) | (byte(color[2]) << 16u) | (byte(color[1]) << 8u) | byte(color[0]);
+}
+
+bool ReplayDraw(const RenderTapeDraw& draw) noexcept
+{
+    auto& renderer = mu::GetRenderer();
+    const auto& state = draw.state;
+
+    renderer.SetDepthTest(state.depthTestEnabled);
+    renderer.SetDepthMask(state.depthWriteEnabled);
+    renderer.SetCullFace(state.cullEnabled);
+    renderer.SetAlphaTest(state.alphaTestEnabled);
+    renderer.SetFogEnabled(state.fogEnabled);
+    renderer.SetStencilTest(state.stencilEnabled);
+    renderer.SetScissorEnabled(state.scissorEnabled);
+    renderer.SetDepthFunc(static_cast<int>(state.depthFunc));
+    renderer.SetAlphaFunc(static_cast<int>(state.alphaFunc), state.alphaRef);
+    renderer.SetFrontFace(static_cast<int>(state.frontFace));
+    renderer.SetColorMask(state.colorMaskR, state.colorMaskG, state.colorMaskB, state.colorMaskA);
+
+    if (state.blendEnabled)
+    {
+        if (!ApplyBlend(state.blendSource, state.blendDestination))
+            return false;
+    }
+    else
+    {
+        renderer.DisableBlend();
+    }
+
+    mu::FogParams fog{};
+    fog.mode = state.fogMode;
+    fog.start = state.fogStart;
+    fog.end = state.fogEnd;
+    fog.density = state.fogDensity;
+    std::copy(state.fogColor.begin(), state.fogColor.end(), fog.color);
+    renderer.SetFog(fog);
+
+    if (state.viewport.width > 0 && state.viewport.height > 0)
+        renderer.SetViewport(state.viewport.x, state.viewport.y, state.viewport.width, state.viewport.height);
+    if (state.scissor.width > 0 && state.scissor.height > 0)
+        renderer.SetScissor(state.scissor.x, state.scissor.y, state.scissor.width, state.scissor.height);
+
+    renderer.SetMatrixMode(static_cast<int>(LegacyMatrixMode::Projection));
+    renderer.LoadMatrix(state.projection.data());
+    renderer.SetMatrixMode(static_cast<int>(LegacyMatrixMode::ModelView));
+    renderer.LoadMatrix(state.modelView.data());
+
+    const std::uint32_t textureId = state.textureEnabled ? draw.textureId : 0u;
+    renderer.BindTexture(static_cast<int>(textureId));
+
+    std::vector<mu::Vertex3D> vertices;
+    vertices.reserve(draw.vertices.size());
+    for (const auto& vertex : draw.vertices)
+    {
+        vertices.push_back({vertex.position[0], vertex.position[1], vertex.position[2],
+                            vertex.normal[0], vertex.normal[1], vertex.normal[2],
+                            vertex.texCoord[0], vertex.texCoord[1], PackColor(vertex.color)});
+    }
+
+    switch (draw.primitive)
+    {
+    case LegacyPrimitive::Triangles:
+        if (vertices.size() % 3 != 0) return false;
+        renderer.RenderTriangles(vertices, textureId);
+        return true;
+    case LegacyPrimitive::Quads:
+        if (vertices.size() % 4 != 0) return false;
+        renderer.RenderQuad3D(vertices, textureId);
+        return true;
+    case LegacyPrimitive::QuadStrip:
+        renderer.RenderQuadStrip(vertices, textureId);
+        return true;
+    case LegacyPrimitive::Lines:
+        renderer.RenderLines(vertices, textureId);
+        return true;
+    default:
+        return false;
+    }
+}
+} // namespace
+
+std::size_t SessionRenderTape::DrawCount() const noexcept
+{
+    std::size_t count = 0;
+    for (const auto& block : m_blocks)
+        count += block.draws.size();
+    return count;
+}
+
+bool SessionRenderTape::Replay() const noexcept
+{
+    for (const auto& block : m_blocks)
+    {
+        for (const auto& draw : block.draws)
+            if (!ReplayDraw(draw)) return false;
+    }
+    return true;
+}
+
+bool SessionRenderTapeRecording::BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept
+{
+    RenderTapeBlock block{};
+    block.pass = pass;
+    block.fog = fog;
+    m_blocks.push_back(std::move(block));
+    m_currentBlock = m_blocks.size() - 1;
+    return true;
+}
+
+bool SessionRenderTapeRecording::AppendDraw(RenderTapeDraw draw) noexcept
+{
+    if (!m_currentBlock || *m_currentBlock >= m_blocks.size())
+        return false;
+    m_blocks[*m_currentBlock].draws.push_back(std::move(draw));
+    return true;
+}
+
+std::optional<SessionRenderTape> SessionRenderTapeRecording::Finalize() noexcept
+{
+    if (m_blocks.empty())
+        return std::nullopt;
+
+    SessionRenderTape result(std::move(m_blocks));
+    m_blocks.clear();
+    m_currentBlock.reset();
+    return result;
+}
+
+void SessionRenderTapeRecording::Reset() noexcept
+{
+    m_blocks.clear();
+    m_currentBlock.reset();
+}
+
+} // namespace mu::pipeline

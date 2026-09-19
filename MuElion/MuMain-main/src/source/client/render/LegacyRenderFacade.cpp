@@ -114,6 +114,28 @@ bool ReadComponent(const ClientArrayT& array, int index, std::uint32_t component
 LegacyRenderFacade::LegacyRenderFacade(LogicalRenderAssetTable& assets) noexcept
     : m_assets(assets)
 {
+    m_state.modelView.fill(0.0f);
+    m_state.projection.fill(0.0f);
+    m_state.modelView[0] = m_state.modelView[5] = m_state.modelView[10] = m_state.modelView[15] = 1.0f;
+    m_state.projection[0] = m_state.projection[5] = m_state.projection[10] = m_state.projection[15] = 1.0f;
+}
+
+bool LegacyRenderFacade::BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept
+{
+    m_state.fogEnabled = fog.enabled;
+    m_state.fogMode = static_cast<int>(fog.mode);
+    m_state.fogStart = fog.start;
+    m_state.fogEnd = fog.end;
+    m_state.fogDensity = fog.density;
+    m_state.fogColor = fog.color;
+    return m_recording.BeginPass(pass, fog);
+}
+
+std::optional<SessionRenderTape> LegacyRenderFacade::Finalize() noexcept
+{
+    if (m_insidePrimitive)
+        (void)End();
+    return m_recording.Finalize();
 }
 
 bool LegacyRenderFacade::Begin(LegacyPrimitive primitive) noexcept
@@ -180,6 +202,19 @@ bool LegacyRenderFacade::EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<
 {
     if (vertices.empty())
         return true;
+
+    if (m_recording.IsRecording())
+    {
+        mu::GetRenderer().GetMatrix(static_cast<int>(LegacyMatrixMode::ModelView), m_state.modelView.data());
+        mu::GetRenderer().GetMatrix(static_cast<int>(LegacyMatrixMode::Projection), m_state.projection.data());
+
+        RenderTapeDraw draw{};
+        draw.primitive = primitive;
+        draw.textureId = m_boundTextureId;
+        draw.state = m_state;
+        draw.vertices.assign(vertices.begin(), vertices.end());
+        return m_recording.AppendDraw(std::move(draw));
+    }
 
     std::vector<mu::Vertex3D> converted;
     converted.reserve(vertices.size());
@@ -367,17 +402,20 @@ bool LegacyRenderFacade::PopMatrix() noexcept { mu::GetRenderer().PopMatrix(); r
 bool LegacyRenderFacade::SetOpaqueState() noexcept { mu::GetRenderer().DisableBlend(); mu::GetRenderer().SetAlphaTest(false); return true; }
 bool LegacyRenderFacade::SetAlphaTestState(bool enabled) noexcept { return SetAlphaTestEnable(enabled); }
 bool LegacyRenderFacade::SetAdditiveState() noexcept { mu::GetRenderer().SetBlendMode(mu::BlendMode::Additive); return true; }
-bool LegacyRenderFacade::SetTextureEnable(bool enabled) noexcept { mu::GetRenderer().SetTexture2D(enabled); return true; }
-bool LegacyRenderFacade::SetDepthTestEnable(bool enabled) noexcept { mu::GetRenderer().SetDepthTest(enabled); return true; }
-bool LegacyRenderFacade::SetDepthWriteEnable(bool enabled) noexcept { mu::GetRenderer().SetDepthMask(enabled); return true; }
-bool LegacyRenderFacade::SetDepthFunc(RenderCompareFunction func) noexcept { mu::GetRenderer().SetDepthFunc(static_cast<int>(func)); return true; }
-bool LegacyRenderFacade::SetCullEnable(bool enabled) noexcept { mu::GetRenderer().SetCullFace(enabled); return true; }
+bool LegacyRenderFacade::SetTextureEnable(bool enabled) noexcept { m_state.textureEnabled = enabled; mu::GetRenderer().SetTexture2D(enabled); return true; }
+bool LegacyRenderFacade::SetDepthTestEnable(bool enabled) noexcept { m_state.depthTestEnabled = enabled; mu::GetRenderer().SetDepthTest(enabled); return true; }
+bool LegacyRenderFacade::SetDepthWriteEnable(bool enabled) noexcept { m_state.depthWriteEnabled = enabled; mu::GetRenderer().SetDepthMask(enabled); return true; }
+bool LegacyRenderFacade::SetDepthFunc(RenderCompareFunction func) noexcept { m_state.depthFunc = func; mu::GetRenderer().SetDepthFunc(static_cast<int>(func)); return true; }
+bool LegacyRenderFacade::SetCullEnable(bool enabled) noexcept { m_state.cullEnabled = enabled; mu::GetRenderer().SetCullFace(enabled); return true; }
 bool LegacyRenderFacade::SetCullFace(RenderCullFace) noexcept { return true; }
-bool LegacyRenderFacade::SetFrontFace(RenderFrontFace face) noexcept { mu::GetRenderer().SetFrontFace(static_cast<int>(face)); return true; }
-bool LegacyRenderFacade::SetBlendEnable(bool enabled) noexcept { if (enabled) mu::GetRenderer().SetBlendMode(mu::BlendMode::Alpha); else mu::GetRenderer().DisableBlend(); return true; }
+bool LegacyRenderFacade::SetFrontFace(RenderFrontFace face) noexcept { m_state.frontFace = face; mu::GetRenderer().SetFrontFace(static_cast<int>(face)); return true; }
+bool LegacyRenderFacade::SetBlendEnable(bool enabled) noexcept { m_state.blendEnabled = enabled; if (enabled) mu::GetRenderer().SetBlendMode(mu::BlendMode::Alpha); else mu::GetRenderer().DisableBlend(); return true; }
 
 bool LegacyRenderFacade::SetBlendFunc(RenderBlendFactor source, RenderBlendFactor destination) noexcept
 {
+    m_state.blendSource = source;
+    m_state.blendDestination = destination;
+    m_state.blendEnabled = true;
     if (source == RenderBlendFactor::SourceAlpha && destination == RenderBlendFactor::OneMinusSourceAlpha)
         mu::GetRenderer().SetBlendMode(mu::BlendMode::Alpha);
     else if (source == RenderBlendFactor::SourceAlpha && destination == RenderBlendFactor::One)
@@ -397,9 +435,9 @@ bool LegacyRenderFacade::SetBlendFunc(RenderBlendFactor source, RenderBlendFacto
     return true;
 }
 
-bool LegacyRenderFacade::SetAlphaTestEnable(bool enabled) noexcept { mu::GetRenderer().SetAlphaTest(enabled); return true; }
-bool LegacyRenderFacade::SetAlphaFunc(RenderCompareFunction func, float ref) noexcept { mu::GetRenderer().SetAlphaFunc(static_cast<int>(func), ref); return true; }
-bool LegacyRenderFacade::SetFogEnable(bool enabled) noexcept { mu::GetRenderer().SetFogEnabled(enabled); return true; }
+bool LegacyRenderFacade::SetAlphaTestEnable(bool enabled) noexcept { m_state.alphaTestEnabled = enabled; mu::GetRenderer().SetAlphaTest(enabled); return true; }
+bool LegacyRenderFacade::SetAlphaFunc(RenderCompareFunction func, float ref) noexcept { m_state.alphaFunc = func; m_state.alphaRef = ref; mu::GetRenderer().SetAlphaFunc(static_cast<int>(func), ref); return true; }
+bool LegacyRenderFacade::SetFogEnable(bool enabled) noexcept { m_state.fogEnabled = enabled; mu::GetRenderer().SetFogEnabled(enabled); return true; }
 
 bool LegacyRenderFacade::RefreshFog() noexcept
 {
@@ -413,19 +451,19 @@ bool LegacyRenderFacade::RefreshFog() noexcept
     return true;
 }
 
-bool LegacyRenderFacade::SetFogMode(RenderFogMode mode) noexcept { m_fogMode = static_cast<int>(mode); return RefreshFog(); }
-bool LegacyRenderFacade::SetFogColor(const std::array<float, 4>& color) noexcept { m_fogColor = color; return RefreshFog(); }
-bool LegacyRenderFacade::SetFogRange(float start, float end) noexcept { m_fogStart = start; m_fogEnd = end; return RefreshFog(); }
-bool LegacyRenderFacade::SetFogDensity(float density) noexcept { m_fogDensity = density; return RefreshFog(); }
-bool LegacyRenderFacade::SetColorMask(bool r, bool g, bool b, bool a) noexcept { mu::GetRenderer().SetColorMask(r, g, b, a); return true; }
-bool LegacyRenderFacade::SetStencilEnable(bool enabled) noexcept { mu::GetRenderer().SetStencilTest(enabled); return true; }
+bool LegacyRenderFacade::SetFogMode(RenderFogMode mode) noexcept { m_fogMode = static_cast<int>(mode); m_state.fogMode = m_fogMode; return RefreshFog(); }
+bool LegacyRenderFacade::SetFogColor(const std::array<float, 4>& color) noexcept { m_fogColor = color; m_state.fogColor = color; return RefreshFog(); }
+bool LegacyRenderFacade::SetFogRange(float start, float end) noexcept { m_fogStart = start; m_fogEnd = end; m_state.fogStart = start; m_state.fogEnd = end; return RefreshFog(); }
+bool LegacyRenderFacade::SetFogDensity(float density) noexcept { m_fogDensity = density; m_state.fogDensity = density; return RefreshFog(); }
+bool LegacyRenderFacade::SetColorMask(bool r, bool g, bool b, bool a) noexcept { m_state.colorMaskR = r; m_state.colorMaskG = g; m_state.colorMaskB = b; m_state.colorMaskA = a; mu::GetRenderer().SetColorMask(r, g, b, a); return true; }
+bool LegacyRenderFacade::SetStencilEnable(bool enabled) noexcept { m_state.stencilEnabled = enabled; mu::GetRenderer().SetStencilTest(enabled); return true; }
 bool LegacyRenderFacade::SetStencilFunc(RenderCompareFunction func, unsigned int ref, unsigned int mask) noexcept { mu::GetRenderer().SetStencilFunc(static_cast<int>(func), static_cast<int>(ref), mask); return true; }
 bool LegacyRenderFacade::SetStencilOp(RenderStencilOperation fail, RenderStencilOperation depthFail, RenderStencilOperation pass) noexcept { mu::GetRenderer().SetStencilOp(static_cast<int>(fail), static_cast<int>(depthFail), static_cast<int>(pass)); return true; }
 bool LegacyRenderFacade::SetTextureEnvironment(RenderTextureEnvironment environment) noexcept { mu::GetRenderer().SetTexEnv(0x2300, 0x2200, static_cast<int>(environment)); return true; }
 bool LegacyRenderFacade::SetPolygonMode(RenderCullFace face, RenderPolygonMode mode) noexcept { mu::GetRenderer().SetPolygonMode(static_cast<int>(face), static_cast<int>(mode)); return true; }
-bool LegacyRenderFacade::SetViewport(RenderTapeRect rect) noexcept { mu::GetRenderer().SetViewport(rect.x, rect.y, rect.width, rect.height); return true; }
-bool LegacyRenderFacade::SetScissorEnable(bool enabled) noexcept { mu::GetRenderer().SetScissorEnabled(enabled); return true; }
-bool LegacyRenderFacade::SetScissor(RenderTapeRect rect) noexcept { mu::GetRenderer().SetScissor(rect.x, rect.y, rect.width, rect.height); return true; }
+bool LegacyRenderFacade::SetViewport(RenderTapeRect rect) noexcept { m_state.viewport = rect; mu::GetRenderer().SetViewport(rect.x, rect.y, rect.width, rect.height); return true; }
+bool LegacyRenderFacade::SetScissorEnable(bool enabled) noexcept { m_state.scissorEnabled = enabled; mu::GetRenderer().SetScissorEnabled(enabled); return true; }
+bool LegacyRenderFacade::SetScissor(RenderTapeRect rect) noexcept { m_state.scissor = rect; mu::GetRenderer().SetScissor(rect.x, rect.y, rect.width, rect.height); return true; }
 bool LegacyRenderFacade::SetClearColor(const std::array<float, 4>& color) noexcept { mu::GetRenderer().SetClearColor(color[0], color[1], color[2], color[3]); return true; }
 
 bool LegacyRenderFacade::Clear(bool color, bool depth, bool) noexcept
@@ -448,6 +486,12 @@ void LegacyRenderFacade::BindTexture(LogicalRenderAssetRef ref) noexcept
 {
     const auto metadata = m_assets.Resolve(ref);
     m_boundTextureId = metadata ? metadata->textureId : 0;
+    mu::GetRenderer().BindTexture(static_cast<int>(m_boundTextureId));
+}
+
+void LegacyRenderFacade::BindTextureId(std::uint32_t textureId) noexcept
+{
+    m_boundTextureId = textureId;
     mu::GetRenderer().BindTexture(static_cast<int>(m_boundTextureId));
 }
 

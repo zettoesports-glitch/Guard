@@ -2,6 +2,7 @@
 
 #include "client/render/LogicalRenderAssetTable.h"
 #include "client/render/RenderTapeTypes.h"
+#include "client/render/SessionRenderTape.h"
 
 #include <array>
 #include <cstddef>
@@ -16,6 +17,10 @@ class LegacyRenderFacade
 {
 public:
     explicit LegacyRenderFacade(LogicalRenderAssetTable& assets) noexcept;
+
+    [[nodiscard]] bool BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept;
+    [[nodiscard]] std::optional<SessionRenderTape> Finalize() noexcept;
+    [[nodiscard]] bool IsRecording() const noexcept { return m_recording.IsRecording(); }
 
     [[nodiscard]] bool Begin(LegacyPrimitive primitive) noexcept;
     [[nodiscard]] bool End() noexcept;
@@ -80,6 +85,7 @@ public:
                                        std::span<const std::byte> pixels, LegacyPixelFormat format,
                                        RenderAssetRetention retention, RenderSamplerIntent sampler) noexcept;
     void BindTexture(LogicalRenderAssetRef ref) noexcept;
+    void BindTextureId(std::uint32_t textureId) noexcept;
 
 private:
     struct ClientArray
@@ -97,6 +103,8 @@ private:
     [[nodiscard]] bool RefreshFog() noexcept;
 
     LogicalRenderAssetTable& m_assets;
+    SessionRenderTapeRecording m_recording;
+    RenderTapeState m_state{};
     LegacyPrimitive m_primitive = LegacyPrimitive::Triangles;
     bool m_insidePrimitive = false;
     std::vector<RenderTapeVertex> m_vertices;
