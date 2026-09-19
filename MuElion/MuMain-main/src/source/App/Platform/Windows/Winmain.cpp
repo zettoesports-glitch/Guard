@@ -1525,6 +1525,26 @@ MSG MainLoop()
                 sessionRender.BeginFrame();
                 mu::GetRenderer().BeginFrame();
                 RenderScene(g_hDC);
+
+#ifdef MU_ENABLE_MODERN_UI
+                if (UI::Modern::GetRmlUiRuntime().IsInitialized())
+                {
+                    mu::session::SessionRenderUnit modernUiRenderUnit;
+                    if (!modernUiRenderUnit.SubmitModernUiPreparation(
+                            UI::Modern::GetRmlUiRuntime()))
+                    {
+                        static bool reportedModernUiFrameFailure = false;
+                        if (!reportedModernUiFrameFailure)
+                        {
+                            g_ErrorReport.Write(
+                                L"WARNING: RmlUi frame preparation failed; "
+                                L"legacy UI remains active.\r\n");
+                            reportedModernUiFrameFailure = true;
+                        }
+                    }
+                }
+#endif
+
                 sessionRender.ReplayFrame();
                 mu::GetRenderer().EndFrame();
                 sessionRender.EndFrame();

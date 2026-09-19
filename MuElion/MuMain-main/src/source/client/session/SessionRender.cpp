@@ -29,7 +29,13 @@ bool SessionRenderUnit::SubmitModernUiPreparation(
         return false;
 
     auto& facade = mu::pipeline::GetLegacyRenderFacade();
-    const bool ownsPass = !facade.IsRecording();
+
+    // RenderPipeline=0 is the recovered immediate-mode fallback. Do not open a
+    // tape pass in that mode: TapeRenderInterface submissions must reach the
+    // renderer immediately because ReplayFrame() intentionally does nothing.
+    const bool pipelineEnabled = GetSessionRender().IsPipelineEnabled();
+    const bool ownsPass = pipelineEnabled && !facade.IsRecording();
+
     if (ownsPass &&
         !BeginRenderTapePass(mu::pipeline::RenderTapePass::Ui))
         return false;
