@@ -145,7 +145,15 @@ void FrameTargetTransfers::CompleteFrame() noexcept
 
     mu::FramePixelsRgba8 frame;
     if (!mu::GetRenderer().ConsumeFramePixelsRgba8(frame))
+    {
+        // The SDL GPU readback completes synchronously in EndFrame. If no
+        // result exists here, the request failed and must not poison the next
+        // frame by remaining permanently marked as pending.
+        m_pendingCopies.clear();
+        m_pendingDownloads.clear();
+        m_readbackRequested = false;
         return;
+    }
 
     for (const auto& request : m_pendingCopies)
     {

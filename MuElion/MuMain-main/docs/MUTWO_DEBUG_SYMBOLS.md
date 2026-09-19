@@ -232,10 +232,12 @@ TerrainCell:
   float padding
 ```
 
-The reconstructed C++ now has size assertions of 48 bytes for
-`RenderTapeBoneMatrix`, 16 bytes for `RenderTapeTerrainCell`, 192 bytes for
-the non-matrix `RenderTapeBmdConstants` block, and 384 bytes for the complete
-`RenderTapeVertexConstants` block.
+The reconstructed C++ now preserves 48 bytes for `RenderTapeBoneMatrix`,
+16 bytes for `RenderTapeTerrainCell`, and the **232-byte private**
+`RenderTapeBmdConstants` object confirmed by x64 disassembly. Its first
+192 bytes are the shader-visible payload; the remaining 40 bytes are retained
+as CPU-side metadata. The shader-visible vertex constant payload remains
+384 bytes (three 4x4 matrices + the 192-byte BMD prefix).
 
 `LogicalGeometryAssetLease` is currently a functional reconstruction around
 owned vertex/index data. Its private original memory-management implementation

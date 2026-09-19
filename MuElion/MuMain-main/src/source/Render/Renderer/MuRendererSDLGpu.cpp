@@ -379,7 +379,10 @@ static void BlitTextureToSwapchain(SDL_GPUCommandBuffer* commandBuffer, SDL_GPUT
     const auto download = EncodeFramePixelDownload(commandBuffer, sourceTexture, format);
     if (!download)
     {
-        s_frameReadbackState.Fail();
+        if (s_frameReadbackState.IsPending())
+            s_frameReadbackState.Fail();
+        if (s_frameRgbaReadbackState.IsPending())
+            s_frameRgbaReadbackState.Fail();
         return false;
     }
 
@@ -388,7 +391,10 @@ static void BlitTextureToSwapchain(SDL_GPUCommandBuffer* commandBuffer, SDL_GPUT
     {
         mu::log::Get("render")->warn("SDL_gpu -- frame readback fence acquisition failed: {}", SDL_GetError());
         SDL_ReleaseGPUTransferBuffer(s_device, download->transferBuffer);
-        s_frameReadbackState.Fail();
+        if (s_frameReadbackState.IsPending())
+            s_frameReadbackState.Fail();
+        if (s_frameRgbaReadbackState.IsPending())
+            s_frameRgbaReadbackState.Fail();
         return true;
     }
 
