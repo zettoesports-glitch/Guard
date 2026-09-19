@@ -96,9 +96,11 @@ bool LogicalRenderAssetTable::DefineTexture2D(LogicalRenderAssetRef ref,
     std::scoped_lock lock(m_mutex);
     auto& entry = m_entries[ref.id];
 
-    if (entry.metadata.textureId != 0 && entry.metadata.ref.revision != ref.revision)
+    if (entry.metadata.textureId != 0 &&
+        (!entry.ownsTexture || entry.metadata.ref.revision != ref.revision))
     {
-        mu::GetRenderer().ReleaseTexture(entry.metadata.textureId);
+        if (entry.ownsTexture)
+            mu::GetRenderer().ReleaseTexture(entry.metadata.textureId);
         entry.metadata.textureId = 0;
     }
 
@@ -125,6 +127,7 @@ bool LogicalRenderAssetTable::DefineTexture2D(LogicalRenderAssetRef ref,
     entry.metadata.sampler = sampler;
     entry.rgba8 = std::move(rgba);
     entry.lastUsed = std::chrono::steady_clock::now();
+    entry.ownsTexture = true;
     return true;
 }
 
@@ -139,8 +142,12 @@ bool LogicalRenderAssetTable::RegisterCapturedTexture(
 
     std::scoped_lock lock(m_mutex);
     auto& entry = m_entries[ref.id];
-    if (entry.metadata.textureId != 0 && entry.metadata.textureId != textureId)
+    if (entry.metadata.textureId != 0 &&
+        entry.metadata.textureId != textureId &&
+        entry.ownsTexture)
+    {
         mu::GetRenderer().ReleaseTexture(entry.metadata.textureId);
+    }
 
     entry.metadata.ref = ref;
     entry.metadata.textureId = textureId;
@@ -150,6 +157,38 @@ bool LogicalRenderAssetTable::RegisterCapturedTexture(
     entry.metadata.sampler = sampler;
     entry.rgba8.clear();
     entry.lastUsed = std::chrono::steady_clock::now();
+    entry.ownsTexture = true;
+    return true;
+}
+
+bool LogicalRenderAssetTable::RegisterBorrowedTexture(
+    LogicalRenderAssetRef ref, std::uint32_t textureId,
+    std::uint32_t width, std::uint32_t height,
+    RenderAssetRetention retention, RenderSamplerIntent sampler) noexcept
+{
+    if (!ref.IsValid() || textureId == 0 || width == 0 || height == 0 ||
+        !mu::GetRenderer().IsTextureRegistered(textureId))
+        return false;
+
+    std::scoped_lock lock(m_mutex);
+    auto& entry = m_entries[ref.id];
+
+    if (entry.metadata.textureId != 0 &&
+        entry.metadata.textureId != textureId &&
+        entry.ownsTexture)
+    {
+        mu::GetRenderer().ReleaseTexture(entry.metadata.textureId);
+    }
+
+    entry.metadata.ref = ref;
+    entry.metadata.textureId = textureId;
+    entry.metadata.width = width;
+    entry.metadata.height = height;
+    entry.metadata.retention = retention;
+    entry.metadata.sampler = sampler;
+    entry.rgba8.clear();
+    entry.lastUsed = std::chrono::steady_clock::now();
+    entry.ownsTexture = false;
     return true;
 }
 
@@ -210,7 +249,7 @@ void LogicalRenderAssetTable::Release(LogicalRenderAssetRef ref) noexcept
     if (it == m_entries.end() || it->second.metadata.ref.revision != ref.revision)
         return;
 
-    if (it->second.metadata.textureId != 0)
+    if (it->second.metadata.textureId != 0 && it->second.ownsTexture)
         mu::GetRenderer().ReleaseTexture(it->second.metadata.textureId);
     m_entries.erase(it);
 }
@@ -226,7 +265,7 @@ void LogicalRenderAssetTable::ReleaseFrameOnly() noexcept
             continue;
         }
 
-        if (it->second.metadata.textureId != 0)
+        if (it->second.metadata.textureId != 0 && it->second.ownsTexture)
             mu::GetRenderer().ReleaseTexture(it->second.metadata.textureId);
         it = m_entries.erase(it);
     }
@@ -247,7 +286,7 @@ void LogicalRenderAssetTable::CollectIdle() noexcept
             continue;
         }
 
-        if (entry.metadata.textureId != 0)
+        if (entry.metadata.textureId != 0 && entry.ownsTexture)
             mu::GetRenderer().ReleaseTexture(entry.metadata.textureId);
         it = m_entries.erase(it);
     }

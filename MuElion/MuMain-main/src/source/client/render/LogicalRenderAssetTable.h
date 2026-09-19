@@ -52,6 +52,15 @@ public:
         RenderAssetRetention retention = RenderAssetRetention::Shared,
         RenderSamplerIntent sampler = {}) noexcept;
 
+    // Registers a renderer texture owned by another subsystem. The logical
+    // table may reference and resolve it, but must never ReleaseTexture() it.
+    // This is required for modern RmlUi views over legacy bitmap resources.
+    [[nodiscard]] bool RegisterBorrowedTexture(
+        LogicalRenderAssetRef ref, std::uint32_t textureId,
+        std::uint32_t width, std::uint32_t height,
+        RenderAssetRetention retention = RenderAssetRetention::Persistent,
+        RenderSamplerIntent sampler = {}) noexcept;
+
     [[nodiscard]] std::optional<LogicalRenderAssetMetadata> Resolve(LogicalRenderAssetRef ref) noexcept;
     [[nodiscard]] std::optional<LogicalRenderAssetRgba8Snapshot> SnapshotRgba8(
         LogicalRenderAssetRef ref) noexcept;
@@ -69,6 +78,7 @@ private:
         LogicalRenderAssetMetadata metadata{};
         std::vector<std::uint8_t> rgba8;
         std::chrono::steady_clock::time_point lastUsed{};
+        bool ownsTexture = true;
     };
 
     [[nodiscard]] static bool ConvertToRgba8(std::span<const std::byte> pixels,

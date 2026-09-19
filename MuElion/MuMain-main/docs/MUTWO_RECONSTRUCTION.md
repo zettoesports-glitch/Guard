@@ -44,6 +44,7 @@ RmlUi integration, target transfers, and several GPU buffer layouts.
 - exact Debug-observed rejection reason strings
 - `render-tape-failures.log` line format
 - logical texture assets and lifetime retention
+- borrowed logical texture registration for legacy-owned GPU resources
 - logical geometry leases and trusted draw validation
 - indexed-triangle and trail-sample reservations
 - target copy/download commands
