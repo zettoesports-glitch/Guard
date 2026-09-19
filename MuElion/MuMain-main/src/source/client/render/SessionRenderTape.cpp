@@ -3,6 +3,7 @@
 
 #include "Render/Renderer/MuRenderer.h"
 #include "client/render/FrameTape.h"
+#include "client/render/FrameTargetTransfers.h"
 
 #include <algorithm>
 #include <fstream>
@@ -19,6 +20,7 @@ enum class ReconstructedRenderTapeFailure : std::uint32_t
     SkinnedDraw = 2,
     TextDraw = 3,
     Clear = 4,
+    TargetTransfer = 5,
 };
 
 void AppendRenderTapeFailure(ReconstructedRenderTapeFailure failure,
@@ -262,6 +264,30 @@ bool SessionRenderTape::Replay() const noexcept
                 continue;
             }
 
+            if (command.type == RenderTapeCommandType::CopyTarget)
+            {
+                if (!GetFrameTargetTransfers().ExecuteCopyTarget(command.copyTarget.request))
+                {
+                    AppendRenderTapeFailure(
+                        ReconstructedRenderTapeFailure::TargetTransfer, block.pass, order);
+                    blockOk = false;
+                    break;
+                }
+                continue;
+            }
+
+            if (command.type == RenderTapeCommandType::DownloadTarget)
+            {
+                if (!GetFrameTargetTransfers().QueueDownload(command.downloadTarget.request))
+                {
+                    AppendRenderTapeFailure(
+                        ReconstructedRenderTapeFailure::TargetTransfer, block.pass, order);
+                    blockOk = false;
+                    break;
+                }
+                continue;
+            }
+
             if (command.type == RenderTapeCommandType::TextDraw)
             {
                 const auto& text = command.textDraw;
@@ -350,6 +376,32 @@ bool SessionRenderTapeRecording::AppendTextDraw(RenderTapeTextDraw draw) noexcep
     RenderTapeCommand command{};
     command.type = RenderTapeCommandType::TextDraw;
     command.textDraw = std::move(draw);
+    m_blocks[*m_currentBlock].commands.push_back(std::move(command));
+    return true;
+}
+
+bool SessionRenderTapeRecording::AppendCopyTarget(RenderTapeCopyTargetRequest request) noexcept
+{
+    if (!m_currentBlock || *m_currentBlock >= m_blocks.size() ||
+        !request.destination.IsValid())
+        return false;
+
+    RenderTapeCommand command{};
+    command.type = RenderTapeCommandType::CopyTarget;
+    command.copyTarget.request = request;
+    m_blocks[*m_currentBlock].commands.push_back(std::move(command));
+    return true;
+}
+
+bool SessionRenderTapeRecording::AppendDownloadTarget(RenderTapeDownloadTargetRequest request) noexcept
+{
+    if (!m_currentBlock || *m_currentBlock >= m_blocks.size() ||
+        request.requestId == 0)
+        return false;
+
+    RenderTapeCommand command{};
+    command.type = RenderTapeCommandType::DownloadTarget;
+    command.downloadTarget.request = request;
     m_blocks[*m_currentBlock].commands.push_back(std::move(command));
     return true;
 }

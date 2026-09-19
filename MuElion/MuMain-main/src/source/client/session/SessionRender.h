@@ -10,6 +10,8 @@
 #include <thread>
 #include <vector>
 
+#include "client/render/FrameTargetTransfers.h"
+
 namespace mu::pipeline
 {
 enum class RenderTapePass : std::uint8_t;
@@ -39,11 +41,16 @@ public:
     void Configure(bool pipelineEnabled, std::size_t workerCount);
     void Shutdown();
 
-    void BeginFrame(std::uint32_t sessionId = 0);
+    void BeginFrame(std::uint64_t sessionId = 0,
+                    std::uint64_t generation = 0,
+                    std::uint64_t targetId = 0);
     void Submit(Job job);
     void WaitIdle();
     void ReplayFrame();
     void EndFrame();
+    [[nodiscard]] bool ConsumeDownloadedTarget(
+        std::uint64_t requestId,
+        mu::pipeline::CompletedTargetDownload& download) noexcept;
 
     [[nodiscard]] bool IsPipelineEnabled() const noexcept { return m_pipelineEnabled; }
     [[nodiscard]] std::size_t WorkerCount() const noexcept { return m_workers.size(); }

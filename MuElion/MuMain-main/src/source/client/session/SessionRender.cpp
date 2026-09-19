@@ -3,6 +3,7 @@
 
 #include "client/render/FrameTape.h"
 #include "client/render/LegacyRenderFacade.h"
+#include "client/render/FrameTargetTransfers.h"
 
 #include <algorithm>
 #include <utility>
@@ -64,12 +65,23 @@ void SessionRender::Shutdown()
     }
 
     m_pipelineEnabled = false;
+    mu::pipeline::GetFrameTargetTransfers().Reset();
 }
 
-void SessionRender::BeginFrame(std::uint32_t sessionId)
+void SessionRender::BeginFrame(std::uint64_t sessionId,
+                               std::uint64_t generation,
+                               std::uint64_t targetId)
 {
-    const std::uint64_t frame = m_frameCounter.fetch_add(1, std::memory_order_relaxed) + 1;
-    mu::pipeline::GetFrameTape().BeginFrame(frame, sessionId);
+    const std::uint64_t frame =
+        m_frameCounter.fetch_add(1, std::memory_order_relaxed) + 1;
+
+    mu::pipeline::GetLegacyRenderFacade().SetFrameIdentity(
+        mu::pipeline::SessionId(sessionId),
+        mu::pipeline::SessionGeneration(generation),
+        targetId);
+
+    mu::pipeline::GetFrameTape().BeginFrame(
+        frame, static_cast<std::uint32_t>(sessionId));
 }
 
 void SessionRender::Submit(Job job)
@@ -119,8 +131,17 @@ void SessionRender::ReplayFrame()
 
 void SessionRender::EndFrame()
 {
+    mu::pipeline::GetFrameTargetTransfers().CompleteFrame();
     mu::pipeline::GetFrameTape().MarkPresented();
     mu::pipeline::GetFrameTape().SealFrame();
+}
+
+bool SessionRender::ConsumeDownloadedTarget(
+    std::uint64_t requestId,
+    mu::pipeline::CompletedTargetDownload& download) noexcept
+{
+    return mu::pipeline::GetFrameTargetTransfers().ConsumeDownload(
+        requestId, download);
 }
 
 void SessionRender::WorkerLoop()

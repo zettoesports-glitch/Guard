@@ -128,6 +128,16 @@ struct RenderTapeTextDraw
     void* sampler = nullptr;
 };
 
+struct RenderTapeTargetCopy
+{
+    RenderTapeCopyTargetRequest request{};
+};
+
+struct RenderTapeTargetDownload
+{
+    RenderTapeDownloadTargetRequest request{};
+};
+
 struct RenderTapeClear
 {
     bool color = false;
@@ -141,6 +151,8 @@ enum class RenderTapeCommandType : std::uint8_t
     Draw,
     SkinnedDraw,
     TextDraw,
+    CopyTarget,
+    DownloadTarget,
     Clear,
 };
 
@@ -150,6 +162,8 @@ struct RenderTapeCommand
     RenderTapeDraw draw{};
     RenderTapeSkinnedDraw skinnedDraw{};
     RenderTapeTextDraw textDraw{};
+    RenderTapeTargetCopy copyTarget{};
+    RenderTapeTargetDownload downloadTarget{};
     RenderTapeClear clear{};
 };
 
@@ -190,6 +204,8 @@ public:
     [[nodiscard]] bool AppendDraw(RenderTapeDraw draw) noexcept;
     [[nodiscard]] bool AppendSkinnedDraw(RenderTapeSkinnedDraw draw) noexcept;
     [[nodiscard]] bool AppendTextDraw(RenderTapeTextDraw draw) noexcept;
+    [[nodiscard]] bool AppendCopyTarget(RenderTapeCopyTargetRequest request) noexcept;
+    [[nodiscard]] bool AppendDownloadTarget(RenderTapeDownloadTargetRequest request) noexcept;
     [[nodiscard]] bool AppendClear(bool color, bool depth, bool stencil, const RenderTapeState& state) noexcept;
     [[nodiscard]] std::optional<TrailSampleReservation> ReserveTrailSamples(std::uint64_t count) noexcept;
     [[nodiscard]] std::optional<SessionRenderTape> Finalize() noexcept;

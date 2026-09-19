@@ -322,3 +322,36 @@ The current C++ implements this protocol. Instance methods use a CPU-expanded
 compatibility path on the existing SDL GPU renderer; this preserves functional
 draw behavior while the exact private structured-buffer upload path continues
 to be reconstructed.
+
+
+## Target-copy and RGBA8 download request layout
+
+x64 disassembly confirms the reconstructed tape payloads:
+
+```text
+CopyTargetToLogicalTexture:
+  SessionId              8 bytes
+  SessionGeneration      8 bytes
+  targetId               8 bytes
+  RenderTapeRect        16 bytes
+  LogicalRenderAssetRef 16 bytes
+
+DownloadTargetRgba8:
+  SessionId              8 bytes
+  SessionGeneration      8 bytes
+  targetId               8 bytes
+  requestId              8 bytes
+  RenderTapeRect        16 bytes
+  bool                   1 byte
+  userToken              8 bytes
+```
+
+The facade now validates the active session/generation/target identity before
+recording these commands. Full-frame logical texture copies use the SDL GPU
+capture texture path. Cropped copies and downloads share a single native RGBA8
+readback for the frame; completed downloads retain requestId and userToken.
+
+The private name of the boolean is not present in recovered symbols. It is
+currently modeled as row reversal because that matches framebuffer download
+behavior, and this inference is explicitly not treated as a recovered original
+identifier.

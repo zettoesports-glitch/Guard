@@ -2,6 +2,7 @@
 #include "client/render/LegacyRenderFacade.h"
 
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/FrameTape.h"
 
 #include <algorithm>
 #include <cmath>
@@ -119,6 +120,15 @@ LegacyRenderFacade::LegacyRenderFacade(LogicalRenderAssetTable& assets) noexcept
     m_state.projection.fill(0.0f);
     m_state.modelView[0] = m_state.modelView[5] = m_state.modelView[10] = m_state.modelView[15] = 1.0f;
     m_state.projection[0] = m_state.projection[5] = m_state.projection[10] = m_state.projection[15] = 1.0f;
+}
+
+void LegacyRenderFacade::SetFrameIdentity(
+    SessionId session, SessionGeneration generation,
+    std::uint64_t targetId) noexcept
+{
+    m_sessionId = session;
+    m_sessionGeneration = generation;
+    m_targetId = targetId;
 }
 
 bool LegacyRenderFacade::BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept
@@ -1512,6 +1522,46 @@ bool LegacyRenderFacade::AppendFrameOnlyTextureQuad(
         {positions[3][0], positions[3][1], 1.0f, 0.0f, 0xFFFFFFFFu},
     };
     return SubmitQuad2D(vertices, metadata->textureId);
+}
+
+bool LegacyRenderFacade::CopyTargetToLogicalTexture(
+    SessionId session, SessionGeneration generation,
+    std::uint64_t targetId, RenderTapeRect rect,
+    LogicalRenderAssetRef destination) noexcept
+{
+    if (!m_recording.IsRecording() || !destination.IsValid() ||
+        session != m_sessionId || generation != m_sessionGeneration ||
+        targetId != m_targetId)
+    {
+        GetFrameTape().RejectAsset(
+            destination.id, destination.revision,
+            FrameRejectionReason::InvalidTapeIdentity,
+            static_cast<std::uint32_t>(session.Value()));
+        return false;
+    }
+
+    return m_recording.AppendCopyTarget(
+        {session, generation, targetId, rect, destination});
+}
+
+bool LegacyRenderFacade::DownloadTargetRgba8(
+    SessionId session, SessionGeneration generation,
+    std::uint64_t targetId, std::uint64_t requestId,
+    RenderTapeRect rect, bool reverseRows,
+    std::uint64_t userToken) noexcept
+{
+    if (!m_recording.IsRecording() || requestId == 0 ||
+        session != m_sessionId || generation != m_sessionGeneration ||
+        targetId != m_targetId)
+    {
+        GetFrameTape().RejectAsset(
+            0, 0, FrameRejectionReason::InvalidTapeIdentity,
+            static_cast<std::uint32_t>(session.Value()));
+        return false;
+    }
+
+    return m_recording.AppendDownloadTarget(
+        {session, generation, targetId, requestId, rect, reverseRows, userToken});
 }
 
 void LegacyRenderFacade::BindTexture(LogicalRenderAssetRef ref) noexcept

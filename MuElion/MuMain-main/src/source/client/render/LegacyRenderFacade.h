@@ -28,6 +28,8 @@ public:
 
     explicit LegacyRenderFacade(LogicalRenderAssetTable& assets) noexcept;
 
+    void SetFrameIdentity(SessionId session, SessionGeneration generation,
+                          std::uint64_t targetId) noexcept;
     [[nodiscard]] bool BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept;
     [[nodiscard]] bool EndPass() noexcept;
     [[nodiscard]] std::optional<SessionRenderTape> Finalize() noexcept;
@@ -185,6 +187,15 @@ public:
         LogicalRenderAssetRef ref, unsigned int width, unsigned int height,
         std::span<const std::byte> pixels, RenderSamplerIntent sampler,
         const std::array<std::array<float, 2>, 4>& positions) noexcept;
+    [[nodiscard]] bool CopyTargetToLogicalTexture(
+        SessionId session, SessionGeneration generation,
+        std::uint64_t targetId, RenderTapeRect rect,
+        LogicalRenderAssetRef destination) noexcept;
+    [[nodiscard]] bool DownloadTargetRgba8(
+        SessionId session, SessionGeneration generation,
+        std::uint64_t targetId, std::uint64_t requestId,
+        RenderTapeRect rect, bool reverseRows,
+        std::uint64_t userToken) noexcept;
     void BindTexture(LogicalRenderAssetRef ref) noexcept;
     void BindTextureId(std::uint32_t textureId) noexcept;
 
@@ -233,6 +244,10 @@ private:
 
     std::uint64_t m_nextQuadInstanceRun = 1;
     std::uint64_t m_currentQuadInstanceRun = 0;
+
+    SessionId m_sessionId{};
+    SessionGeneration m_sessionGeneration{};
+    std::uint64_t m_targetId = 0;
 
     int m_fogMode = static_cast<int>(RenderFogMode::Linear);
     float m_fogStart = 0.0f;
