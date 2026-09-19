@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -144,10 +145,19 @@ bool LegacyRenderFacade::EndPass() noexcept
 std::optional<SessionRenderTape> LegacyRenderFacade::Finalize() noexcept
 {
     if (m_insidePrimitive && !End())
+    {
+        m_boneMatrices.clear();
         return std::nullopt;
+    }
     if (m_recording.IsRecording() && !m_recording.EndPass())
+    {
+        m_boneMatrices.clear();
         return std::nullopt;
-    return m_recording.Finalize();
+    }
+
+    auto tape = m_recording.Finalize();
+    m_boneMatrices.clear();
+    return tape;
 }
 
 bool LegacyRenderFacade::Begin(LegacyPrimitive primitive) noexcept
@@ -792,6 +802,251 @@ bool LegacyRenderFacade::AppendTrustedGeometryDrawBatch(
             return false;
     }
     return true;
+}
+
+std::optional<unsigned int> LegacyRenderFacade::AppendBoneMatrices(
+    std::span<const RenderTapeBoneMatrix> bones, bool reuseExisting) noexcept
+{
+    if (bones.empty())
+        return 0u;
+
+    if (bones.size() > static_cast<std::size_t>(std::numeric_limits<unsigned int>::max()))
+        return std::nullopt;
+
+    if (reuseExisting && bones.size() <= m_boneMatrices.size())
+    {
+        for (std::size_t offset = 0; offset + bones.size() <= m_boneMatrices.size(); ++offset)
+        {
+            if (std::equal(bones.begin(), bones.end(), m_boneMatrices.begin() + offset,
+                           [](const RenderTapeBoneMatrix& left, const RenderTapeBoneMatrix& right) {
+                               return std::memcmp(&left, &right, sizeof(RenderTapeBoneMatrix)) == 0;
+                           }))
+            {
+                return static_cast<unsigned int>(offset);
+            }
+        }
+    }
+
+    if (m_boneMatrices.size() >
+        static_cast<std::size_t>(std::numeric_limits<unsigned int>::max()) - bones.size())
+        return std::nullopt;
+
+    const auto offset = static_cast<unsigned int>(m_boneMatrices.size());
+    m_boneMatrices.insert(m_boneMatrices.end(), bones.begin(), bones.end());
+    return offset;
+}
+
+bool LegacyRenderFacade::DrawBmdGeometry(
+    const LogicalGeometryAssetLease& geometry,
+    unsigned int firstVertex, unsigned int vertexCount,
+    unsigned int firstIndex, unsigned int indexCount,
+    const RenderTapeBmdConstants& constants) noexcept
+{
+    if (!geometry.IsValid())
+        return false;
+
+    const auto sourceVertices = geometry.SkinnedVertices();
+    if (sourceVertices.empty())
+        return false;
+
+    if (firstVertex > sourceVertices.size() ||
+        vertexCount > sourceVertices.size() - firstVertex)
+        return false;
+
+    const auto indices = geometry.Indices();
+    std::vector<mu::SkinnedVertex3D> vertices;
+
+    if (!indices.empty())
+    {
+        if (firstIndex > indices.size() || indexCount > indices.size() - firstIndex)
+            return false;
+
+        vertices.reserve(indexCount);
+        const std::size_t vertexEnd = static_cast<std::size_t>(firstVertex) + vertexCount;
+        for (std::size_t i = firstIndex; i < static_cast<std::size_t>(firstIndex) + indexCount; ++i)
+        {
+            const std::size_t index = indices[i];
+            if (index < firstVertex || index >= vertexEnd || index >= sourceVertices.size())
+                return false;
+            vertices.push_back(sourceVertices[index]);
+        }
+    }
+    else
+    {
+        if (indexCount != 0)
+            return false;
+        vertices.assign(sourceVertices.begin() + firstVertex,
+                        sourceVertices.begin() + firstVertex + vertexCount);
+    }
+
+    if (vertices.empty() || vertices.size() % 3u != 0u)
+        return false;
+
+    const std::size_t boneOffset = constants.bmdMode[1];
+    if (boneOffset > m_boneMatrices.size())
+        return false;
+
+    const auto boneSpan =
+        std::span<const RenderTapeBoneMatrix>(m_boneMatrices).subspan(boneOffset);
+    const auto boneFloats = std::span<const float>(
+        reinterpret_cast<const float*>(boneSpan.data()), boneSpan.size() * 12u);
+
+    mu::SkinningParameters parameters{
+        .boneMatrices = boneFloats,
+        .paletteVersion = static_cast<std::uint32_t>(boneOffset),
+        .bodyOrigin = {constants.bmdBodyOrigin[0],
+                       constants.bmdBodyOrigin[1],
+                       constants.bmdBodyOrigin[2]},
+        .bodyScale = constants.bmdScale[0],
+        .boneScale = constants.bmdScale[1],
+        .restPoseScale = constants.bmdScale[2],
+        .lightDirection = {constants.bmdLightPosition[0],
+                           constants.bmdLightPosition[1],
+                           constants.bmdLightPosition[2]},
+        .textureCoordinateOffset = {constants.bmdUvAnimation[0],
+                                    constants.bmdUvAnimation[1]},
+        .chromeWave = constants.bmdUvAnimation[2],
+        .chromeWave2 = constants.bmdUvAnimation[3],
+        .chromeLight = {constants.bmdChromeLight[0],
+                        constants.bmdChromeLight[1]},
+        .chromeTimeTerm = constants.bmdChromeLight[3],
+        .textureCoordinates =
+            static_cast<mu::SkinningTextureCoordinates>(constants.bmdMode[2]),
+        .translate = (constants.bmdMode[3] & RenderTapeBmdTranslate) != 0u,
+        .lightEnabled = (constants.bmdMode[3] & RenderTapeBmdLighting) != 0u,
+    };
+
+    return SubmitSkinnedTriangles(vertices, geometry.TextureId(), parameters);
+}
+
+bool LegacyRenderFacade::DrawRigidInstances(
+    const LogicalGeometryAssetLease& geometry,
+    unsigned int firstVertex, unsigned int vertexCount,
+    unsigned int firstIndex, unsigned int indexCount,
+    std::span<const RenderTapeRigidInstance> instances,
+    const RenderTapeBmdConstants& constants) noexcept
+{
+    if (!geometry.IsValid() || instances.empty())
+        return false;
+
+    const auto source = geometry.SkinnedVertices();
+    if (source.empty() || firstVertex > source.size() ||
+        vertexCount > source.size() - firstVertex)
+        return false;
+
+    const auto indices = geometry.Indices();
+    std::vector<std::size_t> sourceIndices;
+    if (!indices.empty())
+    {
+        if (firstIndex > indices.size() || indexCount > indices.size() - firstIndex)
+            return false;
+        sourceIndices.reserve(indexCount);
+        const std::size_t vertexEnd = static_cast<std::size_t>(firstVertex) + vertexCount;
+        for (std::size_t i = firstIndex; i < static_cast<std::size_t>(firstIndex) + indexCount; ++i)
+        {
+            const std::size_t index = indices[i];
+            if (index < firstVertex || index >= vertexEnd || index >= source.size())
+                return false;
+            sourceIndices.push_back(index);
+        }
+    }
+    else
+    {
+        if (indexCount != 0)
+            return false;
+        sourceIndices.reserve(vertexCount);
+        for (std::size_t i = firstVertex; i < static_cast<std::size_t>(firstVertex) + vertexCount; ++i)
+            sourceIndices.push_back(i);
+    }
+
+    if (sourceIndices.empty() || sourceIndices.size() % 3u != 0u)
+        return false;
+
+    std::vector<mu::Vertex3D> expanded;
+    expanded.reserve(sourceIndices.size() * instances.size());
+
+    const bool translate =
+        (constants.bmdMode[3] & RenderTapeBmdTranslate) != 0u;
+    const bool lighting =
+        (constants.bmdMode[3] & RenderTapeBmdLighting) != 0u;
+    const bool uvAnimation =
+        (constants.bmdMode[3] & RenderTapeBmdUvAnimation) != 0u;
+    const bool boneScalePath =
+        (constants.bmdMode[3] & RenderTapeBmdBoneScalePath) != 0u;
+
+    for (const auto& instance : instances)
+    {
+        for (const std::size_t sourceIndex : sourceIndices)
+        {
+            const auto& input = source[sourceIndex];
+
+            const float inputScale =
+                boneScalePath ? constants.bmdScale[1] : constants.bmdScale[0];
+            const float px = input.x * inputScale;
+            const float py = input.y * inputScale;
+            const float pz = input.z * inputScale;
+
+            float x = px * instance.transform0[0] +
+                      py * instance.transform0[1] +
+                      pz * instance.transform0[2] +
+                      instance.transform0[3];
+            float y = px * instance.transform1[0] +
+                      py * instance.transform1[1] +
+                      pz * instance.transform1[2] +
+                      instance.transform1[3];
+            float z = px * instance.transform2[0] +
+                      py * instance.transform2[1] +
+                      pz * instance.transform2[2] +
+                      instance.transform2[3];
+
+            if (translate)
+            {
+                x = x * constants.bmdScale[2] + constants.bmdBodyOrigin[0];
+                y = y * constants.bmdScale[2] + constants.bmdBodyOrigin[1];
+                z = z * constants.bmdScale[2] + constants.bmdBodyOrigin[2];
+            }
+
+            const float nx = input.nx * instance.transform0[0] +
+                             input.ny * instance.transform0[1] +
+                             input.nz * instance.transform0[2];
+            const float ny = input.nx * instance.transform1[0] +
+                             input.ny * instance.transform1[1] +
+                             input.nz * instance.transform1[2];
+            const float nz = input.nx * instance.transform2[0] +
+                             input.ny * instance.transform2[1] +
+                             input.nz * instance.transform2[2];
+
+            std::array<float, 4> color = instance.baseColor;
+            if (lighting)
+            {
+                const float dot =
+                    nx * constants.bmdLightPosition[0] +
+                    ny * constants.bmdLightPosition[1] +
+                    nz * constants.bmdLightPosition[2];
+                const float factor = std::max(dot * 0.8f + 0.4f, 0.2f);
+                color = {
+                    instance.bodyLightAndAlpha[0] * factor,
+                    instance.bodyLightAndAlpha[1] * factor,
+                    instance.bodyLightAndAlpha[2] * factor,
+                    instance.bodyLightAndAlpha[3],
+                };
+            }
+
+            float u = input.u;
+            float v = input.v;
+            if (uvAnimation)
+            {
+                u += instance.uvAnimation[0];
+                v += instance.uvAnimation[1];
+            }
+
+            expanded.push_back({
+                x, y, z, nx, ny, nz, u, v, PackColor(color)
+            });
+        }
+    }
+
+    return SubmitTriangles(expanded, geometry.TextureId());
 }
 
 bool LegacyRenderFacade::MatrixMode(LegacyMatrixMode mode) noexcept { mu::GetRenderer().SetMatrixMode(static_cast<int>(mode)); return true; }

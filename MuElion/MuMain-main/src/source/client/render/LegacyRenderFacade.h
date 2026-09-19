@@ -69,6 +69,20 @@ public:
     [[nodiscard]] bool AppendTrustedGeometryDrawBatch(
         std::span<const TrustedGeometryDraw> draws) noexcept;
 
+    [[nodiscard]] std::optional<unsigned int> AppendBoneMatrices(
+        std::span<const RenderTapeBoneMatrix> bones, bool reuseExisting) noexcept;
+    [[nodiscard]] bool DrawBmdGeometry(
+        const LogicalGeometryAssetLease& geometry,
+        unsigned int firstVertex, unsigned int vertexCount,
+        unsigned int firstIndex, unsigned int indexCount,
+        const RenderTapeBmdConstants& constants) noexcept;
+    [[nodiscard]] bool DrawRigidInstances(
+        const LogicalGeometryAssetLease& geometry,
+        unsigned int firstVertex, unsigned int vertexCount,
+        unsigned int firstIndex, unsigned int indexCount,
+        std::span<const RenderTapeRigidInstance> instances,
+        const RenderTapeBmdConstants& constants) noexcept;
+
     [[nodiscard]] bool MatrixMode(LegacyMatrixMode mode) noexcept;
     [[nodiscard]] bool LoadIdentity() noexcept;
     [[nodiscard]] bool LoadMatrix(const std::array<float, 16>& matrix) noexcept;
@@ -174,6 +188,7 @@ private:
 
     std::vector<RenderTapeState> m_attribStack;
     std::vector<ClientAttribSnapshot> m_clientAttribStack;
+    std::vector<RenderTapeBoneMatrix> m_boneMatrices;
 
     int m_fogMode = static_cast<int>(RenderFogMode::Linear);
     float m_fogStart = 0.0f;

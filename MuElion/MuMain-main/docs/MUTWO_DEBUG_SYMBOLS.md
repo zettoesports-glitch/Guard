@@ -240,3 +240,26 @@ the non-matrix `RenderTapeBmdConstants` block, and 384 bytes for the complete
 `LogicalGeometryAssetLease` is currently a functional reconstruction around
 owned vertex/index data. Its private original memory-management implementation
 is not claimed to be textually identical.
+
+
+## BMD mode mapping from embedded shader
+
+Further shader analysis confirms:
+
+- `bmdMode.y` is added to vertex bone indices before indexing `bmdBones`.
+  Therefore it is a bone-buffer base offset, not one of the four geometry range
+  parameters passed to `DrawBmdGeometry`.
+- `bmdMode.z` selects the legacy texture-coordinate mode (mesh/chrome family).
+- `bmdMode.w` is a bitfield. Observed bits include translate (bit 0),
+  lighting (bit 1), UV animation (bit 2), wave deformation (bit 3), the
+  alternate/bone-scale transform path (bit 4), and terrain-light override
+  (bit 5).
+- Shader mode 6 consumes six float4 rows per rigid instance:
+  transform0, transform1, transform2, bodyLight+alpha, baseColor, uvAnimation.
+  The C++ reconstruction now asserts `sizeof(RenderTapeRigidInstance) == 96`.
+
+Based on the fact that bone base is already carried by `bmdMode.y`, the four
+unsigned parameters on `DrawBmdGeometry`/`DrawRigidInstances` are
+reconstructed as vertex-start, vertex-count, index-start and index-count. This
+is a semantic reconstruction supported by the shader layout, not a claim that
+the original parameter names are known.

@@ -221,9 +221,35 @@ struct alignas(16) RenderTapeVertexConstants
     RenderTapeBmdConstants bmd{};
 };
 
+// bmdMode.w bit usage recovered from the shader. Names describe observed
+// behavior and are intentionally kept separate from the original private enum.
+enum RenderTapeBmdModeFlag : std::uint32_t
+{
+    RenderTapeBmdTranslate = 1u << 0,
+    RenderTapeBmdLighting = 1u << 1,
+    RenderTapeBmdUvAnimation = 1u << 2,
+    RenderTapeBmdWave = 1u << 3,
+    RenderTapeBmdBoneScalePath = 1u << 4,
+    RenderTapeBmdTerrainLightOverride = 1u << 5,
+    RenderTapeBmdFlag64 = 1u << 6,
+};
+
+// Mode 6 in the embedded shader consumes exactly six float4 rows per rigid
+// instance. The semantic mapping below is directly observable in the shader.
+struct alignas(16) RenderTapeRigidInstance
+{
+    RenderTapeFloat4 transform0{};
+    RenderTapeFloat4 transform1{};
+    RenderTapeFloat4 transform2{};
+    RenderTapeFloat4 bodyLightAndAlpha{};
+    RenderTapeFloat4 baseColor{};
+    RenderTapeFloat4 uvAnimation{};
+};
+
 static_assert(sizeof(RenderTapeBoneMatrix) == 48);
 static_assert(sizeof(RenderTapeTerrainCell) == 16);
 static_assert(sizeof(RenderTapeBmdConstants) == 192);
 static_assert(sizeof(RenderTapeVertexConstants) == 384);
+static_assert(sizeof(RenderTapeRigidInstance) == 96);
 
 } // namespace mu::pipeline
