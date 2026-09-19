@@ -2787,6 +2787,64 @@ public:
     }
 
     // -----------------------------------------------------------------------
+    // RenderTriangles2D: arbitrary UI triangles in conventional Y-down
+    // window coordinates. This is used by RmlUi and other modern UI paths.
+    // -----------------------------------------------------------------------
+    void RenderTriangles2D(std::span<const Vertex2D> vertices, std::uint32_t textureId) override
+    {
+        if (vertices.empty() || vertices.size() % 3u != 0u ||
+            !s_frameActive || !m_colorWriteEnabled || m_stencilTestEnabled)
+        {
+            return;
+        }
+
+        void* pTex = LookupTextureForDraw(textureId);
+        if (!pTex)
+        {
+            mu::log::Get("render")->warn(
+                "SDL_gpu::RenderTriangles2D -- unknown textureId {}, skipping", textureId);
+            return;
+        }
+
+        const Uint32 byteSize = static_cast<Uint32>(vertices.size() * sizeof(Vertex2D));
+        const Uint32 vtxOffset = UploadVertices(vertices.data(), byteSize);
+        if (vtxOffset == ~0u)
+            return;
+
+        SDL_GPUGraphicsPipeline* pipeline =
+            s_pipelines2DDepthOff[static_cast<int>(BlendMode::Alpha)];
+        if (!pipeline)
+            return;
+
+        RenderCmd cmd{};
+        cmd.type = RenderCmdType::DrawTriangles2D;
+        cmd.pipeline = pipeline;
+        cmd.texture = static_cast<SDL_GPUTexture*>(pTex);
+        void* pSampler = LookupSampler(textureId);
+        cmd.sampler = pSampler ? static_cast<SDL_GPUSampler*>(pSampler) : s_defaultSampler;
+        cmd.vtxOffset = vtxOffset;
+        cmd.vtxCount = static_cast<Uint32>(vertices.size());
+        cmd.fogUniform = m_fogUniform;
+        cmd.blendMode = BlendMode::Alpha;
+        cmd.blendEnabled = true;
+        cmd.depthTestEnabled = false;
+        cmd.depthMaskEnabled = false;
+        cmd.cullFaceEnabled = false;
+        cmd.vu.mvp = glm::ortho(
+            0.0f, static_cast<float>(s_cachedWinW),
+            static_cast<float>(s_cachedWinH), 0.0f,
+            -1.0f, 1.0f);
+
+        FrameProfiler::Count(FrameProfiler::Counter::BatchVertices, cmd.vtxCount);
+        s_renderCmds.push_back(cmd);
+        ++s_dbgDrawCallsThisFrame;
+        s_dbgVtxBytesThisFrame += byteSize;
+        FrameProfiler::Count(FrameProfiler::Counter::DrawCalls);
+        FrameProfiler::Count(FrameProfiler::Counter::BatchDraws);
+        FrameProfiler::Count(FrameProfiler::Counter::VertexBytes, byteSize);
+    }
+
+    // -----------------------------------------------------------------------
     // RenderQuad2D: Render a screen-space textured quad (4 vertices per quad).
     // Vertex count must be a multiple of 4.
     // -----------------------------------------------------------------------

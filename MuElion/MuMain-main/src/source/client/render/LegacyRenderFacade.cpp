@@ -454,6 +454,42 @@ bool LegacyRenderFacade::SubmitQuad3D(std::span<const mu::Vertex3D> vertices, st
     return result;
 }
 
+bool LegacyRenderFacade::SubmitTriangles2D(
+    std::span<const mu::Vertex2D> vertices, std::uint32_t textureId) noexcept
+{
+    if (vertices.empty())
+        return true;
+    if (vertices.size() % 3u != 0u)
+        return false;
+
+    if (!m_recording.IsRecording())
+    {
+        mu::GetRenderer().RenderTriangles2D(vertices, textureId);
+        return true;
+    }
+
+    RenderTapeDraw draw{};
+    draw.primitive = LegacyPrimitive::Triangles;
+    draw.screenSpace2D = true;
+    draw.textureId = textureId;
+    draw.state = m_state;
+    draw.vertices.reserve(vertices.size());
+    for (const auto& v : vertices)
+    {
+        RenderTapeVertex out{};
+        out.position = {v.x, v.y, 0.0f};
+        out.texCoord = {v.u, v.v};
+        out.color = {
+            static_cast<float>(v.color & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 8u) & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 16u) & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 24u) & 0xffu) / 255.0f,
+        };
+        draw.vertices.push_back(out);
+    }
+    return m_recording.AppendDraw(std::move(draw));
+}
+
 bool LegacyRenderFacade::SubmitQuad2D(std::span<const mu::Vertex2D> vertices, std::uint32_t textureId) noexcept
 {
     if (vertices.empty())

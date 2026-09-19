@@ -148,7 +148,12 @@ bool ReplayDraw(const RenderTapeDraw& draw) noexcept
         }
         if (vertices2D.size() % 4 != 0)
             return false;
-        renderer.RenderQuad2D(vertices2D, textureId);
+        if (draw.primitive == LegacyPrimitive::Triangles)
+            renderer.RenderTriangles2D(vertices2D, textureId);
+        else if (draw.primitive == LegacyPrimitive::Quads)
+            renderer.RenderQuad2D(vertices2D, textureId);
+        else
+            return false;
         return true;
     }
 

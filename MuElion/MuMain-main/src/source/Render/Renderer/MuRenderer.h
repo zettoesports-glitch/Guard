@@ -155,6 +155,8 @@ class IMuRenderer
 public:
     virtual ~IMuRenderer() = default;
 
+    // Render screen-space textured geometry in window coordinates (Y-down).
+    virtual void RenderTriangles2D(std::span<const Vertex2D> vertices, std::uint32_t textureId) = 0;
     // Render a screen-space textured quad (4 vertices, GL_QUADS).
     virtual void RenderQuad2D(std::span<const Vertex2D> vertices, std::uint32_t textureId) = 0;
 
