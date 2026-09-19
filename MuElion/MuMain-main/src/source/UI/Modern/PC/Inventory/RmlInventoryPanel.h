@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -11,29 +12,57 @@ namespace UI::Modern::PC::Inventory
 class RmlInventoryPanel
 {
 public:
-    enum class Action
+    static constexpr std::size_t kInventorySlotCount = 64;
+    static constexpr std::size_t kEquipmentSlotCount = 12;
+
+    struct SlotState
+    {
+        bool visible = true;
+        bool enabled = true;
+        bool occupied = false;
+        bool selected = false;
+        int iconFrame = 0;
+    };
+
+    struct State
+    {
+        bool visible = false;
+        int viewportWidth = 0;
+        int viewportHeight = 0;
+
+        std::string title = "Inventory";
+        std::string zen;
+
+        bool repairEnabled = true;
+        bool repairActive = false;
+        bool privateStoreEnabled = true;
+        bool privateStoreOpen = false;
+        bool extensionEnabled = true;
+        bool socketOptionEnabled = true;
+        bool setOptionEnabled = true;
+
+        std::array<SlotState, kInventorySlotCount> inventory{};
+        std::array<SlotState, kEquipmentSlotCount> equipment{};
+    };
+
+    enum class ActionType
     {
         Close,
-        SocketOption,
-        SetOption,
         Repair,
         PrivateStore,
-        ExtensionBag,
-        CloseExtension,
-    };
-
-    enum class SlotArea
-    {
-        Inventory,
-        Equipment,
         Extension,
+        SocketOption,
+        SetOption,
+        InventorySlotPrimary,
+        InventorySlotSecondary,
+        EquipmentSlotPrimary,
+        EquipmentSlotSecondary,
     };
 
-    struct SlotRequest
+    struct Action
     {
-        SlotArea area = SlotArea::Inventory;
+        ActionType type = ActionType::Close;
         std::size_t index = 0;
-        bool secondary = false;
     };
 
     RmlInventoryPanel();
@@ -48,25 +77,11 @@ public:
     [[nodiscard]] bool Show();
     [[nodiscard]] bool Hide();
     void Release();
+
     [[nodiscard]] bool IsLoaded() const noexcept;
-
-    [[nodiscard]] bool ShowExtension(bool show);
-    [[nodiscard]] bool IsExtensionLoaded() const noexcept;
-
-    void SetTitle(std::string title);
-    void SetZenText(std::string zenText);
-
-    // 0 hides the extension. 1..4 exposes 32 slots per unlocked bag.
-    void SetExpandedBagCount(std::size_t bagCount);
-    [[nodiscard]] std::size_t GetExpandedBagCount() const noexcept;
-
-    void SetInventorySlotFrame(std::size_t index, int frame);
-    void SetEquipmentSlotFrame(std::size_t index, int frame);
-    void SetExtensionSlotFrame(std::size_t index, int frame);
-
+    [[nodiscard]] bool ApplyState(const State& state);
     [[nodiscard]] bool Update();
     [[nodiscard]] std::optional<Action> ConsumeAction();
-    [[nodiscard]] std::optional<SlotRequest> ConsumeSlotRequest();
 
 private:
     class Impl;

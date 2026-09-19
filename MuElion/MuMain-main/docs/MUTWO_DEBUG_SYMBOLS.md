@@ -1610,3 +1610,46 @@ truth. It owns only RmlUi presentation state:
 Item ownership, validation, equip/use rules, repair logic, private-store rules
 and network requests remain in the legacy inventory system until their exact
 modern ownership/callback graph is recovered.
+
+
+## Inventory design contract reconstruction
+
+The x64 Debug string inventory exposes the complete design-key surface for the
+main inventory document:
+
+```text
+Inventory-Size
+Inventory-Reference
+Inventory-InitialPosition
+Inventory-Grid
+Inventory-Equipment0 .. Inventory-Equipment11
+Inventory-Button0 .. Inventory-Button5
+```
+
+It also preserves the dynamic slot prefix `isSlot` and named equipment ids:
+
+```text
+slot_weapon_right
+slot_weapon_left
+slot_helm
+slot_armor
+slot_pants
+slot_gloves
+slot_boots
+slot_wing
+slot_helper
+slot_amulet
+slot_ring_right
+slot_ring_left
+```
+
+The reconstructed `RmlInventoryPanel` consumes those authored metrics,
+creates 64 `isSlotN` inventory slots at runtime, binds twelve equipment slots
+with `RmlMuSlot`, and exposes semantic one-shot actions for close, repair,
+private store, extension bag, socket/set option, and primary/secondary slot
+interaction.
+
+The legacy `CNewUIMyInventory` remains authoritative for item ownership,
+drag/drop, repair eligibility, networking and equipment validation. This
+presentation controller intentionally does not send item packets or mutate
+`CNewUIInventoryCtrl` state.

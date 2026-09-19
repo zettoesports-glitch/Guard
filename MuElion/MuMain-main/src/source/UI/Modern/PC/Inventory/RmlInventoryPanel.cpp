@@ -7,30 +7,25 @@
 #include "UI/Modern/RmlMuSlot.h"
 #include "UI/Modern/RmlUiDesign.h"
 
-#include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Core.h>
 #include <RmlUi/Core/Element.h>
 #include <RmlUi/Core/ElementDocument.h>
 #include <RmlUi/Core/FileInterface.h>
 #include <RmlUi/Core/StreamMemory.h>
-#include <RmlUi/Core/StringUtilities.h>
 
 #include <algorithm>
 #include <array>
-#include <memory>
+#include <cstdio>
 #include <sstream>
 #include <utility>
-#include <vector>
 
 namespace UI::Modern::PC::Inventory
 {
 
 namespace
 {
-constexpr const char* kInventoryPath =
+constexpr const char* kDocumentPath =
     "Data/UI/PC/Inventory/inventory.rml";
-constexpr const char* kExtensionPath =
-    "Data/UI/PC/Inventory/inventory_extension.rml";
 
 struct Rect
 {
@@ -40,25 +35,29 @@ struct Rect
     float height = 0.0f;
 };
 
-RmlUiDesign::Values LoadDesignValues(const char* path)
+Rml::String PixelValue(float value)
 {
-    Rml::FileInterface* files = Rml::GetFileInterface();
-    if (!files || !path)
-        return {};
+    std::array<char, 64> buffer{};
+    std::snprintf(
+        buffer.data(), buffer.size(), "%.3fpx",
+        static_cast<double>(value));
+    return Rml::String(buffer.data());
+}
 
-    Rml::String contents;
-    if (!files->LoadFile(path, contents) || contents.empty())
-        return {};
-
-    Rml::StreamMemory stream(
-        reinterpret_cast<const Rml::byte*>(contents.data()),
-        contents.size());
-    return RmlUiDesign::Parse(&stream);
+Rml::String ScaleValue(float value)
+{
+    std::array<char, 64> buffer{};
+    std::snprintf(
+        buffer.data(), buffer.size(), "scale(%.6f)",
+        static_cast<double>(value));
+    return Rml::String(buffer.data());
 }
 
 template <typename T>
-bool ParseScalar(const RmlUiDesign::Values& values,
-                 const char* key, T& output)
+bool ParseScalar(
+    const RmlUiDesign::Values& values,
+    const char* key,
+    T& output)
 {
     const auto it = values.find(key);
     if (it == values.end())
@@ -68,41 +67,66 @@ bool ParseScalar(const RmlUiDesign::Values& values,
     T parsed{};
     if (!(stream >> parsed))
         return false;
+
     output = parsed;
     return true;
 }
 
-bool ParsePair(const RmlUiDesign::Values& values,
-               const char* key, float& x, float& y)
+bool ParsePair(
+    const RmlUiDesign::Values& values,
+    const char* key,
+    float& a,
+    float& b)
 {
     const auto it = values.find(key);
     if (it == values.end())
         return false;
+
     std::istringstream stream(it->second);
-    return static_cast<bool>(stream >> x >> y);
+    return static_cast<bool>(stream >> a >> b);
 }
 
-bool ParseRect(const RmlUiDesign::Values& values,
-               const char* key, Rect& rect)
+bool ParseRect(
+    const RmlUiDesign::Values& values,
+    const std::string& key,
+    Rect& rect)
 {
     const auto it = values.find(key);
     if (it == values.end())
         return false;
+
     std::istringstream stream(it->second);
     return static_cast<bool>(
         stream >> rect.x >> rect.y >> rect.width >> rect.height);
 }
 
-Rml::Element* ElementById(
-    Rml::ElementDocument* document, const Rml::String& id)
+RmlUiDesign::Values LoadDesignValues()
+{
+    Rml::FileInterface* files = Rml::GetFileInterface();
+    if (!files)
+        return {};
+
+    Rml::String contents;
+    if (!files->LoadFile(kDocumentPath, contents) || contents.empty())
+        return {};
+
+    Rml::StreamMemory stream(
+        reinterpret_cast<const Rml::byte*>(contents.data()),
+        contents.size());
+    return RmlUiDesign::Parse(&stream);
+}
+
+Rml::Element* RequiredElement(
+    Rml::ElementDocument* document,
+    const Rml::String& id)
 {
     return document ? document->GetElementById(id) : nullptr;
 }
 
-void SetEncodedText(Rml::Element* element, const std::string& text)
+void SetText(Rml::Element* element, const std::string& text)
 {
     if (element)
-        element->SetInnerRML(Rml::StringUtilities::EncodeRml(text));
+        element->SetInnerRML(text);
 }
 
 } // namespace
@@ -118,16 +142,15 @@ public:
         float referenceHeight = 480.0f;
         float initialX = 360.0f;
         float initialY = 40.0f;
-
-        float extensionWidth = 327.5f;
-        std::array<float, 4> extensionHeights{223.0f, 361.0f, 499.05f, 636.0f};
-        float extensionInitialX = 21.0f;
-        float extensionInitialY = 40.0f;
+        float gridX = 60.0f;
+        float gridY = 370.0f;
+        float pitchX = 26.0f;
+        float pitchY = 26.0f;
+        std::array<Rect, kEquipmentSlotCount> equipment{};
     };
 
     Impl()
-        : inventoryHost_(kInventoryPath),
-          extensionHost_(kExtensionPath)
+        : host_(kDocumentPath)
     {
     }
 
@@ -138,194 +161,210 @@ public:
 
     [[nodiscard]] bool Load(bool show)
     {
-        if (inventoryHost_.IsLoaded())
+        if (host_.IsLoaded())
         {
             if (show)
                 return Show();
             return true;
         }
 
-        if (!inventoryHost_.Load(show))
+        if (!host_.Load(show))
             return false;
 
-        inventoryDocument_ = inventoryHost_.GetDocument();
-        if (!inventoryDocument_)
+        document_ = host_.GetDocument();
+        if (!document_)
             return false;
 
         ReadDesign();
-        if (!BindInventory())
+        if (!BindElements() || !CreateInventorySlots())
         {
             Release();
             return false;
         }
 
-        inventoryVisible_ = show;
-        SetEncodedText(titleElement_, title_);
-        SetEncodedText(zenElement_, zenText_);
-        ApplyInventoryMetrics();
-        return true;
+        if (show)
+            state_.visible = true;
+
+        return ApplyState(state_);
     }
 
     [[nodiscard]] bool Show()
     {
-        if (!inventoryHost_.IsLoaded() && !Load(false))
+        if (!host_.IsLoaded() && !Load(false))
             return false;
-        inventoryVisible_ = true;
-        return inventoryHost_.Show();
+
+        state_.visible = true;
+        const bool shown = host_.Show();
+        if (shown)
+            (void)ApplyState(state_);
+        return shown;
     }
 
     [[nodiscard]] bool Hide()
     {
-        inventoryVisible_ = false;
-        return inventoryHost_.Hide();
+        state_.visible = false;
+        if (root_)
+            root_->SetProperty("display", "none");
+        return host_.Hide();
     }
 
     void Release()
     {
-        UnbindExtension();
-        UnbindInventory();
+        mover_.Unbind();
 
-        extensionDocument_ = nullptr;
-        inventoryDocument_ = nullptr;
-        extensionHost_.Release();
-        inventoryHost_.Release();
+        closeButton_.Unbind();
+        repairButton_.Unbind();
+        privateStoreButton_.Unbind();
+        extensionButton_.Unbind();
+        socketOptionButton_.Unbind();
+        setOptionButton_.Unbind();
+
+        for (auto& slot : inventorySlots_)
+            slot.Unbind();
+        for (auto& slot : equipmentSlots_)
+            slot.Unbind();
+
+        inventorySlotElements_.fill(nullptr);
+        equipmentSlotElements_.fill(nullptr);
+
+        document_ = nullptr;
+        root_ = nullptr;
+        drag_ = nullptr;
+        title_ = nullptr;
+        zen_ = nullptr;
+        grid_ = nullptr;
+
+        closeElement_ = nullptr;
+        repairElement_ = nullptr;
+        privateStoreElement_ = nullptr;
+        extensionElement_ = nullptr;
+        socketOptionElement_ = nullptr;
+        setOptionElement_ = nullptr;
 
         pendingAction_.reset();
-        pendingSlot_.reset();
+        host_.Release();
     }
 
     [[nodiscard]] bool IsLoaded() const noexcept
     {
-        return inventoryHost_.IsLoaded() && inventoryDocument_;
+        return host_.IsLoaded() && document_ != nullptr;
     }
 
-    [[nodiscard]] bool ShowExtension(bool show)
+    [[nodiscard]] bool ApplyState(const State& state)
     {
-        if (!show)
-        {
-            extensionVisible_ = false;
-            return extensionHost_.IsLoaded()
-                ? extensionHost_.Hide()
-                : true;
-        }
-
-        if (expandedBagCount_ == 0)
+        state_ = state;
+        if (!IsLoaded())
             return false;
 
-        if (!extensionHost_.IsLoaded())
-        {
-            if (!extensionHost_.Load(false))
-                return false;
-            extensionDocument_ = extensionHost_.GetDocument();
-            if (!extensionDocument_ || !BindExtension())
-            {
-                extensionHost_.Release();
-                extensionDocument_ = nullptr;
-                return false;
-            }
-            ApplyExtensionMetrics();
-            ApplyExtensionBagVisibility();
-        }
+        const bool visible =
+            state_.visible &&
+            state_.viewportWidth > 0 &&
+            state_.viewportHeight > 0;
 
-        extensionVisible_ = true;
-        return extensionHost_.Show();
-    }
+        root_->SetProperty("display", visible ? "block" : "none");
+        if (!visible)
+            return true;
 
-    [[nodiscard]] bool IsExtensionLoaded() const noexcept
-    {
-        return extensionHost_.IsLoaded() && extensionDocument_;
-    }
+        ApplyLayout();
 
-    void SetTitle(std::string title)
-    {
-        title_ = std::move(title);
-        SetEncodedText(titleElement_, title_);
-    }
+        SetText(title_, state_.title);
+        SetText(zen_, state_.zen);
 
-    void SetZenText(std::string zenText)
-    {
-        zenText_ = std::move(zenText);
-        SetEncodedText(zenElement_, zenText_);
-    }
+        closeButton_.SetEnabled(true);
+        repairButton_.SetEnabled(state_.repairEnabled);
+        privateStoreButton_.SetEnabled(state_.privateStoreEnabled);
+        extensionButton_.SetEnabled(state_.extensionEnabled);
+        socketOptionButton_.SetEnabled(state_.socketOptionEnabled);
+        setOptionButton_.SetEnabled(state_.setOptionEnabled);
 
-    void SetExpandedBagCount(std::size_t bagCount)
-    {
-        expandedBagCount_ = std::min<std::size_t>(bagCount, 4);
-        if (expandedBagCount_ == 0)
-        {
-            if (extensionHost_.IsLoaded())
-                (void)extensionHost_.Hide();
-            extensionVisible_ = false;
-        }
+        repairElement_->SetClass("selected", state_.repairActive);
+        privateStoreElement_->SetClass(
+            "selected", state_.privateStoreOpen);
 
-        if (extensionDocument_)
-        {
-            ApplyExtensionMetrics();
-            ApplyExtensionBagVisibility();
-        }
-    }
+        (void)closeButton_.Update();
+        (void)repairButton_.Update();
+        (void)privateStoreButton_.Update();
+        (void)extensionButton_.Update();
+        (void)socketOptionButton_.Update();
+        (void)setOptionButton_.Update();
 
-    [[nodiscard]] std::size_t GetExpandedBagCount() const noexcept
-    {
-        return expandedBagCount_;
-    }
+        for (std::size_t i = 0; i < inventorySlots_.size(); ++i)
+            ApplySlotState(
+                inventorySlots_[i],
+                inventorySlotElements_[i],
+                state_.inventory[i]);
 
-    void SetInventorySlotFrame(std::size_t index, int frame)
-    {
-        if (index < inventorySlots_.size() && inventorySlots_[index])
-            inventorySlots_[index]->SetIconFrame(frame);
-    }
+        for (std::size_t i = 0; i < equipmentSlots_.size(); ++i)
+            ApplySlotState(
+                equipmentSlots_[i],
+                equipmentSlotElements_[i],
+                state_.equipment[i]);
 
-    void SetEquipmentSlotFrame(std::size_t index, int frame)
-    {
-        if (index < equipmentSlots_.size() && equipmentSlots_[index])
-            equipmentSlots_[index]->SetIconFrame(frame);
-    }
-
-    void SetExtensionSlotFrame(std::size_t index, int frame)
-    {
-        if (index < extensionSlots_.size() && extensionSlots_[index])
-            extensionSlots_[index]->SetIconFrame(frame);
+        document_->UpdateDocument();
+        return true;
     }
 
     [[nodiscard]] bool Update()
     {
+        if (!IsLoaded())
+            return false;
+
         bool changed = false;
 
-        if (inventoryDocument_)
+        for (RmlMuButton* button : AllButtons())
+            changed |= button->Update();
+
+        auto emit = [&](RmlMuButton& button, ActionType type) {
+            if (button.ConsumeClicked())
+            {
+                pendingAction_ = Action{type, 0};
+                changed = true;
+            }
+        };
+
+        emit(closeButton_, ActionType::Close);
+        emit(repairButton_, ActionType::Repair);
+        emit(privateStoreButton_, ActionType::PrivateStore);
+        emit(extensionButton_, ActionType::Extension);
+        emit(socketOptionButton_, ActionType::SocketOption);
+        emit(setOptionButton_, ActionType::SetOption);
+
+        for (std::size_t i = 0; i < inventorySlots_.size(); ++i)
         {
-            for (RmlMuButton* button : Buttons())
-                changed |= button->Update();
-
-            if (closeButton_.ConsumeClicked())
-                pendingAction_ = Action::Close;
-            else if (socketButton_.ConsumeClicked())
-                pendingAction_ = Action::SocketOption;
-            else if (setButton_.ConsumeClicked())
-                pendingAction_ = Action::SetOption;
-            else if (repairButton_.ConsumeClicked())
-                pendingAction_ = Action::Repair;
-            else if (privateStoreButton_.ConsumeClicked())
-                pendingAction_ = Action::PrivateStore;
-            else if (extensionButton_.ConsumeClicked())
-                pendingAction_ = Action::ExtensionBag;
-
-            changed |= PollSlots(inventorySlots_, SlotArea::Inventory, 0);
-            changed |= PollSlots(equipmentSlots_, SlotArea::Equipment, 0);
-            changed |= inventoryMover_.ConsumePositionChanged();
+            changed |= inventorySlots_[i].Update();
+            if (inventorySlots_[i].ConsumeClicked())
+            {
+                pendingAction_ = Action{
+                    ActionType::InventorySlotPrimary, i};
+                changed = true;
+            }
+            if (inventorySlots_[i].ConsumeSecondaryClicked())
+            {
+                pendingAction_ = Action{
+                    ActionType::InventorySlotSecondary, i};
+                changed = true;
+            }
         }
 
-        if (extensionDocument_)
+        for (std::size_t i = 0; i < equipmentSlots_.size(); ++i)
         {
-            changed |= extensionCloseButton_.Update();
-            if (extensionCloseButton_.ConsumeClicked())
-                pendingAction_ = Action::CloseExtension;
-
-            changed |= PollSlots(extensionSlots_, SlotArea::Extension, 0);
-            changed |= extensionMover_.ConsumePositionChanged();
+            changed |= equipmentSlots_[i].Update();
+            if (equipmentSlots_[i].ConsumeClicked())
+            {
+                pendingAction_ = Action{
+                    ActionType::EquipmentSlotPrimary, i};
+                changed = true;
+            }
+            if (equipmentSlots_[i].ConsumeSecondaryClicked())
+            {
+                pendingAction_ = Action{
+                    ActionType::EquipmentSlotSecondary, i};
+                changed = true;
+            }
         }
 
-        return changed || pendingAction_.has_value() || pendingSlot_.has_value();
+        changed |= mover_.ConsumePositionChanged();
+        return changed;
     }
 
     [[nodiscard]] std::optional<Action> ConsumeAction()
@@ -333,308 +372,268 @@ public:
         return std::exchange(pendingAction_, std::nullopt);
     }
 
-    [[nodiscard]] std::optional<SlotRequest> ConsumeSlotRequest()
-    {
-        return std::exchange(pendingSlot_, std::nullopt);
-    }
-
 private:
     void ReadDesign()
     {
-        const auto values = LoadDesignValues(kInventoryPath);
-        Rect size{};
-        if (ParseRect(values, "Inventory-Size", size))
+        const auto values = LoadDesignValues();
+
+        (void)ParsePair(
+            values, "Inventory-Size",
+            design_.width, design_.height);
+        (void)ParsePair(
+            values, "Inventory-Reference",
+            design_.referenceWidth, design_.referenceHeight);
+        (void)ParsePair(
+            values, "Inventory-InitialPosition",
+            design_.initialX, design_.initialY);
+
+        const auto grid = values.find("Inventory-Grid");
+        if (grid != values.end())
         {
-            design_.width = size.x;
-            design_.height = size.y;
+            std::istringstream stream(grid->second);
+            (void)(stream >>
+                design_.gridX >> design_.gridY >>
+                design_.pitchX >> design_.pitchY);
         }
-        else
+
+        for (std::size_t i = 0; i < design_.equipment.size(); ++i)
         {
-            float w = design_.width, h = design_.height;
-            if (ParsePair(values, "Inventory-Size", w, h))
-            {
-                design_.width = w;
-                design_.height = h;
-            }
-        }
-
-        (void)ParsePair(values, "Inventory-Reference",
-                        design_.referenceWidth, design_.referenceHeight);
-        (void)ParsePair(values, "Inventory-InitialPosition",
-                        design_.initialX, design_.initialY);
-
-        const auto extensionValues = LoadDesignValues(kExtensionPath);
-        (void)ParseScalar(extensionValues, "Extension-Width",
-                          design_.extensionWidth);
-        (void)ParsePair(extensionValues, "Extension-InitialPosition",
-                        design_.extensionInitialX, design_.extensionInitialY);
-
-        const auto heights = extensionValues.find("Extension-Heights");
-        if (heights != extensionValues.end())
-        {
-            std::istringstream stream(heights->second);
-            for (float& value : design_.extensionHeights)
-                if (!(stream >> value))
-                    break;
+            (void)ParseRect(
+                values,
+                "Inventory-Equipment" + std::to_string(i),
+                design_.equipment[i]);
         }
     }
 
-    [[nodiscard]] bool BindInventory()
+    [[nodiscard]] bool BindElements()
     {
-        inventoryRoot_ = ElementById(inventoryDocument_, "inventory");
-        dragElement_ = ElementById(inventoryDocument_, "btnDrag");
-        titleElement_ = ElementById(inventoryDocument_, "tfTitle");
-        zenElement_ = ElementById(inventoryDocument_, "tfZen");
+        root_ = RequiredElement(document_, "inventory");
+        drag_ = RequiredElement(document_, "btnDrag");
+        title_ = RequiredElement(document_, "tfTitle");
+        zen_ = RequiredElement(document_, "tfZen");
+        grid_ = RequiredElement(document_, "inventory-grid");
 
-        if (!inventoryRoot_ || !dragElement_ || !titleElement_ || !zenElement_)
+        closeElement_ = RequiredElement(document_, "btnClose");
+        repairElement_ = RequiredElement(document_, "btnRepair");
+        privateStoreElement_ =
+            RequiredElement(document_, "btnPrivateStore");
+        extensionElement_ =
+            RequiredElement(document_, "btnExtensionBag");
+        socketOptionElement_ =
+            RequiredElement(document_, "btnSocketOption");
+        setOptionElement_ =
+            RequiredElement(document_, "btnSetOption");
+
+        if (!root_ || !drag_ || !title_ || !zen_ || !grid_ ||
+            !closeElement_ || !repairElement_ ||
+            !privateStoreElement_ || !extensionElement_ ||
+            !socketOptionElement_ || !setOptionElement_)
             return false;
 
-        auto bindButton = [&](RmlMuButton& button, const char* id) {
-            Rml::Element* element = ElementById(inventoryDocument_, id);
-            if (!element)
-                return false;
-            button.Bind(element);
-            return true;
-        };
+        static constexpr std::array<const char*, kEquipmentSlotCount>
+            equipmentIds{
+                "slot_weapon_right",
+                "slot_weapon_left",
+                "slot_helm",
+                "slot_armor",
+                "slot_pants",
+                "slot_gloves",
+                "slot_boots",
+                "slot_wing",
+                "slot_helper",
+                "slot_amulet",
+                "slot_ring_left",
+                "slot_ring_right",
+            };
 
-        if (!bindButton(closeButton_, "btnClose") ||
-            !bindButton(socketButton_, "btnSocketOption") ||
-            !bindButton(setButton_, "btnSetOption") ||
-            !bindButton(repairButton_, "btnRepair") ||
-            !bindButton(privateStoreButton_, "btnPrivateStore") ||
-            !bindButton(extensionButton_, "btnExtensionBag"))
-            return false;
-
-        inventorySlots_.clear();
-        inventorySlots_.reserve(64);
-        for (std::size_t index = 0; index < 64; ++index)
+        for (std::size_t i = 0; i < equipmentIds.size(); ++i)
         {
-            auto slot = std::make_unique<RmlMuSlot>();
-            Rml::Element* element = ElementById(
-                inventoryDocument_,
-                Rml::String("isSlot") + std::to_string(index));
-            if (!element)
+            equipmentSlotElements_[i] =
+                RequiredElement(document_, equipmentIds[i]);
+            if (!equipmentSlotElements_[i])
                 return false;
-            slot->Bind(element);
-            inventorySlots_.push_back(std::move(slot));
+
+            equipmentSlots_[i].Bind(equipmentSlotElements_[i]);
         }
 
-        constexpr const char* equipmentIds[] = {
-            "slot_weapon_right", "slot_weapon_left", "slot_helm",
-            "slot_armor", "slot_pants", "slot_gloves", "slot_boots",
-            "slot_wing", "slot_helper", "slot_amulet",
-            "slot_ring_left", "slot_ring_right", "slot_pentagram"
-        };
-
-        equipmentSlots_.clear();
-        equipmentSlots_.reserve(std::size(equipmentIds));
-        for (const char* id : equipmentIds)
-        {
-            auto slot = std::make_unique<RmlMuSlot>();
-            Rml::Element* element = ElementById(inventoryDocument_, id);
-            if (!element)
-                return false;
-            slot->Bind(element);
-            equipmentSlots_.push_back(std::move(slot));
-        }
-
-        inventoryMover_.Bind(inventoryRoot_, dragElement_);
+        closeButton_.Bind(closeElement_);
+        repairButton_.Bind(repairElement_);
+        privateStoreButton_.Bind(privateStoreElement_);
+        extensionButton_.Bind(extensionElement_);
+        socketOptionButton_.Bind(socketOptionElement_);
+        setOptionButton_.Bind(setOptionElement_);
+        mover_.Bind(root_, drag_);
         return true;
     }
 
-    [[nodiscard]] bool BindExtension()
+    [[nodiscard]] bool CreateInventorySlots()
     {
-        extensionRoot_ = ElementById(extensionDocument_, "extension");
-        extensionDragElement_ = ElementById(extensionDocument_, "btnDrag");
-        Rml::Element* close = ElementById(extensionDocument_, "btnClose");
-        if (!extensionRoot_ || !extensionDragElement_ || !close)
+        if (!document_ || !grid_)
             return false;
 
-        extensionCloseButton_.Bind(close);
-        extensionMover_.Bind(extensionRoot_, extensionDragElement_);
+        grid_->SetInnerRML("");
 
-        extensionSlots_.clear();
-        extensionSlots_.reserve(128);
-        for (std::size_t index = 0; index < 128; ++index)
+        for (std::size_t i = 0; i < inventorySlots_.size(); ++i)
         {
-            auto slot = std::make_unique<RmlMuSlot>();
-            Rml::Element* element = ElementById(
-                extensionDocument_,
-                Rml::String("isSlot") + std::to_string(index));
+            Rml::ElementPtr element =
+                document_->CreateElement("div");
             if (!element)
                 return false;
-            slot->Bind(element);
-            extensionSlots_.push_back(std::move(slot));
+
+            element->SetId(
+                Rml::String("isSlot") + std::to_string(i));
+            element->SetClass("mu-item-slot", true);
+            element->SetClass("inventory-slot", true);
+
+            Rml::Element* raw =
+                grid_->AppendChild(std::move(element));
+            if (!raw)
+                return false;
+
+            inventorySlotElements_[i] = raw;
+            inventorySlots_[i].Bind(raw);
         }
+
         return true;
     }
 
-    void UnbindInventory()
+    void ApplyLayout()
     {
-        inventoryMover_.Unbind();
-        for (RmlMuButton* button : Buttons())
-            button->Unbind();
+        const float viewportWidth =
+            static_cast<float>(state_.viewportWidth);
+        const float viewportHeight =
+            static_cast<float>(state_.viewportHeight);
 
-        inventorySlots_.clear();
-        equipmentSlots_.clear();
+        const float referenceRight =
+            std::max(1.0f, design_.initialX + design_.width);
+        const float referenceBottom =
+            std::max(1.0f, design_.initialY + design_.height);
 
-        inventoryRoot_ = nullptr;
-        dragElement_ = nullptr;
-        titleElement_ = nullptr;
-        zenElement_ = nullptr;
-    }
+        const float scale = std::clamp(
+            std::min(
+                viewportWidth / referenceRight,
+                viewportHeight / referenceBottom),
+            0.25f, 1.0f);
 
-    void UnbindExtension()
-    {
-        extensionMover_.Unbind();
-        extensionCloseButton_.Unbind();
-        extensionSlots_.clear();
-        extensionRoot_ = nullptr;
-        extensionDragElement_ = nullptr;
-    }
+        root_->SetProperty("width", PixelValue(design_.width));
+        root_->SetProperty("height", PixelValue(design_.height));
+        root_->SetProperty("transform-origin", "0 0");
+        root_->SetProperty("transform", ScaleValue(scale));
 
-    [[nodiscard]] std::array<RmlMuButton*, 6> Buttons()
-    {
-        return {
-            &closeButton_, &socketButton_, &setButton_, &repairButton_,
-            &privateStoreButton_, &extensionButton_
-        };
-    }
-
-    [[nodiscard]] bool PollSlots(
-        std::vector<std::unique_ptr<RmlMuSlot>>& slots,
-        SlotArea area,
-        std::size_t baseIndex)
-    {
-        bool changed = false;
-        for (std::size_t i = 0; i < slots.size(); ++i)
-        {
-            RmlMuSlot* slot = slots[i].get();
-            if (!slot)
-                continue;
-
-            changed |= slot->Update();
-            if (slot->ConsumeClicked())
-            {
-                pendingSlot_ = SlotRequest{area, baseIndex + i, false};
-                changed = true;
-            }
-            if (slot->ConsumeSecondaryClicked())
-            {
-                pendingSlot_ = SlotRequest{area, baseIndex + i, true};
-                changed = true;
-            }
-        }
-        return changed;
-    }
-
-    void ApplyInventoryMetrics()
-    {
-        if (!inventoryRoot_ || !inventoryDocument_)
-            return;
-
-        const Rml::Vector2i dimensions =
-            inventoryDocument_->GetContext()
-                ? inventoryDocument_->GetContext()->GetDimensions()
-                : Rml::Vector2i{};
-
-        inventoryMover_.SetMetrics(
-            static_cast<float>(dimensions.x),
-            static_cast<float>(dimensions.y),
+        mover_.SetMetrics(
+            viewportWidth / scale,
+            viewportHeight / scale,
             design_.width,
             design_.height,
             0.0f,
             0.0f);
-        inventoryMover_.SetPosition(design_.initialX, design_.initialY);
-    }
 
-    void ApplyExtensionMetrics()
-    {
-        if (!extensionRoot_ || !extensionDocument_)
-            return;
+        const Rml::Vector2f current = mover_.GetPosition();
+        if (current.x == 0.0f && current.y == 0.0f)
+            mover_.SetPosition(design_.initialX, design_.initialY);
 
-        const std::size_t visibleBags =
-            std::clamp<std::size_t>(expandedBagCount_, 1, 4);
-        const float height = design_.extensionHeights[visibleBags - 1];
+        grid_->SetProperty("left", PixelValue(design_.gridX));
+        grid_->SetProperty("top", PixelValue(design_.gridY));
 
-        extensionRoot_->SetProperty(
-            "height", Rml::CreateString("%.3fpx", height));
-
-        const Rml::Vector2i dimensions =
-            extensionDocument_->GetContext()
-                ? extensionDocument_->GetContext()->GetDimensions()
-                : Rml::Vector2i{};
-
-        extensionMover_.SetMetrics(
-            static_cast<float>(dimensions.x),
-            static_cast<float>(dimensions.y),
-            design_.extensionWidth,
-            height,
-            0.0f,
-            0.0f);
-        extensionMover_.SetPosition(
-            design_.extensionInitialX,
-            design_.extensionInitialY);
-    }
-
-    void ApplyExtensionBagVisibility()
-    {
-        const std::size_t visibleSlots =
-            std::min<std::size_t>(expandedBagCount_ * 32, 128);
-
-        for (std::size_t index = 0; index < extensionSlots_.size(); ++index)
+        for (std::size_t i = 0; i < inventorySlotElements_.size(); ++i)
         {
-            if (!extensionSlots_[index])
+            Rml::Element* element = inventorySlotElements_[i];
+            if (!element)
                 continue;
-            extensionSlots_[index]->SetVisible(index < visibleSlots);
-            (void)extensionSlots_[index]->Update();
+
+            const std::size_t column = i % 8u;
+            const std::size_t row = i / 8u;
+            element->SetProperty(
+                "left",
+                PixelValue(static_cast<float>(column) * design_.pitchX));
+            element->SetProperty(
+                "top",
+                PixelValue(static_cast<float>(row) * design_.pitchY));
+            element->SetProperty(
+                "width", PixelValue(design_.pitchX));
+            element->SetProperty(
+                "height", PixelValue(design_.pitchY));
         }
 
-        if (extensionRoot_)
+        for (std::size_t i = 0; i < equipmentSlotElements_.size(); ++i)
         {
-            for (std::size_t bag = 0; bag < 4; ++bag)
-                extensionRoot_->SetClass(
-                    Rml::String("bags-") + std::to_string(bag + 1),
-                    expandedBagCount_ == bag + 1);
+            Rml::Element* element = equipmentSlotElements_[i];
+            if (!element)
+                continue;
+
+            const Rect& rect = design_.equipment[i];
+            element->SetProperty("left", PixelValue(rect.x));
+            element->SetProperty("top", PixelValue(rect.y));
+            element->SetProperty("width", PixelValue(rect.width));
+            element->SetProperty("height", PixelValue(rect.height));
         }
     }
 
-    RmlDocumentHost inventoryHost_;
-    RmlDocumentHost extensionHost_;
-    Rml::ElementDocument* inventoryDocument_ = nullptr;
-    Rml::ElementDocument* extensionDocument_ = nullptr;
+    static void ApplySlotState(
+        RmlMuSlot& slot,
+        Rml::Element* element,
+        const SlotState& state)
+    {
+        slot.SetVisible(state.visible);
+        slot.SetEnabled(state.enabled);
+        slot.SetIconFrame(state.iconFrame);
 
-    Rml::Element* inventoryRoot_ = nullptr;
-    Rml::Element* dragElement_ = nullptr;
-    Rml::Element* titleElement_ = nullptr;
-    Rml::Element* zenElement_ = nullptr;
-    Rml::Element* extensionRoot_ = nullptr;
-    Rml::Element* extensionDragElement_ = nullptr;
+        if (element)
+        {
+            element->SetClass("occupied", state.occupied);
+            element->SetClass("selected", state.selected);
+        }
 
-    RmlMuMovablePanel inventoryMover_;
-    RmlMuMovablePanel extensionMover_;
+        (void)slot.Update();
+    }
+
+    [[nodiscard]] std::array<RmlMuButton*, 6> AllButtons()
+    {
+        return {
+            &closeButton_,
+            &repairButton_,
+            &privateStoreButton_,
+            &extensionButton_,
+            &socketOptionButton_,
+            &setOptionButton_,
+        };
+    }
+
+    RmlDocumentHost host_;
+    Rml::ElementDocument* document_ = nullptr;
+
+    Rml::Element* root_ = nullptr;
+    Rml::Element* drag_ = nullptr;
+    Rml::Element* title_ = nullptr;
+    Rml::Element* zen_ = nullptr;
+    Rml::Element* grid_ = nullptr;
+
+    Rml::Element* closeElement_ = nullptr;
+    Rml::Element* repairElement_ = nullptr;
+    Rml::Element* privateStoreElement_ = nullptr;
+    Rml::Element* extensionElement_ = nullptr;
+    Rml::Element* socketOptionElement_ = nullptr;
+    Rml::Element* setOptionElement_ = nullptr;
+
+    std::array<Rml::Element*, kInventorySlotCount>
+        inventorySlotElements_{};
+    std::array<Rml::Element*, kEquipmentSlotCount>
+        equipmentSlotElements_{};
+
+    std::array<RmlMuSlot, kInventorySlotCount> inventorySlots_{};
+    std::array<RmlMuSlot, kEquipmentSlotCount> equipmentSlots_{};
 
     RmlMuButton closeButton_;
-    RmlMuButton socketButton_;
-    RmlMuButton setButton_;
     RmlMuButton repairButton_;
     RmlMuButton privateStoreButton_;
     RmlMuButton extensionButton_;
-    RmlMuButton extensionCloseButton_;
-
-    std::vector<std::unique_ptr<RmlMuSlot>> inventorySlots_;
-    std::vector<std::unique_ptr<RmlMuSlot>> equipmentSlots_;
-    std::vector<std::unique_ptr<RmlMuSlot>> extensionSlots_;
+    RmlMuButton socketOptionButton_;
+    RmlMuButton setOptionButton_;
+    RmlMuMovablePanel mover_;
 
     Design design_;
-    std::string title_ = "Inventory";
-    std::string zenText_;
-    std::size_t expandedBagCount_ = 0;
-    bool inventoryVisible_ = false;
-    bool extensionVisible_ = false;
-
+    State state_;
     std::optional<Action> pendingAction_;
-    std::optional<SlotRequest> pendingSlot_;
 };
 
 RmlInventoryPanel::RmlInventoryPanel()
@@ -644,7 +643,8 @@ RmlInventoryPanel::RmlInventoryPanel()
 
 RmlInventoryPanel::~RmlInventoryPanel() = default;
 RmlInventoryPanel::RmlInventoryPanel(RmlInventoryPanel&&) noexcept = default;
-RmlInventoryPanel& RmlInventoryPanel::operator=(RmlInventoryPanel&&) noexcept = default;
+RmlInventoryPanel& RmlInventoryPanel::operator=(
+    RmlInventoryPanel&&) noexcept = default;
 
 bool RmlInventoryPanel::Load(bool show)
 {
@@ -672,55 +672,9 @@ bool RmlInventoryPanel::IsLoaded() const noexcept
     return m_impl && m_impl->IsLoaded();
 }
 
-bool RmlInventoryPanel::ShowExtension(bool show)
+bool RmlInventoryPanel::ApplyState(const State& state)
 {
-    return m_impl && m_impl->ShowExtension(show);
-}
-
-bool RmlInventoryPanel::IsExtensionLoaded() const noexcept
-{
-    return m_impl && m_impl->IsExtensionLoaded();
-}
-
-void RmlInventoryPanel::SetTitle(std::string title)
-{
-    if (m_impl)
-        m_impl->SetTitle(std::move(title));
-}
-
-void RmlInventoryPanel::SetZenText(std::string zenText)
-{
-    if (m_impl)
-        m_impl->SetZenText(std::move(zenText));
-}
-
-void RmlInventoryPanel::SetExpandedBagCount(std::size_t bagCount)
-{
-    if (m_impl)
-        m_impl->SetExpandedBagCount(bagCount);
-}
-
-std::size_t RmlInventoryPanel::GetExpandedBagCount() const noexcept
-{
-    return m_impl ? m_impl->GetExpandedBagCount() : 0;
-}
-
-void RmlInventoryPanel::SetInventorySlotFrame(std::size_t index, int frame)
-{
-    if (m_impl)
-        m_impl->SetInventorySlotFrame(index, frame);
-}
-
-void RmlInventoryPanel::SetEquipmentSlotFrame(std::size_t index, int frame)
-{
-    if (m_impl)
-        m_impl->SetEquipmentSlotFrame(index, frame);
-}
-
-void RmlInventoryPanel::SetExtensionSlotFrame(std::size_t index, int frame)
-{
-    if (m_impl)
-        m_impl->SetExtensionSlotFrame(index, frame);
+    return m_impl && m_impl->ApplyState(state);
 }
 
 bool RmlInventoryPanel::Update()
@@ -728,15 +682,12 @@ bool RmlInventoryPanel::Update()
     return m_impl && m_impl->Update();
 }
 
-std::optional<RmlInventoryPanel::Action> RmlInventoryPanel::ConsumeAction()
+std::optional<RmlInventoryPanel::Action>
+RmlInventoryPanel::ConsumeAction()
 {
-    return m_impl ? m_impl->ConsumeAction() : std::nullopt;
-}
-
-std::optional<RmlInventoryPanel::SlotRequest>
-RmlInventoryPanel::ConsumeSlotRequest()
-{
-    return m_impl ? m_impl->ConsumeSlotRequest() : std::nullopt;
+    return m_impl
+        ? m_impl->ConsumeAction()
+        : std::nullopt;
 }
 
 } // namespace UI::Modern::PC::Inventory
