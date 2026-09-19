@@ -46,7 +46,12 @@ namespace Party { class RmlPartyFrameLayer; }
 namespace ServerMessage { class RmlServerMessageLayer; }
 namespace ServerSelect { class RmlServerSelectPanel; }
 namespace SystemMenu { class RmlSystemMenuPanel; }
-namespace World { class RmlStoreLabelLayer; }
+namespace World
+{
+class RmlMapNameLayer;
+class RmlMonsterInfoLayer;
+class RmlStoreLabelLayer;
+}
 
 class RmlPcUiHost
 {
@@ -92,6 +97,8 @@ public:
     [[nodiscard]] ServerMessage::RmlServerMessageLayer& ServerMessage() noexcept;
     [[nodiscard]] ServerSelect::RmlServerSelectPanel& ServerSelect() noexcept;
     [[nodiscard]] SystemMenu::RmlSystemMenuPanel& SystemMenu() noexcept;
+    [[nodiscard]] World::RmlMapNameLayer& MapName() noexcept;
+    [[nodiscard]] World::RmlMonsterInfoLayer& MonsterInfo() noexcept;
     [[nodiscard]] World::RmlStoreLabelLayer& StoreLabel() noexcept;
 
 private:

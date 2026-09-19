@@ -330,3 +330,11 @@ and differential runtime tests succeed.
   `RmlMiniMapLegacyBridge`; the existing legacy bitmap is registered as a
   borrowed logical texture, so RmlUi can render it without taking ownership
   or triggering a duplicate GPU upload
+
+
+- reconstructed `RmlMapNameLayer` from the public `World/map_name.rml`
+  contract with authored panel size plus 0.5s fade-in, 5s hold and 0.5s
+  fade-out timing; map/guild/strife values remain externally supplied
+- reconstructed `RmlMonsterInfoLayer` from the public
+  `World/monster_info.rml` contract with target anchoring, world raise,
+  retained monster-name/HP rows and viewport reference scaling

@@ -42,6 +42,8 @@
 #include "UI/Modern/PC/ServerSelect/RmlServerSelectPanel.h"
 #include "UI/Modern/PC/ServerSelect/RmlServerSelectLegacyBridge.h"
 #include "UI/Modern/PC/SystemMenu/RmlSystemMenuPanel.h"
+#include "UI/Modern/PC/World/RmlMapNameLayer.h"
+#include "UI/Modern/PC/World/RmlMonsterInfoLayer.h"
 #include "UI/Modern/PC/World/RmlStoreLabelLayer.h"
 
 #include <utility>
@@ -72,6 +74,8 @@ public:
         // Release document owners before RmlUiRuntime shuts its Context down.
         // Reverse roughly follows UI dependency/overlay order.
         storeLabel_.Release();
+        monsterInfo_.Release();
+        mapName_.Release();
         serverMessage_.Release();
         serverSelect_.Release();
         tooltip_.Release();
@@ -199,6 +203,7 @@ public:
         }
 
         if (messageBox_.IsLoaded()) changed |= messageBox_.Update();
+        if (mapName_.IsLoaded()) changed |= mapName_.Update();
 
         return changed;
     }
@@ -246,6 +251,8 @@ public:
     ServerSelect::RmlServerSelectPanel serverSelect_;
     ServerSelect::RmlServerSelectLegacyBridge serverSelectLegacyBridge_;
     SystemMenu::RmlSystemMenuPanel systemMenu_;
+    World::RmlMapNameLayer mapName_;
+    World::RmlMonsterInfoLayer monsterInfo_;
     World::RmlStoreLabelLayer storeLabel_;
 
     int viewportWidth_ = 0;
@@ -322,6 +329,8 @@ MU_PC_UI_GETTER(Party, party_, Party::RmlPartyFrameLayer)
 MU_PC_UI_GETTER(ServerMessage, serverMessage_, ServerMessage::RmlServerMessageLayer)
 MU_PC_UI_GETTER(ServerSelect, serverSelect_, ServerSelect::RmlServerSelectPanel)
 MU_PC_UI_GETTER(SystemMenu, systemMenu_, SystemMenu::RmlSystemMenuPanel)
+MU_PC_UI_GETTER(MapName, mapName_, World::RmlMapNameLayer)
+MU_PC_UI_GETTER(MonsterInfo, monsterInfo_, World::RmlMonsterInfoLayer)
 MU_PC_UI_GETTER(StoreLabel, storeLabel_, World::RmlStoreLabelLayer)
 
 #undef MU_PC_UI_GETTER

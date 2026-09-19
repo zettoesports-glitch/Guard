@@ -1,0 +1,63 @@
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    overflow: hidden;
+    pointer-events: none;
+    font-family: Arial;
+}
+#panel, #content, .label, .map-name-art {
+    position: absolute;
+    pointer-events: none;
+}
+#panel {
+    display: none;
+    width: 256.811px;
+    height: 165px;
+}
+#content {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+.map-name-art {
+    left: 0px;
+    top: 26px;
+    width: 100%;
+    height: 92px;
+    background-color: #141414aa;
+}
+.map-name-art.shade {
+    top: 118px;
+    height: 2px;
+    opacity: 0.3008;
+}
+.label {
+    left: 0px;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.strife {
+    top: 20px;
+    height: 20px;
+    line-height: 20px;
+    color: #e85b5b;
+    font-size: 12px;
+}
+.map-name {
+    top: 56px;
+    height: 30px;
+    line-height: 30px;
+    color: #f3dfaa;
+    font-size: 22px;
+}
+.occupy-guild {
+    top: 90px;
+    height: 20px;
+    line-height: 20px;
+    color: #d4d4d4;
+    font-size: 12px;
+}
