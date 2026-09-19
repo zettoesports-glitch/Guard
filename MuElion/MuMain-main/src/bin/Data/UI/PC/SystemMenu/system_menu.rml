@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed System Menu</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-systemmenu-system-menu">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

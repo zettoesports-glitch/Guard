@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <functional>
 #include <mutex>
+#include <string>
+#include <unordered_map>
 #include <utility>
 
 namespace UI::Modern
@@ -95,7 +97,11 @@ public:
         bootstrapDocument_ =
             context_->LoadDocument("Data/UI/PC/HUD/main_frame.rml");
         if (bootstrapDocument_)
+        {
+            documents_.emplace(
+                "Data/UI/PC/HUD/main_frame.rml", bootstrapDocument_);
             bootstrapDocument_->Show();
+        }
 
         initialized_ = true;
         return true;
@@ -109,6 +115,7 @@ public:
 
         if (context_)
         {
+            documents_.clear();
             Rml::RemoveContext(contextName_);
             context_ = nullptr;
             bootstrapDocument_ = nullptr;
@@ -210,6 +217,69 @@ public:
         return executed ? snapshot : nullptr;
     }
 
+    [[nodiscard]] Rml::ElementDocument* LoadDocument(
+        const char* path, bool show)
+    {
+        if (path == nullptr || *path == '\0')
+            return nullptr;
+
+        Rml::ElementDocument* document = nullptr;
+        const bool executed = Execute([this, path, show, &document] {
+            const auto existing = documents_.find(path);
+            if (existing != documents_.end())
+            {
+                document = existing->second;
+            }
+            else
+            {
+                document = context_->LoadDocument(path);
+                if (document)
+                    documents_.emplace(path, document);
+            }
+
+            if (document && show)
+                document->Show();
+        });
+
+        return executed ? document : nullptr;
+    }
+
+    [[nodiscard]] bool ShowDocument(const char* path)
+    {
+        return LoadDocument(path, true) != nullptr;
+    }
+
+    [[nodiscard]] bool HideDocument(const char* path)
+    {
+        if (path == nullptr || *path == '\0')
+            return false;
+
+        bool hidden = false;
+        const bool executed = Execute([this, path, &hidden] {
+            const auto existing = documents_.find(path);
+            if (existing == documents_.end() || existing->second == nullptr)
+                return;
+
+            existing->second->Hide();
+            hidden = true;
+        });
+
+        return executed && hidden;
+    }
+
+    [[nodiscard]] Rml::ElementDocument* GetDocument(const char* path) noexcept
+    {
+        if (path == nullptr || *path == '\0')
+            return nullptr;
+
+        std::scoped_lock lock(mutex_);
+        if (!initialized_ || !context_)
+            return nullptr;
+
+        const auto existing = documents_.find(path);
+        return existing != documents_.end() ? existing->second : nullptr;
+    }
+
     [[nodiscard]] Rml::Context* GetContext() noexcept
     {
         std::scoped_lock lock(mutex_);
@@ -227,6 +297,7 @@ private:
     bool initialized_ = false;
     std::uint64_t sequence_ = 0;
     std::shared_ptr<RmlUiRenderSnapshot> lastSnapshot_;
+    std::unordered_map<std::string, Rml::ElementDocument*> documents_;
     std::unique_ptr<Rml::ElementInstancerGeneric<RmlHudMapViewport>>
         mapViewportInstancer_;
 };
@@ -287,6 +358,27 @@ std::shared_ptr<const RmlUiRenderSnapshot> RmlUiRuntime::PrepareRenderSnapshot()
 Rml::Context* RmlUiRuntime::GetContext() noexcept
 {
     return m_impl ? m_impl->GetContext() : nullptr;
+}
+
+Rml::ElementDocument* RmlUiRuntime::LoadDocument(
+    const char* path, bool show)
+{
+    return m_impl ? m_impl->LoadDocument(path, show) : nullptr;
+}
+
+bool RmlUiRuntime::ShowDocument(const char* path)
+{
+    return m_impl && m_impl->ShowDocument(path);
+}
+
+bool RmlUiRuntime::HideDocument(const char* path)
+{
+    return m_impl && m_impl->HideDocument(path);
+}
+
+Rml::ElementDocument* RmlUiRuntime::GetDocument(const char* path) noexcept
+{
+    return m_impl ? m_impl->GetDocument(path) : nullptr;
 }
 
 RmlUiRuntime& GetRmlUiRuntime()

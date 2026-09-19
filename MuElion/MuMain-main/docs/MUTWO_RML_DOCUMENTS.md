@@ -125,3 +125,15 @@ the existing MuMain UI logic, and newly authored RML/RCSS.
 The initial `HUD/main_frame.rml` in this branch is a neutral bootstrap. It
 loads the reconstructed stylesheet and instantiates the recovered custom
 `map-viewport` element without replacing the legacy HUD yet.
+
+
+## Materialized reconstruction tree
+
+The `mordenize` branch now contains independently-authored neutral RML
+skeletons for every fully-qualified path listed above. The runtime loads them
+lazily by path; only `HUD/main_frame.rml` is shown during bootstrap.
+
+These skeletons intentionally contain no copied MuClient markup or styling.
+They establish the recovered file/layout contract so each screen can be
+reconstructed incrementally without guessing directory names or replacing the
+legacy UI before parity is validated.

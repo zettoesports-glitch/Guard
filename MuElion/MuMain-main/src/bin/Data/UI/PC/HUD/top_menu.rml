@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Top Menu</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-hud-top-menu">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Pet Frame</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-character-pet-frame">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

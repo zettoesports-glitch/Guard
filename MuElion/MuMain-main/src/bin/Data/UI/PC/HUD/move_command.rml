@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Move Command</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-hud-move-command">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

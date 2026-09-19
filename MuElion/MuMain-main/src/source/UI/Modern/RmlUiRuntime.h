@@ -7,6 +7,7 @@
 namespace Rml
 {
 class Context;
+class ElementDocument;
 }
 
 namespace UI::Modern
@@ -47,6 +48,15 @@ public:
     [[nodiscard]] std::shared_ptr<const RmlUiRenderSnapshot> PrepareRenderSnapshot();
 
     [[nodiscard]] Rml::Context* GetContext() noexcept;
+
+    // Reconstructed document-host surface. Paths come from the Debug-derived
+    // document inventory and are loaded lazily so the legacy UI remains the
+    // active fallback until each modern screen reaches behavioral parity.
+    [[nodiscard]] Rml::ElementDocument* LoadDocument(
+        const char* path, bool show = false);
+    [[nodiscard]] bool ShowDocument(const char* path);
+    [[nodiscard]] bool HideDocument(const char* path);
+    [[nodiscard]] Rml::ElementDocument* GetDocument(const char* path) noexcept;
 
 private:
     class Impl;

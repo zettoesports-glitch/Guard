@@ -16,3 +16,11 @@ body {
 #hud-map-viewport {
     display: none;
 }
+
+
+.mu-modern-document,
+.mu-document-root {
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+}

@@ -108,6 +108,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   `Data/UI/PC/HUD/main_frame.rml`
 - reconstructed stylesheet bootstrap:
   `Data/UI/PC/ui_assets.rcss`
+- lazy RML document host with load/show/hide lookup by recovered path
+- neutral independently-authored skeletons for every fully-qualified RML path
+  currently confirmed by the Debug executable
 - Debug-derived RML document inventory in `MUTWO_RML_DOCUMENTS.md`
 
 No VDraven RML/RCSS contents are copied. The public repository does not expose
@@ -126,8 +129,8 @@ a license file, so UI documents are reconstructed independently.
 - [ ] Replace remaining CPU-expanded instance/terrain compatibility paths with
       the exact private storage-buffer path as more structure offsets are
       recovered
-- [ ] Reconstruct the actual RML/RCSS screens from observable behavior and the
-      existing MuMain UI, using the Debug-derived document inventory
+- [ ] Replace the neutral RML skeletons screen-by-screen with behaviorally
+      reconstructed UI from observable behavior and the existing MuMain UI
 
 ## Current confidence boundary
 
