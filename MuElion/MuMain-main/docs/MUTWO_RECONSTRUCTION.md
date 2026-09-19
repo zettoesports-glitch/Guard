@@ -107,6 +107,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - recovered `RmlUiDesign::Parser` for `mu-design-*` meta constants
 - reconstructed `RmlMuButton` listener, atomic click latch, visibility/
   enabled state and CSS synchronization
+- reconstructed `RmlMuMovablePanel` drag listener, bounds clamp, position
+  state and `left/top` CSS synchronization
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle

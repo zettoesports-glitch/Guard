@@ -595,3 +595,41 @@ control is enabled+visible and the supplied element is the bound element or one
 of its descendants. The reconstruction exposes semantic method names for these
 non-exported functions; those names are not claimed to be the original private
 identifiers.
+
+
+## RmlMuMovablePanel drag controller
+
+RTTI exposes `UI::Modern::RmlMuMovablePanel::Listener`; the listener stores
+its owner at x64 offset `+0x10` and forwards `ProcessEvent(Event&)`
+unchanged.
+
+The owner constructor and event bodies recover the following x64 layout:
+
+```text
++0x00 unique_ptr<Listener>
++0x08 Rml::Element* panel
++0x10 Rml::Element* drag handle
++0x18 float container width
++0x1c float container height
++0x20 float panel width
++0x24 float panel height
++0x28 float parent/origin x
++0x2c float parent/origin y
++0x30 float position x
++0x34 float position y
++0x38 float drag mouse offset x
++0x3c float drag mouse offset y
++0x40 bool dragging
++0x41 bool position changed
+```
+
+Binding attaches the same listener to `dragstart`, `drag`, and `dragend`
+on the handle. On drag start, the recovered code reads float event parameters
+`mouse_x` and `mouse_y` and stores mouse-minus-panel offsets. While dragging,
+it derives the new absolute position from those parameters, clamps each axis to
+`0..max(0, container_size-panel_size)`, and writes the panel properties
+`left` and `top` using the exact format `%.3fpx` after subtracting the
+stored parent/origin offset. Applying CSS sets the position-changed latch.
+
+The reconstruction preserves these behaviors while giving semantic names to
+non-exported methods whose original private identifiers are not present.
