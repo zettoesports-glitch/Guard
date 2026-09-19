@@ -2267,3 +2267,41 @@ guild mutations.
 returns SelectType/Confirm/Cancel intents only. The central `RmlPcUiHost`
 owns all three controllers but never auto-loads them, preserving the legacy
 Guild UI until a bridge/action boundary is explicitly enabled.
+
+
+### Guild read-only legacy bridge
+
+The Guild modern surface now has a passive adapter over the existing NewUI
+windows.
+
+`CNewUIGuildMakeWindow::BuildSnapshot` copies:
+- legacy visibility and position;
+- INFO / MARK / RESULT_INFO stage;
+- current guild-name edit text;
+- all 64 editable mark color indices;
+- the selected 0..15 mark color.
+
+`CNewUIGuildInfoWindow::BuildSnapshot` copies:
+- legacy visibility, position and current tab;
+- guild/master state, guild name, score and rival name;
+- the 64-cell guild mark;
+- guild notice rows;
+- member name/number/server/status rows;
+- union guild names/member counts/64-cell marks.
+
+The three underlying guild listbox classes expose const deque views solely for
+snapshot copying. No `CMessageText`/list entry ownership moves into RmlUi.
+
+For a guild master, member capacity uses the same legacy formula visible in
+`CNewUIGuildInfoWindow::Render_Text`: ordinary classes use Level / 10; Dark
+Lord additionally uses Charisma / 10; the result is clamped to 80.
+
+`RmlGuildLegacyBridge` converts the copied wide strings to UTF-8 and
+fingerprints both snapshots to avoid unnecessary retained-DOM rebuilds. The
+central PC host invokes this bridge only when the corresponding modern Guild
+document was explicitly loaded.
+
+This bridge is intentionally one-way. It does not call guild packet methods,
+open/accept message boxes, modify the selected legacy list row, or mutate
+GuildMark. Modern Guild actions remain semantic intents until their exact
+legacy callback ownership is recovered/validated.

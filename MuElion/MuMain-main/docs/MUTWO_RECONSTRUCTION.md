@@ -389,3 +389,10 @@ and differential runtime tests succeed.
   confirmation and network ownership
 - central `RmlPcUiHost` now owns the three Guild controllers without
   auto-loading them, preserving the legacy surface by default
+
+
+- added read-only `RmlGuildLegacyBridge` over
+  `CNewUIGuildMakeWindow` and `CNewUIGuildInfoWindow`; it mirrors creation
+  stage/name/8x8 mark/color plus guild notice/member/union state into explicitly
+  loaded RmlUi panels while keeping all validation, selection, confirmation
+  dialogs and network requests legacy-authoritative

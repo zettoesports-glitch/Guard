@@ -23,6 +23,7 @@
 #include "UI/Modern/PC/Gens/RmlGensRankingPanel.h"
 #include "UI/Modern/PC/Gens/RmlGensRankingLegacyBridge.h"
 #include "UI/Modern/PC/Guild/RmlGuildCreatePanel.h"
+#include "UI/Modern/PC/Guild/RmlGuildLegacyBridge.h"
 #include "UI/Modern/PC/Guild/RmlGuildInfoPanel.h"
 #include "UI/Modern/PC/Guild/RmlGuildPositionPanel.h"
 #include "UI/Modern/PC/Help/RmlHelpPanel.h"
@@ -203,9 +204,22 @@ public:
         if (petFrame_.IsLoaded()) changed |= petFrame_.Update();
         if (petInfo_.IsLoaded()) changed |= petInfo_.Update();
         if (friend_.IsLoaded()) changed |= friend_.Update();
-        if (guildCreate_.IsLoaded()) changed |= guildCreate_.Update();
-        if (guildInfo_.IsLoaded()) changed |= guildInfo_.Update();
-        if (guildPosition_.IsLoaded()) changed |= guildPosition_.Update();
+        if (guildCreate_.IsLoaded() && g_pGuildMakeWindow)
+        {
+            changed |= guildLegacyBridge_.SynchronizeCreate(
+                *g_pGuildMakeWindow, guildCreate_,
+                viewportWidth_, viewportHeight_);
+            changed |= guildCreate_.Update();
+        }
+        if (guildInfo_.IsLoaded() && g_pGuildInfoWindow)
+        {
+            changed |= guildLegacyBridge_.SynchronizeInfo(
+                *g_pGuildInfoWindow, guildInfo_,
+                viewportWidth_, viewportHeight_);
+            changed |= guildInfo_.Update();
+        }
+        if (guildPosition_.IsLoaded())
+            changed |= guildPosition_.Update();
         if (gensRanking_.IsLoaded() && g_pNewUIGensRanking)
         {
             changed |= gensRankingLegacyBridge_.Synchronize(
@@ -304,6 +318,7 @@ public:
     Guild::RmlGuildCreatePanel guildCreate_;
     Guild::RmlGuildInfoPanel guildInfo_;
     Guild::RmlGuildPositionPanel guildPosition_;
+    Guild::RmlGuildLegacyBridge guildLegacyBridge_;
     Gens::RmlGensRankingLegacyBridge gensRankingLegacyBridge_;
     Help::RmlHelpPanel help_;
     Help::RmlHelpLegacyBridge helpLegacyBridge_;
