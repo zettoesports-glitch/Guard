@@ -129,6 +129,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - reconstructed `RmlMainFrameLayer` with exact main-frame document path,
   nine design keys, recovered DOM IDs/state classes, gauges, six skill icons,
   scale layout and seven button intents
+- reconstructed dynamic `skill_list_icons.rml` sublayer with Debug-exact
+  element creation/id/class/inner-RML sequence and legacy chooser arrangement
 - reconstructed top-menu layer with exact document/DOM contract, nine design
   keys, independent option/action enable state and `start`/`stop` helper state
 - reconstructed `RmlCharacterFramePanel` with seven design keys, general

@@ -27,6 +27,10 @@ namespace UI::Modern::PC::HUD
 namespace
 {
 constexpr const char* kDocumentPath = "Data/UI/PC/HUD/main_frame.rml";
+constexpr const char* kSkillListDocumentPath =
+    "Data/UI/PC/HUD/skill_list_icons.rml";
+constexpr const char* kSkillIconInnerRml =
+    "<div class=\"skill-sheet\"/><div class=\"skill-cooldown\"/>";
 
 Rml::String PixelValue(float value)
 {
@@ -151,10 +155,20 @@ public:
         float marbleHeight = 89.0f;
         float legacyReferenceWidth = 640.0f;
         float legacyReferenceHeight = 480.0f;
+
+        // Observable retained CNewUISkillList arrangement.
+        std::size_t skillListCenteredCount = 14;
+        std::size_t skillListFirstRowCount = 18;
+        float skillListLeftRunStart = -8.0f;
+        float skillListSecondRowStart = -11.0f;
+        float skillListSlotWidth = 32.0f;
+        float skillListSlotHeight = 38.0f;
+        float skillListIconOffset = 6.0f;
     };
 
     Impl()
-        : host_(kDocumentPath)
+        : host_(kDocumentPath),
+          skillListHost_(kSkillListDocumentPath)
     {
     }
 
@@ -180,7 +194,7 @@ public:
             return false;
 
         ReadDesign();
-        if (!BindElements())
+        if (!BindElements() || !LoadSkillListDocument())
         {
             Release();
             return false;
@@ -217,6 +231,11 @@ public:
 
     void Release()
     {
+        ClearSkillListElements();
+        skillListRoot_ = nullptr;
+        skillListDocument_ = nullptr;
+        skillListHost_.Release();
+
         UnbindElements();
         document_ = nullptr;
         host_.Release();
@@ -242,6 +261,7 @@ public:
         SyncExperience();
         SyncSkillPage();
         SyncSkillIcons();
+        SyncSkillList();
         SyncButtons();
         document_->UpdateDocument();
         return true;
@@ -318,6 +338,28 @@ private:
         (void)ParseScalar(
             values, "RmlMainFrameLayer-LegacyReferenceHeight",
             design_.legacyReferenceHeight);
+
+        (void)ParseScalar(
+            values, "NewUIMainFrameWindow-SkillListCenteredCount",
+            design_.skillListCenteredCount);
+        (void)ParseScalar(
+            values, "NewUIMainFrameWindow-SkillListFirstRowCount",
+            design_.skillListFirstRowCount);
+        (void)ParseScalar(
+            values, "NewUIMainFrameWindow-SkillListLeftRunStart",
+            design_.skillListLeftRunStart);
+        (void)ParseScalar(
+            values, "NewUIMainFrameWindow-SkillListSecondRowStart",
+            design_.skillListSecondRowStart);
+        (void)ParseScalar(
+            values, "NewUIMainFrameWindow-SkillListSlotWidth",
+            design_.skillListSlotWidth);
+        (void)ParseScalar(
+            values, "NewUIMainFrameWindow-SkillListSlotHeight",
+            design_.skillListSlotHeight);
+        (void)ParseScalar(
+            values, "NewUIMainFrameWindow-SkillListIconOffset",
+            design_.skillListIconOffset);
     }
 
     [[nodiscard]] bool BindElements()
@@ -388,6 +430,65 @@ private:
                bind(questButton_, "main-button-quest") &&
                bind(communityButton_, "main-button-community") &&
                bind(systemButton_, "main-button-system");
+    }
+
+    [[nodiscard]] bool LoadSkillListDocument()
+    {
+        if (!skillListHost_.Load(false))
+            return false;
+
+        skillListDocument_ = skillListHost_.GetDocument();
+        if (!skillListDocument_)
+            return false;
+
+        skillListRoot_ =
+            RequiredElement(skillListDocument_, "skill-list-icons");
+        return skillListRoot_ != nullptr;
+    }
+
+    void ClearSkillListElements()
+    {
+        skillListElements_.clear();
+        if (skillListRoot_)
+            skillListRoot_->SetInnerRML("");
+    }
+
+    [[nodiscard]] bool EnsureSkillListElementCount(std::size_t count)
+    {
+        if (!skillListDocument_ || !skillListRoot_)
+            return false;
+
+        if (skillListElements_.size() == count)
+            return true;
+
+        ClearSkillListElements();
+        skillListElements_.reserve(count);
+
+        // Main-x64-Debug function at 0x1406743f0:
+        // CreateElement("div"), id "skill-list-icon-N", class
+        // "mu-skill-icon", exact two-child InnerRML, append to root.
+        for (std::size_t index = 0; index < count; ++index)
+        {
+            Rml::ElementPtr element =
+                skillListDocument_->CreateElement("div");
+            if (!element)
+                return false;
+
+            element->SetId(
+                Rml::String("skill-list-icon-") +
+                std::to_string(index));
+            element->SetClass("mu-skill-icon", true);
+            element->SetInnerRML(kSkillIconInnerRml);
+
+            Rml::Element* raw =
+                skillListRoot_->AppendChild(std::move(element));
+            if (!raw)
+                return false;
+
+            skillListElements_.push_back(raw);
+        }
+
+        return true;
     }
 
     void UnbindElements()
@@ -640,6 +741,129 @@ private:
         }
     }
 
+    void SyncSkillList()
+    {
+        if (!skillListDocument_ || !skillListRoot_)
+            return;
+
+        const bool visible =
+            state_.visible &&
+            state_.skillListVisible &&
+            state_.viewportWidth > 0 &&
+            state_.viewportHeight > 0;
+
+        skillListRoot_->SetProperty(
+            "display", visible ? "block" : "none");
+
+        if (!visible)
+        {
+            (void)skillListHost_.Hide();
+            return;
+        }
+
+        if (!EnsureSkillListElementCount(
+                state_.skillListSkills.size()))
+            return;
+
+        (void)skillListHost_.Show();
+
+        // Legacy CNewUISkillList starts at x=385, y=390 in the 640x480
+        // reference space. Its placement formula is retained exactly here:
+        // alternating centered 14, four left-run entries, then second row.
+        constexpr float kLegacyOriginX = 385.0f;
+        constexpr float kLegacyOriginY = 390.0f;
+
+        const float scaleX =
+            state_.viewportWidth > 0 && design_.legacyReferenceWidth > 0.0f
+                ? static_cast<float>(state_.viewportWidth) /
+                    design_.legacyReferenceWidth
+                : 1.0f;
+        const float scaleY =
+            state_.viewportHeight > 0 && design_.legacyReferenceHeight > 0.0f
+                ? static_cast<float>(state_.viewportHeight) /
+                    design_.legacyReferenceHeight
+                : 1.0f;
+
+        for (std::size_t index = 0;
+             index < skillListElements_.size();
+             ++index)
+        {
+            Rml::Element* element = skillListElements_[index];
+            if (!element)
+                continue;
+
+            float x = kLegacyOriginX;
+            float y = kLegacyOriginY;
+
+            if (index >= design_.skillListFirstRowCount)
+                y -= design_.skillListSlotHeight;
+
+            if (index < design_.skillListCenteredCount)
+            {
+                const std::size_t quotient = index / 2u;
+                if ((index % 2u) == 0u)
+                {
+                    x = kLegacyOriginX +
+                        static_cast<float>(quotient) *
+                            design_.skillListSlotWidth;
+                }
+                else
+                {
+                    x = kLegacyOriginX -
+                        static_cast<float>(quotient + 1u) *
+                            design_.skillListSlotWidth;
+                }
+            }
+            else if (index < design_.skillListFirstRowCount)
+            {
+                x = kLegacyOriginX +
+                    design_.skillListLeftRunStart *
+                        design_.skillListSlotWidth -
+                    static_cast<float>(
+                        index - design_.skillListCenteredCount) *
+                        design_.skillListSlotWidth;
+            }
+            else
+            {
+                x = kLegacyOriginX +
+                    design_.skillListSecondRowStart *
+                        design_.skillListSlotWidth +
+                    static_cast<float>(
+                        index - design_.skillListFirstRowCount + 1u) *
+                        design_.skillListSlotWidth;
+            }
+
+            const SkillIcon& skill = state_.skillListSkills[index];
+            element->SetProperty(
+                "left", PixelValue(x * scaleX));
+            element->SetProperty(
+                "top", PixelValue(y * scaleY));
+            element->SetProperty(
+                "width",
+                PixelValue(design_.skillListSlotWidth * scaleX));
+            element->SetProperty(
+                "height",
+                PixelValue(design_.skillListSlotHeight * scaleY));
+            element->SetProperty(
+                "display", skill.visible ? "block" : "none");
+            element->SetClass("disabled", !skill.enabled);
+            element->SetAttribute("data-skill-id", skill.skillId);
+
+            if (element->GetNumChildren() >= 2)
+            {
+                if (Rml::Element* cooldown = element->GetChild(1))
+                {
+                    const float ratio =
+                        std::clamp(skill.cooldownRatio, 0.0f, 1.0f);
+                    cooldown->SetProperty(
+                        "height", PercentValue(ratio * 100.0f));
+                }
+            }
+        }
+
+        skillListDocument_->UpdateDocument();
+    }
+
     void SyncButtons()
     {
         for (RmlMuButton* button : AllButtons())
@@ -647,7 +871,11 @@ private:
     }
 
     RmlDocumentHost host_;
+    RmlDocumentHost skillListHost_;
     Rml::ElementDocument* document_ = nullptr;
+    Rml::ElementDocument* skillListDocument_ = nullptr;
+    Rml::Element* skillListRoot_ = nullptr;
+    std::vector<Rml::Element*> skillListElements_;
 
     Rml::Element* frame_ = nullptr;
     Rml::Element* shell_ = nullptr;

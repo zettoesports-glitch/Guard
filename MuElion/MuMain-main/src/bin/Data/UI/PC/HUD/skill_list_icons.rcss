@@ -1,0 +1,51 @@
+body {
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#skill-list-icons,
+.mu-skill-icon,
+.skill-sheet,
+.skill-cooldown {
+    position: absolute;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+#skill-list-icons {
+    display: none;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.mu-skill-icon {
+    overflow: hidden;
+    clip: always;
+    border-width: 1px;
+    border-color: #6d644e;
+    background-color: #20242a;
+}
+
+.mu-skill-icon.disabled {
+    opacity: 0.45;
+}
+
+.skill-sheet {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.skill-cooldown {
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    height: 0%;
+    background-color: #80808099;
+}

@@ -1135,3 +1135,43 @@ authored coordinates, the reconstruction uniformly scales the panel to fit,
 while preserving logical drag bounds. This layout policy is compatibility
 behavior and is not claimed to reproduce an unrecovered private transform
 formula instruction-for-instruction.
+
+
+### Dynamic skill-list icon document
+
+The main-frame subsystem also owns the secondary document
+`skill_list_icons.rml`. Direct x64 disassembly recovers the container id
+`skill-list-icons` and a dynamic icon-construction function beginning at
+`0x1406743f0`.
+
+That function receives an icon count, clears the previous retained collection,
+then loops exactly that count. For each index it:
+
+1. calls `ElementDocument::CreateElement("div")`;
+2. builds the exact id prefix `skill-list-icon-` + decimal index;
+3. applies class `mu-skill-icon`;
+4. sets the exact inner RML
+   `<div class="skill-sheet"/><div class="skill-cooldown"/>`;
+5. appends the new element to `skill-list-icons`;
+6. stores the resulting element in an internal retained collection.
+
+A separate document/update body stores the resolved `skill-list-icons`
+element at object offset +0x28 and keeps a retained collection beginning at
++0x30. The surrounding object is non-polymorphic, so no reliable private class
+name survives RTTI; the reconstruction therefore models this as a private
+sublayer of `RmlMainFrameLayer` rather than inventing an original type name.
+
+The positional arrangement is already preserved in the legacy
+`CNewUISkillList`: origin (385,390) in the 640x480 reference space, 32x38
+slots, alternating centered entries for the first 14, a four-entry left run
+through entry 17, then a second row. The observable metadata strings
+`NewUIMainFrameWindow-SkillListCenteredCount`,
+`SkillListFirstRowCount`, `SkillListLeftRunStart`,
+`SkillListSecondRowStart`, `SkillListSlotWidth`,
+`SkillListSlotHeight`, and `SkillListIconOffset` expose the same
+arrangement.
+
+The reconstruction now loads the secondary skill-list document privately,
+creates its icons with the recovered DOM sequence, scales legacy-reference
+positions to the current viewport, and updates visibility/enabled/cooldown
+state from `RmlMainFrameLayer::State::skillListSkills`.

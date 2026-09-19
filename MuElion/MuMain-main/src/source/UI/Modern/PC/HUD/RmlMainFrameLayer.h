@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <vector>
 
 namespace UI::Modern::PC::HUD
 {
@@ -66,6 +67,10 @@ public:
         int hotSelectionSlot = -1;
 
         std::array<SkillIcon, 6> skills{};
+
+        // Filtered non-master skills shown by the legacy skill chooser.
+        bool skillListVisible = false;
+        std::vector<SkillIcon> skillListSkills;
     };
 
     RmlMainFrameLayer();
