@@ -6,6 +6,7 @@
 #include "Render/Textures/ZzzOpenglUtil.h"
 #include "Render/Textures/ZzzTexture.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Engine/Object/ZzzCharacter.h"
 #include "Render/Effects/ZzzEffect.h"
 #include "World/MapInfra/MapManager.h"
@@ -882,7 +883,7 @@ void CPhysicsCloth::RenderFace(BOOL bFront, int iTexture, vec3_t* pvRenderPos, u
         }
     }
 
-    mu::GetRenderer().RenderQuad3D(quadVerts, 0);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(quadVerts, 0);
 }
 
 void CPhysicsCloth::RenderCollisions(void)
