@@ -1089,3 +1089,49 @@ with map name/coordinates, recovered scaling design inputs, two embedded
 `RmlMuButton` controls, exact start/stop class behavior, and one-shot
 `OpenOptions` / `ToggleHelper` actions. Game-side MU Helper behavior stays
 outside this layer.
+
+
+## RmlCharacterFramePanel reconstruction
+
+The public MuClient character-frame document and Debug string inventory expose
+the exact modern document path and seven design keys:
+
+```text
+Data/UI/PC/Character/character_frame.rml
+RmlCharacterFramePanel-PanelWidth
+RmlCharacterFramePanel-PanelHeight
+RmlCharacterFramePanel-ReferenceWidth
+RmlCharacterFramePanel-ReferenceHeight
+RmlCharacterFramePanel-GfxStageWidth
+RmlCharacterFramePanel-InitialX
+RmlCharacterFramePanel-InitialY
+```
+
+The observable DOM contract contains general level/class/server/experience/
+point fields, five stat groups, five `character-stat-button-N` controls,
+`character-pet`, `character-master`, `character-drag`, and
+`character-close`.
+
+The existing MuMain `CNewUICharacterInfoWindow::BtnProcess()` remains the
+authoritative game-rule boundary: stat increases send
+`SendIncreaseCharacterStatPoint`, pet/master buttons toggle their legacy
+interfaces, and close hides the character interface. The reconstructed modern
+panel deliberately does not duplicate those side effects. It exposes one-shot
+presentation intents instead:
+
+- `IncreaseStat(index)`
+- `OpenPet`
+- `OpenMaster`
+- `Close`
+
+The panel owns the RML document host, binds the exact observable IDs, reuses
+`RmlMuButton` and `RmlMuMovablePanel`, supports the fifth charisma/
+leadership row only when the supplied state marks it visible, and consumes a
+presentation-neutral state containing labels, values and detail text.
+
+The independently-authored RCSS uses the recovered 327x639 authored panel
+dimensions and initial 639,40 position. When a viewport cannot contain those
+authored coordinates, the reconstruction uniformly scales the panel to fit,
+while preserving logical drag bounds. This layout policy is compatibility
+behavior and is not claimed to reproduce an unrecovered private transform
+formula instruction-for-instruction.

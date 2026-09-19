@@ -1,9 +1,81 @@
 <rml>
 <head>
+    <meta name="mu-design-RmlCharacterFramePanel-PanelWidth" content="327"/>
+    <meta name="mu-design-RmlCharacterFramePanel-PanelHeight" content="639"/>
+    <meta name="mu-design-RmlCharacterFramePanel-ReferenceWidth" content="640"/>
+    <meta name="mu-design-RmlCharacterFramePanel-ReferenceHeight" content="480"/>
+    <meta name="mu-design-RmlCharacterFramePanel-GfxStageWidth" content="1024"/>
+    <meta name="mu-design-RmlCharacterFramePanel-InitialX" content="639"/>
+    <meta name="mu-design-RmlCharacterFramePanel-InitialY" content="40"/>
     <title>Reconstructed Character Frame</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="character_frame.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-character-character-frame">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="character-frame" class="character-frame">
+        <div id="character-background" class="character-background"/>
+        <div id="character-drag" class="character-drag"/>
+
+        <div id="character-title" class="character-title"/>
+
+        <div id="character-section-general" class="character-section general"/>
+        <div id="character-field-level" class="character-field"/>
+        <div id="character-field-class" class="character-field"/>
+        <div id="character-field-server" class="character-field"/>
+        <div id="character-field-points" class="character-field"/>
+
+        <div id="character-level-label" class="character-label"/>
+        <div id="character-level" class="character-value"/>
+        <div id="character-class-label" class="character-label"/>
+        <div id="character-class" class="character-value"/>
+        <div id="character-server-label" class="character-label"/>
+        <div id="character-server" class="character-value"/>
+        <div id="character-experience" class="character-detail"/>
+        <div id="character-point-label" class="character-label"/>
+        <div id="character-points" class="character-value points"/>
+
+        <div id="character-section-strength" class="character-section stat-section"/>
+        <div id="character-field-stat-0" class="character-field stat-field"/>
+        <div id="character-stat-label-0" class="character-label stat-label"/>
+        <div id="character-stat-value-0" class="character-value stat-value"/>
+        <div id="character-detail-0" class="character-detail stat-detail"/>
+        <div id="character-stat-button-0" class="mu-button stat-up">+</div>
+
+        <div id="character-section-dexterity" class="character-section stat-section"/>
+        <div id="character-field-stat-1" class="character-field stat-field"/>
+        <div id="character-stat-label-1" class="character-label stat-label"/>
+        <div id="character-stat-value-1" class="character-value stat-value"/>
+        <div id="character-detail-1" class="character-detail stat-detail"/>
+        <div id="character-stat-button-1" class="mu-button stat-up">+</div>
+
+        <div id="character-section-vitality" class="character-section stat-section"/>
+        <div id="character-field-stat-2" class="character-field stat-field"/>
+        <div id="character-stat-label-2" class="character-label stat-label"/>
+        <div id="character-stat-value-2" class="character-value stat-value"/>
+        <div id="character-detail-2" class="character-detail stat-detail"/>
+        <div id="character-stat-button-2" class="mu-button stat-up">+</div>
+
+        <div id="character-section-energy" class="character-section stat-section"/>
+        <div id="character-field-stat-3" class="character-field stat-field"/>
+        <div id="character-stat-label-3" class="character-label stat-label"/>
+        <div id="character-stat-value-3" class="character-value stat-value"/>
+        <div id="character-detail-3" class="character-detail stat-detail"/>
+        <div id="character-stat-button-3" class="mu-button stat-up">+</div>
+
+        <div id="character-section-charisma" class="character-section stat-section"/>
+        <div id="character-field-stat-4" class="character-field stat-field"/>
+        <div id="character-stat-label-4" class="character-label stat-label"/>
+        <div id="character-stat-value-4" class="character-value stat-value"/>
+        <div id="character-detail-4" class="character-detail stat-detail"/>
+        <div id="character-stat-button-4" class="mu-button stat-up">+</div>
+
+        <div id="character-pet" class="mu-button footer-button pet">
+            <span id="character-pet-label">Pet</span>
+        </div>
+        <div id="character-master" class="mu-button footer-button master">
+            <span id="character-master-label">Master</span>
+        </div>
+        <div id="character-close" class="mu-button close-button">X</div>
+    </div>
 </body>
 </rml>
