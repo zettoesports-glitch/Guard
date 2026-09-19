@@ -2586,8 +2586,8 @@ public:
         cmd.vtxOffset = vtxOffset;
         cmd.vtxCount = static_cast<Uint32>(vertices.size());
         cmd.fogUniform = m_fogUniform;
-        cmd.blendMode = BlendMode::Alpha;
-        cmd.blendEnabled = true;
+        cmd.blendMode = m_activeBlendMode;
+        cmd.blendEnabled = m_blendEnabled;
         // 2D ortho projection for text — Y-up to match SDL_ttf GPU convention.
         // SDL_ttf negates Y in the vertex data (see SDL_gpu_textengine.c: "In the GPU API
         // positive y-axis is upwards so the signs of the y-coords is reversed").
@@ -2811,8 +2811,8 @@ public:
         if (vtxOffset == ~0u)
             return;
 
-        SDL_GPUGraphicsPipeline* pipeline =
-            s_pipelines2DDepthOff[static_cast<int>(BlendMode::Alpha)];
+        const int pipelineIdx = GetActivePipelineIndex();
+        SDL_GPUGraphicsPipeline* pipeline = s_pipelines2DDepthOff[pipelineIdx];
         if (!pipeline)
             return;
 
