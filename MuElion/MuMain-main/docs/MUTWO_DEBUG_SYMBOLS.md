@@ -791,3 +791,69 @@ The lambda is deliberately located in the reconstructed
 `RmlDocumentHost::Impl::Release()`, matching the RTTI evidence. This is an
 architectural/behavioral reconstruction; unknown private identifiers and
 memory offsets are not invented.
+
+
+## RmlChatPanel reconstruction
+
+The x64 Debug binary exposes RTTI for
+`UI::Modern::PC::Chat::RmlChatPanel::Impl`, confirming a pimpl-backed chat
+panel in the nested `UI::Modern::PC::Chat` namespace.
+
+Direct disassembly at the chat static initializer loads exactly 21 design-key
+strings, then associates them with the exact document path
+`Data/UI/PC/Chat/chat.rml`. The recovered keys are:
+
+```text
+RmlChatPanel-ViewHeights
+RmlChatPanel-ResizeViewportHeight
+RmlChatPanel-SmallStageScale
+RmlChatPanel-LargeStageBottom
+RmlChatPanel-SmallStageBottom
+RmlChatPanel-ViewWidth
+RmlChatPanel-RowHeight
+RmlChatPanel-EditingExtraHeight
+RmlChatPanel-ViewHeightMargin
+RmlChatPanel-MenuTop
+RmlChatPanel-InputTop
+RmlChatPanel-ScrollDownBottom
+RmlChatPanel-MarqueeSecondsPerPixel
+RmlChatPanel-ShadowOffsetX
+RmlChatPanel-AlphaStep
+RmlChatPanel-AlphaMaximum
+RmlChatPanel-AlphaMinimum
+RmlChatPanel-DefaultAlpha
+RmlChatPanel-RmlBlockedChatWidth
+RmlChatPanel-RmlBlockedChatHeight
+RmlChatPanel-RmlBlockedChatVisibleRows
+```
+
+The public MuClient chat asset provides observable metadata values and DOM IDs.
+The local reconstruction uses those observable contracts but independently
+authors the RML/RCSS content.
+
+A separate x64 switch at `0x1405361d0` recovers the exact message CSS-class
+mapping used by the panel presentation layer:
+
+```text
+1 -> whisper
+2 -> system
+3 -> error
+4 -> party
+5 -> guild
+6 -> union
+7 -> gm
+8 -> gens
+default -> normal
+```
+
+The reconstructed `RmlChatPanel::Impl` now owns a `RmlDocumentHost`, binds
+the recovered chat DOM IDs, reuses the reconstructed `RmlMuButton`,
+`RmlMuScrollBar` and `RmlMuMovablePanel` controls, renders retained message
+rows, applies proportional scrolling, cycles the recovered view-height and
+alpha design values, and manages the blocked-chat presentation/request state.
+
+The bridge to the legacy `CNewUIChatLogWindow` message vectors and game
+network/input submission remains a separate integration step. Keeping that
+bridge separate prevents the presentation reconstruction from inventing
+private ownership relationships that have not yet been confirmed in the
+Debug executable.

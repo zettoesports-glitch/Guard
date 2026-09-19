@@ -115,6 +115,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   page clicks, drag navigation and one-shot position requests
 - reconstructed `RmlMuSlot` as a `RmlMuButton` derivative with secondary
   mouse latch and exact `icon-frame-N` CSS switching
+- reconstructed `RmlChatPanel::Impl` controller with exact document path,
+  21 design keys, recovered message-class switch, retained message rows,
+  scroll controls and blocked-chat presentation
 - reconstructed `RmlDocumentHost` lifecycle wrapper with runtime-dispatched
   release and safe RmlUi deferred document closing
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
@@ -147,8 +150,9 @@ a license file, so UI documents are reconstructed independently.
 - [ ] Replace remaining CPU-expanded instance/terrain compatibility paths with
       the exact private storage-buffer path as more structure offsets are
       recovered
-- [ ] Replace the neutral RML skeletons screen-by-screen with behaviorally
-      reconstructed UI from observable behavior and the existing MuMain UI
+- [ ] Replace the remaining neutral RML skeletons screen-by-screen with
+      behaviorally reconstructed UI from observable behavior and the existing
+      MuMain UI (Chat is now materialized functionally)
 
 ## Current confidence boundary
 
