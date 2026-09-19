@@ -19,6 +19,7 @@
 #include "UI/Modern/PC/Inventory/RmlInventoryExtensionPanel.h"
 #include "UI/Modern/PC/Inventory/RmlInventoryExtensionLegacyBridge.h"
 #include "UI/Modern/PC/Inventory/RmlPrivateStorePanel.h"
+#include "UI/Modern/PC/Inventory/RmlPrivateStoreLegacyBridge.h"
 #include "UI/Modern/PC/Inventory/RmlStoragePanel.h"
 #include "UI/Modern/PC/Inventory/RmlStorageExtensionPanel.h"
 #include "UI/Modern/PC/Inventory/RmlStorageSecurityPanel.h"
@@ -142,7 +143,11 @@ public:
                 inventoryExtension_);
             changed |= inventoryExtension_.Update();
         }
-        if (privateStore_.IsLoaded()) changed |= privateStore_.Update();
+        if (privateStore_.IsLoaded())
+        {
+            changed |= privateStoreLegacyBridge_.Synchronize(privateStore_);
+            changed |= privateStore_.Update();
+        }
         if (storage_.IsLoaded()) changed |= storage_.Update();
         if (storageExtension_.IsLoaded()) changed |= storageExtension_.Update();
         if (storageSecurity_.IsLoaded()) changed |= storageSecurity_.Update();

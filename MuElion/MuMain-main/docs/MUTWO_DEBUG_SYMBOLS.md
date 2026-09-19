@@ -2037,3 +2037,32 @@ created 8x4 controls, each with
 Pointed-square/drag ownership is private to the individual extension controls,
 so the bridge does not guess a selected slot. No `ITEM*` is retained and no
 movement/network behavior is duplicated.
+
+
+## Private Store legacy state bridge
+
+`RmlPrivateStoreLegacyBridge` unifies the two proven legacy personal-store
+windows into the reconstructed seller/buyer presentation, but only after that
+modern panel has been explicitly loaded.
+
+Seller mode reads:
+
+- `INTERFACE_MYSHOP_INVENTORY` visibility;
+- `CNewUIMyShopInventory::IsEnablePersonalShop()`;
+- current title through `GetTitle()`;
+- its public inventory control and pointed-square index.
+
+Buyer mode reads:
+
+- `INTERFACE_PURCHASESHOP_INVENTORY` visibility;
+- `CNewUIPurchaseShopInventory::GetTitleText()`;
+- its locked inventory control and pointed-square index.
+
+Both modes project the same 8x4 / 32-slot occupancy map through public
+`FindItem(column,row)` and `GetIndex(column,row)`. No item or price pointer
+is retained.
+
+The reconstructed drop-state colors are intentionally left neutral here. The
+legacy seller calculates allowed/banned drop state from the **currently picked
+item** during drag-and-drop; reproducing that transient feedback belongs in the
+future picked-item/action bridge rather than the steady-state snapshot.

@@ -102,6 +102,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - `RmlMuHelperLegacyBridge` maps the real `g_MuHelper.GetConfig()` state,
 - `RmlInventoryLegacyBridge` projects legacy visibility, repair/shop state,
 - `RmlInventoryExtensionLegacyBridge` maps the legacy 0–4 opened bags and
+- `RmlPrivateStoreLegacyBridge` projects seller/buyer visibility, shop-open
+  state, title/name and the 32-slot inventory through public legacy controls
   128 global-indexed extension slots by occupancy without retaining items
   64 inventory cells and 12 equipment slots into an explicitly loaded modern
   inventory without owning any `ITEM*`
