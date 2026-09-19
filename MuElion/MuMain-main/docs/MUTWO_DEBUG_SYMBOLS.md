@@ -729,3 +729,35 @@ The recovered layout helpers also show proportional thumb sizing and position
 mapping. The reconstruction applies equivalent `top`, `height`, `display`
 and disabled/pointer-event state through RmlUi properties. Public method names
 are semantic reconstructions, not claims about stripped private identifiers.
+
+
+## RmlMuSlot reconstruction
+
+The x64 class layout shows `RmlMuSlot` deriving directly from the
+0x18-byte reconstructed `RmlMuButton`. Its additional fields are:
+
+```text
+base +0x00..+0x17  RmlMuButton
++0x18              unique_ptr<RmlMuSlot::Listener>
++0x20              Rml::Element*
++0x28              atomic<bool> secondaryClicked
++0x2c              int iconFrame
+```
+
+Binding first resets previous state, calls the button binding path for the same
+element, and then registers an additional `mouseup` listener. Unbinding
+removes the current `icon-frame-N` class when nonzero, removes `mouseup`,
+unbinds the button base, zeroes the frame and clears the atomic latch.
+
+The listener reads the exact event parameter `button`; when its integer value
+is 1 it performs an atomic store of true into the byte at +0x28. A separate
+method uses atomic exchange(false) to consume that latch once. Hiding/clearing
+the slot also clears the secondary-click state.
+
+Direct disassembly of the frame setter shows the exact class-name construction
+`icon-frame-` + decimal frame number. Changing frames removes the old class,
+stores the new integer at +0x2c, and applies the new class when nonzero.
+
+The reconstruction exposes this as `ConsumeSecondaryClicked()` and
+`SetIconFrame()`; these semantic names are not claimed to be the stripped
+private source identifiers.

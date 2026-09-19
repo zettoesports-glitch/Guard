@@ -113,6 +113,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   exact key navigation and one-shot optional change delivery
 - reconstructed `RmlMuScrollBar` four-child binding, proportional thumb,
   page clicks, drag navigation and one-shot position requests
+- reconstructed `RmlMuSlot` as a `RmlMuButton` derivative with secondary
+  mouse latch and exact `icon-frame-N` CSS switching
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle
