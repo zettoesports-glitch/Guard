@@ -5,6 +5,7 @@
 #include "ZzzOpenglUtil.h"
 #include "ZzzTexture.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Renderer/RenderUtils.h"
 #include "Render/Models/ZzzBMD.h"
 #include "Engine/Object/ZzzInfomation.h"
@@ -829,7 +830,7 @@ void RenderBox(float Matrix[3][4])
     EmitQuad(TransformVertices[0], TransformVertices[1], TransformVertices[5], TransformVertices[4], mu::PackABGR(.6f, .6f, .6f, 1.f));
     EmitQuad(TransformVertices[7], TransformVertices[5], TransformVertices[1], TransformVertices[3], mu::PackABGR(.4f, .4f, .4f, 1.f));
     EmitQuad(TransformVertices[0], TransformVertices[4], TransformVertices[6], TransformVertices[2], mu::PackABGR(.4f, .4f, .4f, 1.f));
-    mu::GetRenderer().RenderQuad3D(verts, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(verts, 0u);
 }
 
 void RenderPlane3D(float Width, float Height, float Matrix[3][4])
@@ -852,7 +853,7 @@ void RenderPlane3D(float Width, float Height, float Matrix[3][4])
         {TransformVertices[2][0], TransformVertices[2][1], TransformVertices[2][2], 0.f, 0.f, 1.f, 1.f, 0.f, 0xFFFFFFFFu},
         {TransformVertices[3][0], TransformVertices[3][1], TransformVertices[3][2], 0.f, 0.f, 1.f, 0.f, 0.f, 0xFFFFFFFFu},
     };
-    mu::GetRenderer().RenderQuad3D(verts, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(verts, 0u);
 }
 
 void BeginSprite()
@@ -938,7 +939,7 @@ void RenderSprite(int Texture, vec3_t Position, float Width, float Height, vec3_
         {p[2][0], p[2][1], p[2][2], 0.f, 0.f, 0.f, c[2][0], c[2][1], color},
         {p[3][0], p[3][1], p[3][2], 0.f, 0.f, 0.f, c[3][0], c[3][1], color},
     };
-    mu::GetRenderer().RenderQuad3D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, static_cast<std::uint32_t>(Texture));
 }
 
 void RenderSpriteUV(int Texture, vec3_t Position, float Width, float Height, float(*UV)[2], vec3_t Light[4], float Alpha)
@@ -970,7 +971,7 @@ void RenderSpriteUV(int Texture, vec3_t Position, float Width, float Height, flo
         {p[2][0], p[2][1], p[2][2], 0.f, 0.f, 0.f, UV[2][0], UV[2][1], mu::PackABGR(Light[2][0], Light[2][1], Light[2][2], Alpha)},
         {p[3][0], p[3][1], p[3][2], 0.f, 0.f, 0.f, UV[3][0], UV[3][1], mu::PackABGR(Light[3][0], Light[3][1], Light[3][2], Alpha)},
     };
-    mu::GetRenderer().RenderQuad3D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, static_cast<std::uint32_t>(Texture));
 }
 
 void RenderNumber(vec3_t Position, int Num, vec3_t Color, float Alpha, float Scale)
@@ -1094,7 +1095,7 @@ void RenderColor(float x, float y, float Width, float Height, float Alpha, int F
         {x + Width, y - Height, 0.0f, 0.0f, color},
         {x + Width, y, 0.0f, 0.0f, color},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, 0u);
 }
 void EndRenderColor()
 {
@@ -1127,7 +1128,7 @@ void RenderColorQuadARGB(float x, float y, float Width, float Height, unsigned i
         {x + Width, y - Height, 0.0f, 0.0f, color},
         {x + Width, y, 0.0f, 0.0f, color},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, 0u);
 }
 
 void RenderColorLineARGB(float x1, float y1, float x2, float y2, float thickness, unsigned int argbColor)
@@ -1161,7 +1162,7 @@ void RenderColorLineARGB(float x1, float y1, float x2, float y2, float thickness
         {x2 - ox, y2 - oy, 0.0f, 0.0f, color},
         {x2 + ox, y2 + oy, 0.0f, 0.0f, color},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, 0u);
 }
 
 void RenderColorBitmap(int Texture, float x, float y, float Width, float Height, float u, float v, float uWidth, float vHeight, unsigned int color)
@@ -1182,7 +1183,7 @@ void RenderColorBitmap(int Texture, float x, float y, float Width, float Height,
         {x + Width, y - Height, u + uWidth, v + vHeight, color},
         {x + Width, y, u + uWidth, v, color},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, static_cast<std::uint32_t>(Texture));
 }
 
 void RenderBitmap(int Texture, float x, float y, float Width, float Height, float u, float v, float uWidth, float vHeight, bool Scale, bool StartScale, float Alpha)
@@ -1212,7 +1213,7 @@ void RenderBitmap(int Texture, float x, float y, float Width, float Height, floa
         {x + Width, y - Height, u + uWidth, v + vHeight, color},
         {x + Width, y, u + uWidth, v, color},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, static_cast<std::uint32_t>(Texture));
 }
 
 void RenderBitmapRotate(int Texture, float x, float y, float Width, float Height, float Rotate, float u, float v,
@@ -1251,7 +1252,7 @@ void RenderBitmapRotate(int Texture, float x, float y, float Width, float Height
         {p2[2][0] + x, p2[2][1] + y, u + uWidth, v + vHeight, color},
         {p2[3][0] + x, p2[3][1] + y, u + uWidth, v, color},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, static_cast<std::uint32_t>(Texture));
 }
 
 void RenderBitRotate(int Texture, float x, float y, float Width, float Height, float Rotate)
@@ -1299,7 +1300,7 @@ void RenderBitRotate(int Texture, float x, float y, float Width, float Height, f
         {p2[2][0] + halfW, p2[2][1] + halfH, 1.0f, 1.0f, 0xFFFFFFFFu},
         {p2[3][0] + halfW, p2[3][1] + halfH, 1.0f, 0.0f, 0xFFFFFFFFu},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, static_cast<std::uint32_t>(Texture));
 }
 
 void RenderPointRotate(int Texture, float ix, float iy, float iWidth, float iHeight, float x, float y, float Width, float Height, float Rotate, float Rotate_Loc, float uWidth, float vHeight, int Num)
@@ -1350,7 +1351,7 @@ void RenderPointRotate(int Texture, float ix, float iy, float iWidth, float iHei
         {p4[2][0] + halfW, p4[2][1] + halfH, uWidth, vHeight, 0xFFFFFFFFu},
         {p4[3][0] + halfW, p4[3][1] + halfH, uWidth, 0.0f, 0xFFFFFFFFu},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, static_cast<std::uint32_t>(Texture));
 
     if (Num > -1)
     {
@@ -1401,7 +1402,7 @@ void RenderBitmapLocalRotate(int Texture, float x, float y, float Width, float H
         {p[2][0], p[2][1], u + uWidth, v + vHeight, 0xFFFFFFFFu},
         {p[3][0], p[3][1], u + uWidth, v, 0xFFFFFFFFu},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, static_cast<std::uint32_t>(Texture));
 }
 
 void RenderBitmapAlpha(int Texture, float sx, float sy, float Width, float Height)
@@ -1441,7 +1442,7 @@ void RenderBitmapAlpha(int Texture, float sx, float sy, float Width, float Heigh
                 {p[2][0], p[2][1], u1, v1, (static_cast<std::uint32_t>(Alpha[2] * 255.0f) << 24) | 0x00FFFFFFu},
                 {p[3][0], p[3][1], u1, v0, (static_cast<std::uint32_t>(Alpha[3] * 255.0f) << 24) | 0x00FFFFFFu},
             };
-            mu::GetRenderer().RenderQuad2D(vertices, static_cast<std::uint32_t>(Texture));
+            mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, static_cast<std::uint32_t>(Texture));
         }
     }
 }
@@ -1463,7 +1464,7 @@ void RenderBitmapUV(int Texture, float x, float y, float Width, float Height, fl
         {x + Width, y - Height, u + uWidth, v + vHeight, color},
         {x + Width, y, u + uWidth, v, color},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, static_cast<std::uint32_t>(Texture));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

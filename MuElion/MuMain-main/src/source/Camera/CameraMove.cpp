@@ -18,6 +18,7 @@
 #include "Engine/AI/ZzzAI.h"
 #include "World/MapInfra/MapManager.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 
 // Forward declaration for LoginScene offset helper
 static void ApplyLoginSceneOffset(float& x, float& y, float& z);
@@ -548,7 +549,7 @@ void CCameraMove::RenderWayPoint()
         const mu::Vertex3D v3 = {minX, maxY, z, 0.f, 0.f, 1.f, 0.f, 0.f, waypointColor};
         vertices.insert(vertices.end(), {v0, v1, v2, v3});
     }
-    mu::GetRenderer().RenderQuad3D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 
     vertices.clear();
     if (m_listWayPoint.size() >= 2)
@@ -568,7 +569,7 @@ void CCameraMove::RenderWayPoint()
         previous = current;
         hasPrevious = true;
     }
-    mu::GetRenderer().RenderLines(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitLines(vertices, 0u);
 
     EnableDepthTest();
     mu::GetRenderer().SetAlphaTest(true);

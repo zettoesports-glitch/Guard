@@ -7,6 +7,7 @@
 #include "Core/Globals/_types.h"
 #include "Core/Globals/_define.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Renderer/RenderUtils.h"
 #include <cmath>
 #include <cstring>
@@ -120,7 +121,7 @@ void RenderPyramidWireframe(const vec3_t v[8], const vec3_t apex)
         MakeVertex(apex, sideColor), MakeVertex(v[5], sideColor), MakeVertex(apex, sideColor),
         MakeVertex(v[6], sideColor), MakeVertex(apex, sideColor), MakeVertex(v[7], sideColor),
     };
-    mu::GetRenderer().RenderLines(lines, 0);
+    mu::pipeline::GetLegacyRenderFacade().SubmitLines(lines, 0);
 }
 
 void RenderPyramidFilled(const vec3_t v[8], const vec3_t apex)
@@ -133,7 +134,7 @@ void RenderPyramidFilled(const vec3_t v[8], const vec3_t apex)
         MakeVertex(v[4], color), MakeVertex(v[5], color), MakeVertex(v[6], color), MakeVertex(v[4], color),
         MakeVertex(v[6], color), MakeVertex(v[7], color),
     };
-    mu::GetRenderer().RenderTriangles(triangles, 0);
+    mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(triangles, 0);
 }
 
 void RenderGroundProjection(const Frustum& frustum)
@@ -185,7 +186,7 @@ void RenderGroundProjection(const Frustum& frustum)
             AppendLine(lines, sx0, sy0, z0, sx1, sy1, z1, color);
         }
     }
-    mu::GetRenderer().RenderLines(lines, 0);
+    mu::pipeline::GetLegacyRenderFacade().SubmitLines(lines, 0);
 }
 
 // Draw a terrain-hugging horizontal line between two ground hit points.
@@ -253,7 +254,7 @@ void RenderFovGroundIntersect(const vec3_t apex, const vec3_t v[8])
         const std::uint32_t color = mu::PackABGR(1.f, 1.f, 0.f, 0.9f);
         AppendGroundSegment(lines, topLx, topLy, topRx, topRy, color);
     }
-    mu::GetRenderer().RenderLines(lines, 0);
+    mu::pipeline::GetLegacyRenderFacade().SubmitLines(lines, 0);
 }
 
 void RenderCameraMarker(const vec3_t apex)
@@ -267,7 +268,7 @@ void RenderCameraMarker(const vec3_t apex)
         {apex[0], apex[1], apex[2] - CAMERA_MARKER_HALF_LENGTH, 0.f, 0.f, 1.f, 0.f, 0.f, color},
         {apex[0], apex[1], apex[2] + CAMERA_MARKER_HALF_LENGTH, 0.f, 0.f, 1.f, 0.f, 0.f, color},
     };
-    mu::GetRenderer().RenderLines(lines, 0);
+    mu::pipeline::GetLegacyRenderFacade().SubmitLines(lines, 0);
 }
 } // namespace
 
