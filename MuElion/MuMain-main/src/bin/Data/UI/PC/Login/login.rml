@@ -1,9 +1,24 @@
 <rml>
 <head>
-    <title>Reconstructed Login</title>
+    <meta name="mu-design-Login-Width" content="307.998413"/>
+    <meta name="mu-design-Login-Height" content="190.000717"/>
+    <meta name="mu-design-Login-AnchorX" content="0.5"/>
+    <meta name="mu-design-Login-AnchorY" content="0.666666667"/>
+    <title>Reconstructed MU Login</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="login.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-login-login">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="login-panel">
+        <div id="login-background"></div>
+        <div id="title">MU Online</div>
+        <div id="server-name"></div>
+        <div id="account-label"></div>
+        <div id="password-label"></div>
+        <input id="account-input" class="mu-text-input" type="text"/>
+        <input id="password-input" class="mu-text-input" type="password"/>
+        <div id="ok-button" class="mu-button login-button"><span id="ok-label">OK</span></div>
+        <div id="cancel-button" class="mu-button login-button"><span id="cancel-label">Cancel</span></div>
+    </div>
 </body>
 </rml>

@@ -1785,3 +1785,46 @@ The panel intentionally does not send `SendMuHelperSaveDataRequest` or status
 packets itself; network/domain ownership remains with the existing
 `MUHelper::CMuHelper` and legacy UI until the higher-level ownership bridge is
 validated.
+
+
+## Login / Login Bottom presentation reconstruction
+
+The x64 Debug executable preserves both exact document paths:
+
+```text
+Data/UI/PC/Login/login.rml
+Data/UI/PC/Login/login_bottom.rml
+```
+
+and these design keys:
+
+```text
+Login-Width
+Login-Height
+Login-AnchorX
+Login-AnchorY
+Login-Szene
+
+LoginBottom-Columns
+LoginBottom-Width
+LoginBottom-Height
+LoginBottom-HorizontalMargin
+LoginBottom-BottomMargin
+LoginBottom-BaselineY
+```
+
+The Debug strings also preserve the stable DOM ids `login-panel`,
+`account-input`, `password-input`, `account-label`,
+`password-label`, and the `login-` / `login-buttons-` prefixes. The
+public observable asset confirms the OK/Cancel plus Menu/Credit control
+contract.
+
+No dedicated modern login controller RTTI name is currently recovered, so
+`RmlLoginPanel` is a semantic local name. It hosts the login and bottom
+documents, applies the recovered anchor and bottom-control layout, and exposes
+login credentials and cancel/menu/credit actions as one-shot requests.
+
+The panel does not call `SendLoginLongPassword` or
+`SendLoginShortPassword`. Password text is cleared on hide, cancel and after
+the login request is consumed, keeping network/authentication ownership in the
+existing login scene.
