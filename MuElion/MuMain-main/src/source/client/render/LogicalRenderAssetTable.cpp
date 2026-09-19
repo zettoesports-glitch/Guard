@@ -142,6 +142,11 @@ bool LogicalRenderAssetTable::RegisterCapturedTexture(
 
     std::scoped_lock lock(m_mutex);
     auto& entry = m_entries[ref.id];
+    const bool preserveBorrowedSameTexture =
+        entry.metadata.textureId == textureId &&
+        entry.metadata.textureId != 0 &&
+        !entry.ownsTexture;
+
     if (entry.metadata.textureId != 0 &&
         entry.metadata.textureId != textureId &&
         entry.ownsTexture)
@@ -157,7 +162,7 @@ bool LogicalRenderAssetTable::RegisterCapturedTexture(
     entry.metadata.sampler = sampler;
     entry.rgba8.clear();
     entry.lastUsed = std::chrono::steady_clock::now();
-    entry.ownsTexture = true;
+    entry.ownsTexture = !preserveBorrowedSameTexture;
     return true;
 }
 
@@ -172,6 +177,10 @@ bool LogicalRenderAssetTable::RegisterBorrowedTexture(
 
     std::scoped_lock lock(m_mutex);
     auto& entry = m_entries[ref.id];
+    const bool preserveOwnedSameTexture =
+        entry.metadata.textureId == textureId &&
+        entry.metadata.textureId != 0 &&
+        entry.ownsTexture;
 
     if (entry.metadata.textureId != 0 &&
         entry.metadata.textureId != textureId &&
@@ -188,7 +197,7 @@ bool LogicalRenderAssetTable::RegisterBorrowedTexture(
     entry.metadata.sampler = sampler;
     entry.rgba8.clear();
     entry.lastUsed = std::chrono::steady_clock::now();
-    entry.ownsTexture = false;
+    entry.ownsTexture = preserveOwnedSameTexture;
     return true;
 }
 

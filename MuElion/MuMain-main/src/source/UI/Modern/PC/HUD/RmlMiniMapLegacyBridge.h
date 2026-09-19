@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace SEASON3B
 {
 class CNewUIMiniMap;
