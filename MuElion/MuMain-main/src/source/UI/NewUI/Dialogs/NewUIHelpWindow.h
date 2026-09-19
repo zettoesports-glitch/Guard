@@ -9,8 +9,28 @@
 
 #include "UI/NewUI/NewUIManager.h"
 
+#include <array>
+#include <string>
+#include <vector>
+
 namespace SEASON3B
 {
+
+struct HelpSnapshotPage
+{
+    std::wstring heading;
+    std::vector<std::wstring> rows;
+};
+
+struct HelpSnapshot
+{
+    bool visible = false;
+    int x = 0;
+    int y = 0;
+    std::size_t selectedPage = 0;
+    std::array<HelpSnapshotPage, 2> pages;
+};
+
 class CNewUIHelpWindow : public CNewUIObj
 {
 public:
@@ -34,6 +54,11 @@ public:
     void ClosingProcess();
 
     void AutoUpdateIndex();
+
+    // Read-only projection for the reconstructed RmlUi help panel.
+    // The legacy window remains authoritative for visibility, current page
+    // and localized source text.
+    void BuildSnapshot(HelpSnapshot& snapshot) const;
 
 private:
     CNewUIManager* m_pNewUIMng;

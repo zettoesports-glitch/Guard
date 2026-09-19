@@ -272,3 +272,45 @@ void SEASON3B::CNewUIHelpWindow::AutoUpdateIndex()
         g_pNewUISystem->Hide(SEASON3B::INTERFACE_HELP);
     }
 }
+
+void SEASON3B::CNewUIHelpWindow::BuildSnapshot(
+    HelpSnapshot& snapshot) const
+{
+    snapshot.visible = IsVisible();
+    snapshot.x = m_Pos.x;
+    snapshot.y = m_Pos.y;
+    snapshot.selectedPage = (m_iIndex == 1) ? 1u : 0u;
+
+    for (auto& page : snapshot.pages)
+    {
+        page.heading.clear();
+        page.rows.clear();
+    }
+
+    auto& hotKey = snapshot.pages[0];
+    hotKey.heading = I18N::Game::KeyFunction;
+    hotKey.rows.reserve(25);
+
+    for (int i = 0; i < 4; ++i)
+        hotKey.rows.emplace_back(I18N::Game::Lookup(121 + i));
+
+    const wchar_t* const extraHelpLines[] = {
+        I18N::Game::F8ToggleMonsterHPBar,
+        I18N::Game::F9Toggle3DCamera,
+        I18N::Game::F10LockUnlockCameraZoom,
+        I18N::Game::F11ResetCameraView,
+        I18N::Game::HomeToggleMUHelper,
+        I18N::Game::JToggleChatCommands,
+    };
+    for (const wchar_t* line : extraHelpLines)
+        hotKey.rows.emplace_back(line ? line : L"");
+
+    for (int i = 4; i < 19; ++i)
+        hotKey.rows.emplace_back(I18N::Game::Lookup(121 + i));
+
+    auto& chat = snapshot.pages[1];
+    chat.heading = I18N::Game::ChattingInstructions;
+    chat.rows.reserve(16);
+    for (int i = 0; i < 16; ++i)
+        chat.rows.emplace_back(I18N::Game::Lookup(141 + i));
+}

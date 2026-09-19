@@ -357,3 +357,11 @@ and differential runtime tests succeed.
 - added a read-only `CNewUIDuelWatchWindow::BuildSnapshot` plus
   `RmlDuelWatchLegacyBridge` for the four enabled/joinable duel channels;
   join requests remain game/network-side
+
+
+- reconstructed `RmlHelpPanel` over the public Help document contract with
+  movable panel, Hot Key/Chat tabs, retained localized rows, two scrollbars and
+  semantic close/page actions
+- added read-only `CNewUIHelpWindow::BuildSnapshot` and
+  `RmlHelpLegacyBridge`; legacy F1/Escape visibility and localized I18N text
+  remain authoritative while the modern panel does not issue NewUI side effects

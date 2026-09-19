@@ -2137,3 +2137,28 @@ already-sorted result with `g_CharacterBuffCount`,
 The modern layer dynamically builds retained icons and emits clicked buff-state
 ids only. Cancellation policy (for example Infinity Arrow / Swell of Magic
 Power confirmation) remains in the legacy game UI and is not duplicated.
+
+
+## Help panel reconstruction
+
+The public PC document contract exposes
+`Data/UI/PC/Help/help.rml` with three observable design values:
+`Panel-Size=327 639`, `Panel-Reference=640 480`, and
+`Panel-Initial=20 20`. Its observable DOM contract contains the main panel,
+drag/close controls, Hot Key and Chat tabs, two retained lists, and two
+four-child scrollbars.
+
+The existing MuMain `CNewUIHelpWindow` remains authoritative. Its reachable
+keyboard state is two pages: index 0 renders the function/hot-key list and
+index 1 renders the chat-instruction list. F1 advances 0 -> 1 and then closes;
+Escape closes directly. The older render function still contains unreachable
+index 2/3 branches, but the current input/opening paths never select them.
+
+A read-only `HelpSnapshot` now projects visibility, legacy position,
+selected page, and both localized line sets without touching the shared
+`TextList` render scratch arrays. The modern `RmlHelpLegacyBridge`
+converts those wide strings to UTF-8 and feeds `RmlHelpPanel`.
+
+The reconstructed panel owns no legacy side effects. Close/tab clicks are
+returned as one-shot semantic actions; the legacy NewUI system remains
+authoritative for actually hiding or changing the legacy window.

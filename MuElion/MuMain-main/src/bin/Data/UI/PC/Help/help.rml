@@ -1,9 +1,49 @@
 <rml>
 <head>
-    <title>Reconstructed Help</title>
+    <title>Help</title>
+    <meta name="mu-design-Panel-Size" content="327 639"/>
+    <meta name="mu-design-Panel-Reference" content="640 480"/>
+    <meta name="mu-design-Panel-Initial" content="20 20"/>
+    <link type="text/rcss" href="../Common/common.rcss"/>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="help.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-help-help">
-    <div class="mu-document-root"></div>
+<body>
+    <div id="panel" class="help-panel">
+        <div id="btnDrag" class="help-drag"/>
+        <div id="tfTitle" class="help-title">Help</div>
+        <div id="btnClose" class="mu-button help-close">X</div>
+
+        <div id="btnHotKey" class="mu-button help-tab help-tab-left">
+            <span id="btnHotKey-label">Hot Keys</span>
+        </div>
+        <div id="btnChatHotKey" class="mu-button help-tab help-tab-right">
+            <span id="btnChatHotKey-label">Chat</span>
+        </div>
+
+        <div id="mcHotKey" class="help-page">
+            <div id="tfFunction" class="help-heading"/>
+            <div id="tfFunctionMent" class="help-description"/>
+            <div id="scrollingHotKey" class="help-list"/>
+            <div id="sbHotKey" class="mu-scrollbar help-scroll">
+                <div class="mu-scrollbar-track"/>
+                <div class="mu-scrollbar-down">v</div>
+                <div class="mu-scrollbar-up">^</div>
+                <div class="mu-scrollbar-thumb"/>
+            </div>
+        </div>
+
+        <div id="mcChatHotKey" class="help-page">
+            <div id="tfChatFunction" class="help-heading"/>
+            <div id="tfChatFunctionMent" class="help-description"/>
+            <div id="scrollingChatKey" class="help-list"/>
+            <div id="sbChatHotKey" class="mu-scrollbar help-scroll">
+                <div class="mu-scrollbar-track"/>
+                <div class="mu-scrollbar-down">v</div>
+                <div class="mu-scrollbar-up">^</div>
+                <div class="mu-scrollbar-thumb"/>
+            </div>
+        </div>
+    </div>
 </body>
 </rml>
