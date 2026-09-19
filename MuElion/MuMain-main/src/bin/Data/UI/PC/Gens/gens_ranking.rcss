@@ -1,0 +1,131 @@
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    overflow: hidden;
+    background-color: transparent;
+    font-family: Arial;
+    pointer-events: none;
+}
+
+#panel, #panel div {
+    position: absolute;
+    box-sizing: border-box;
+}
+
+.gens-panel {
+    width: 327px;
+    height: 439px;
+    background-color: #111722ef;
+    border-width: 1px;
+    border-color: #645738;
+    pointer-events: auto;
+}
+
+.gens-drag {
+    left: 8px;
+    top: 6px;
+    width: 276px;
+    height: 34px;
+    drag: drag;
+    cursor: move;
+    pointer-events: auto;
+}
+
+.gens-title {
+    left: 40px;
+    top: 13px;
+    width: 244px;
+    height: 21px;
+    line-height: 21px;
+    color: #f0d57f;
+    text-align: center;
+}
+
+.gens-close {
+    right: 10px;
+    top: 10px;
+    width: 23px;
+    height: 23px;
+    line-height: 23px;
+    text-align: center;
+    color: #d8d8d8;
+    pointer-events: auto;
+}
+
+.gens-mark-box {
+    left: 24px;
+    top: 59px;
+    width: 112px;
+    height: 98px;
+    background-color: #0a0d12c0;
+    border-width: 1px;
+    border-color: #50472f;
+}
+.gens-mark {
+    left: 25px;
+    top: 12px;
+    width: 62px;
+    height: 72px;
+    line-height: 72px;
+    text-align: center;
+    font-size: 34px;
+    font-weight: bold;
+}
+.gens-mark.duprian { color: #d3b14f; }
+.gens-mark.vanert { color: #86a9e8; }
+
+.gens-label {
+    width: 92px;
+    height: 20px;
+    line-height: 20px;
+    color: #e2c94e;
+    font-size: 12px;
+}
+.gens-value {
+    width: 154px;
+    height: 20px;
+    line-height: 20px;
+    color: #eeeeee;
+    font-size: 12px;
+}
+.gens-team-label { left: 152px; top: 67px; }
+.gens-team-value { left: 152px; top: 88px; }
+.gens-grade-label { left: 152px; top: 112px; }
+.gens-grade-value { left: 152px; top: 133px; }
+.gens-grade-text { display: none; }
+
+.gens-ranking-label { left: 24px; top: 174px; }
+.gens-ranking-value { right: 24px; top: 174px; text-align: right; }
+.gens-contribution-label { left: 24px; top: 199px; width: 150px; }
+.gens-contribution-value { right: 24px; top: 199px; text-align: right; }
+
+.gens-state {
+    left: 24px;
+    top: 225px;
+    width: 278px;
+    min-height: 45px;
+    color: #dddddd;
+    font-size: 11px;
+    white-space: normal;
+}
+
+.gens-info-title {
+    left: 24px;
+    top: 278px;
+    width: 110px;
+    height: 22px;
+    color: #e2c94e;
+    font-weight: bold;
+}
+
+.gens-info-text {
+    left: 24px;
+    top: 304px;
+    width: 278px;
+    height: 104px;
+    overflow: hidden;
+    color: #eeeeee;
+    font-size: 11px;
+    white-space: pre-wrap;
+}

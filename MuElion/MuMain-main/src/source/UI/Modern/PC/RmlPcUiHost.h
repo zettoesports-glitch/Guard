@@ -30,6 +30,7 @@ class RmlMessageBoxPanel;
 class RmlTooltipLayer;
 }
 namespace Friend { class RmlFriendPanel; }
+namespace Gens { class RmlGensRankingPanel; }
 namespace Help
 {
 class RmlHelpPanel;
@@ -100,6 +101,7 @@ public:
     [[nodiscard]] Common::RmlMessageBoxPanel& MessageBox() noexcept;
     [[nodiscard]] Common::RmlTooltipLayer& Tooltip() noexcept;
     [[nodiscard]] Friend::RmlFriendPanel& Friend() noexcept;
+    [[nodiscard]] Gens::RmlGensRankingPanel& GensRanking() noexcept;
     [[nodiscard]] Help::RmlHelpPanel& Help() noexcept;
     [[nodiscard]] Help::RmlLongNoticeLayer& LongNotice() noexcept;
     [[nodiscard]] HUD::RmlBuffListLayer& BuffList() noexcept;

@@ -509,3 +509,48 @@ int CNewUIGensRanking::GetImageIndex(BYTE rankIndex)
     return TITLENAME_END - rankIndex;
 }
 #endif //PBG_ADD_GENSRANKING
+
+
+void SEASON3B::CNewUIGensRanking::BuildSnapshot(
+    GensRankingSnapshot& snapshot) const
+{
+    snapshot.visible = IsVisible();
+    snapshot.x = m_Pos.x;
+    snapshot.y = m_Pos.y;
+    snapshot.influence = static_cast<int>(m_byGensInfluence);
+    snapshot.rankIndex = Hero ? static_cast<int>(Hero->GensRanking) : 0;
+    snapshot.contribution = std::max(0, m_nContribution);
+    snapshot.nextContribution = m_nNextContribution;
+
+    snapshot.title = I18N::Game::GensInfoWindow;
+    snapshot.gensInfoLabel = I18N::Game::GensDescription;
+    snapshot.gensTeamLabel = I18N::Game::Gens;
+    snapshot.gensRankingLabel = I18N::Game::Level3095;
+    snapshot.rankingLabel = I18N::Game::GensRanking;
+    snapshot.contributionLabel = I18N::Game::GainContribution;
+
+    snapshot.teamValue = m_szGensTeam;
+    snapshot.rankingValue = m_szRanking;
+    snapshot.contributionValue = std::to_wstring(snapshot.contribution);
+
+    int titleIndex = snapshot.rankIndex;
+    if (titleIndex < TITLENAME_START || titleIndex > TITLENAME_END)
+        titleIndex = TITLENAME_END;
+    snapshot.gradeValue = m_szTitleName[titleIndex - 1];
+
+    snapshot.promotionText.clear();
+    if (snapshot.nextContribution > 0)
+    {
+        wchar_t buffer[TEMP_MAX_TEXT_LENGTH] = {};
+        mu_swprintf(
+            buffer,
+            I18N::Game::TheAmountOfContributionNeededForPromotionToTheNextRankIsD,
+            snapshot.nextContribution);
+        snapshot.promotionText = buffer;
+    }
+
+    snapshot.infoLines[0] =
+        I18N::Game::GensRankingRewardsAreGivenOut;
+    snapshot.infoLines[1] =
+        I18N::Game::GensRankingRewardsCanBeClaimed;
+}

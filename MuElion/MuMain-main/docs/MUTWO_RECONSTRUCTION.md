@@ -372,3 +372,11 @@ and differential runtime tests succeed.
 - slide queues, random level help selection, timers, acceleration, hover
   slowdown and Help-vs-Notice priority remain legacy-authoritative; RmlUi only
   mirrors the currently renderable text/position/color/alpha state
+
+
+- reconstructed `RmlGensRankingPanel` over the public Gens Ranking document
+  contract with movable presentation, influence/rank state, localized labels,
+  promotion text and semantic close intent
+- added read-only `CNewUIGensRanking::BuildSnapshot` plus
+  `RmlGensRankingLegacyBridge`; `SendGensRankingRequest()`, visibility
+  changes and all gameplay/network effects remain legacy-owned

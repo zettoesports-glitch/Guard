@@ -20,6 +20,8 @@
 #include "UI/Modern/PC/Common/RmlMessageBoxPanel.h"
 #include "UI/Modern/PC/Common/RmlTooltipLayer.h"
 #include "UI/Modern/PC/Friend/RmlFriendPanel.h"
+#include "UI/Modern/PC/Gens/RmlGensRankingPanel.h"
+#include "UI/Modern/PC/Gens/RmlGensRankingLegacyBridge.h"
 #include "UI/Modern/PC/Help/RmlHelpPanel.h"
 #include "UI/Modern/PC/Help/RmlHelpLegacyBridge.h"
 #include "UI/Modern/PC/Help/RmlLongNoticeLayer.h"
@@ -113,6 +115,7 @@ public:
         commandWindow_.Release();
         longNotice_.Release();
         help_.Release();
+        gensRanking_.Release();
         friend_.Release();
         petInfo_.Release();
         petFrame_.Release();
@@ -194,6 +197,13 @@ public:
         if (petFrame_.IsLoaded()) changed |= petFrame_.Update();
         if (petInfo_.IsLoaded()) changed |= petInfo_.Update();
         if (friend_.IsLoaded()) changed |= friend_.Update();
+        if (gensRanking_.IsLoaded() && g_pNewUIGensRanking)
+        {
+            changed |= gensRankingLegacyBridge_.Synchronize(
+                *g_pNewUIGensRanking, gensRanking_,
+                viewportWidth_, viewportHeight_);
+            changed |= gensRanking_.Update();
+        }
         if (help_.IsLoaded() && g_pHelp)
         {
             changed |= helpLegacyBridge_.Synchronize(
@@ -281,6 +291,8 @@ public:
     Common::RmlMessageBoxPanel messageBox_;
     Common::RmlTooltipLayer tooltip_;
     Friend::RmlFriendPanel friend_;
+    Gens::RmlGensRankingPanel gensRanking_;
+    Gens::RmlGensRankingLegacyBridge gensRankingLegacyBridge_;
     Help::RmlHelpPanel help_;
     Help::RmlHelpLegacyBridge helpLegacyBridge_;
     Help::RmlLongNoticeLayer longNotice_;
@@ -377,6 +389,7 @@ MU_PC_UI_GETTER(QuickCommand, quickCommand_, Command::RmlQuickCommandPanel)
 MU_PC_UI_GETTER(MessageBox, messageBox_, Common::RmlMessageBoxPanel)
 MU_PC_UI_GETTER(Tooltip, tooltip_, Common::RmlTooltipLayer)
 MU_PC_UI_GETTER(Friend, friend_, Friend::RmlFriendPanel)
+MU_PC_UI_GETTER(GensRanking, gensRanking_, Gens::RmlGensRankingPanel)
 MU_PC_UI_GETTER(Help, help_, Help::RmlHelpPanel)
 MU_PC_UI_GETTER(LongNotice, longNotice_, Help::RmlLongNoticeLayer)
 MU_PC_UI_GETTER(BuffList, buffList_, HUD::RmlBuffListLayer)

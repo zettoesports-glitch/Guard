@@ -3,6 +3,9 @@
 #pragma once
 #include "Core/Globals/_TextureIndex.h"
 
+#include <array>
+#include <string>
+
 #ifdef PBG_ADD_GENSRANKING
 
 #include "UI/NewUI/NewUIBase.h"
@@ -16,6 +19,31 @@
 
 namespace SEASON3B
 {
+    struct GensRankingSnapshot
+    {
+        bool visible = false;
+        int x = 0;
+        int y = 0;
+        int influence = 0;
+        int rankIndex = 0;
+        int contribution = 0;
+        int nextContribution = 0;
+
+        std::wstring title;
+        std::wstring gensInfoLabel;
+        std::wstring gensTeamLabel;
+        std::wstring gensRankingLabel;
+        std::wstring rankingLabel;
+        std::wstring contributionLabel;
+
+        std::wstring teamValue;
+        std::wstring gradeValue;
+        std::wstring rankingValue;
+        std::wstring contributionValue;
+        std::wstring promotionText;
+        std::array<std::wstring, 2> infoLines;
+    };
+
     class CNewUIGensRanking : public CNewUIObj
     {
         enum IMAGE_LIST
@@ -146,6 +174,10 @@ namespace SEASON3B
 
         void RanderMark(float _x, float _y, GENS_TYPE _GensInfluence, BYTE _GensRankInfo, IMAGE_AREA _ImageArea = MARK_RANKINFOWIN, float _RenderY = 0);
         int GetImageIndex(BYTE _index);
+
+        // Read-only presentation projection for the reconstructed RmlUi
+        // ranking window. Opening/network request ownership stays legacy-side.
+        void BuildSnapshot(GensRankingSnapshot& snapshot) const;
     };
 }
 

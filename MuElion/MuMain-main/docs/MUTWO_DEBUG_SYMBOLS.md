@@ -2192,3 +2192,30 @@ The modern `RmlLongNoticeLayer` uses the public design contract
 `Menu-Size=1024 37`, `Menu-Reference=640 480`, and
 `Notice-HoldMilliseconds=2000`; position, text RGB and effective alpha come
 from the authoritative legacy frame.
+
+
+## Gens ranking reconstruction
+
+The public PC document contract
+`Data/UI/PC/Gens/gens_ranking.rml` exposes
+`Panel-Size=327 639`, `Panel-Reference=640 480`, and
+`Panel-Initial=20 20`, together with the observable DOM ids for title,
+team/grade/ranking/contribution values, promotion state, info text, close/drag
+controls and the two Gens marks.
+
+The existing `CNewUIGensRanking` remains authoritative for gameplay and
+network behavior. In particular, `OpenningProcess()` is still the only owner
+of `SendGensRankingRequest()`; the RmlUi controller never sends that packet.
+
+A read-only `GensRankingSnapshot` now projects:
+- legacy visibility and position;
+- Duprian/Vanert influence and Hero Gens rank index;
+- contribution and next-promotion contribution;
+- current ranking/team/title values;
+- all localized labels used by the legacy renderer;
+- the two localized ranking-reward information lines.
+
+`RmlGensRankingLegacyBridge` converts this projection to UTF-8 and feeds the
+independently-authored `RmlGensRankingPanel`. Close clicks remain semantic
+one-shot actions; hiding the NewUI interface is intentionally left to legacy
+ownership.
