@@ -1,0 +1,123 @@
+body {
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    overflow: hidden;
+    font-family: Arial;
+    pointer-events: none;
+}
+.character-create-panel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 857.5px;
+    height: 625px;
+    margin-left: -428.75px;
+    margin-top: -312.5px;
+    transform-origin: center center;
+    pointer-events: none;
+}
+.character-preview {
+    position: absolute;
+    left: 70px;
+    top: 34px;
+    width: 500px;
+    height: 335px;
+    border-width: 1px;
+    border-color: #5c5039;
+    background-color: #08090b88;
+}
+.section-title {
+    position: absolute;
+    left: 604px;
+    top: 28px;
+    width: 180px;
+    height: 20px;
+    color: #ffc000;
+    text-align: center;
+}
+.name-title { left: 244px; top: 392px; width: 120px; }
+.stat-row {
+    position: absolute;
+    left: 610px;
+    width: 180px;
+    height: 25px;
+    color: #d6d6d6;
+}
+.stat-row > div { position: absolute; top: 0px; height: 20px; }
+.stat-row > div:first-child { left: 0px; width: 115px; }
+.stat-row > div:last-child { right: 0px; width: 55px; color: #f7941d; text-align: right; }
+.stat-0 { top: 58px; }
+.stat-1 { top: 83px; }
+.stat-2 { top: 108px; }
+.stat-3 { top: 133px; }
+.stat-4 { top: 158px; }
+
+.class-button {
+    left: 610px;
+    width: 180px;
+    height: 31px;
+    border-width: 1px;
+    border-color: #4e4030;
+    background-color: #11151ddd;
+    line-height: 31px;
+    pointer-events: auto;
+}
+.class-button.selected {
+    color: #ffc000;
+    border-color: #c27c23;
+    background-color: #593216dd;
+}
+.class-0 { top: 205px; }
+.class-1 { top: 238px; }
+.class-2 { top: 271px; }
+.class-3 { top: 304px; }
+.class-4 { top: 337px; }
+.class-5 { top: 370px; }
+.class-6 { top: 403px; }
+
+#taExplain {
+    position: absolute;
+    left: 70px;
+    top: 458px;
+    width: 500px;
+    height: 60px;
+}
+#taExplain-label {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 500px;
+    height: 60px;
+    color: #cfcfcf;
+    white-space: pre-wrap;
+}
+#tiCharacterName-frame {
+    position: absolute;
+    left: 190px;
+    top: 390px;
+    width: 315px;
+    height: 34px;
+}
+#tiCharacterName {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 315px;
+    height: 28px;
+    padding: 4px;
+    pointer-events: auto;
+}
+.action-button {
+    top: 548px;
+    width: 110px;
+    height: 34px;
+    border-width: 1px;
+    border-color: #725a38;
+    background-color: #1a1c22;
+    line-height: 34px;
+    pointer-events: auto;
+}
+.action-button.ok { left: 575px; }
+.action-button.cancel { left: 692px; }

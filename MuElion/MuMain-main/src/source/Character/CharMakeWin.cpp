@@ -273,6 +273,48 @@ void CCharMakeWin::Show(bool bShow)
     }
 }
 
+
+void CCharMakeWin::BuildSnapshot(CCharMakeSnapshot& snapshot) const
+{
+    snapshot.visible = IsShow();
+    snapshot.selectedClass = static_cast<int>(m_nSelJob);
+
+    for (int classIndex = 0; classIndex < MAX_CLASS; ++classIndex)
+    {
+        snapshot.classEnabled[static_cast<std::size_t>(classIndex)] =
+            m_abtnJob[classIndex].IsEnable();
+        snapshot.classNames[static_cast<std::size_t>(classIndex)] =
+            I18N::Game::Lookup(kClassButtonTextIds[static_cast<std::size_t>(classIndex)]);
+    }
+
+    const auto& stats =
+        kClassStatTable[static_cast<std::size_t>(m_nSelJob)];
+    for (std::size_t index = 0; index < 4; ++index)
+    {
+        snapshot.statNames[index] =
+            I18N::Game::Lookup(kStatLabelBaseId + static_cast<int>(index));
+        snapshot.statValues[index] = stats.values[index];
+    }
+
+    snapshot.statCount = 4;
+    snapshot.statNames[4].clear();
+    snapshot.statValues[4].clear();
+    if (m_nSelJob == CLASS_DARK_LORD)
+    {
+        snapshot.statCount = 5;
+        snapshot.statNames[4] = I18N::Game::Lookup(kDarkLordLeadershipTextId);
+        snapshot.statValues[4] = kDarkLordLeadershipStatValue;
+    }
+
+    snapshot.description.clear();
+    for (int line = 0; line < m_nDescLine; ++line)
+    {
+        if (!snapshot.description.empty())
+            snapshot.description += L"\n";
+        snapshot.description += m_aszJobDesc[line];
+    }
+}
+
 bool CCharMakeWin::CursorInWin(int nArea)
 {
     if (!CWin::m_bShow)

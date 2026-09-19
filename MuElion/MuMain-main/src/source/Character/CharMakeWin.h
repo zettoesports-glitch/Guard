@@ -10,6 +10,9 @@
 #include "UI/Widgets/Win.h"
 #include "UI/Widgets/Button.h"
 
+#include <array>
+#include <string>
+
 #define CMW_SPR_INPUT 0
 #define CMW_SPR_STAT 1
 #define CMW_SPR_DESC 2
@@ -17,6 +20,18 @@
 
 #define CMW_DESC_LINE_MAX 2
 #define CMW_DESC_ROW_MAX 75
+
+struct CCharMakeSnapshot
+{
+    bool visible = false;
+    int selectedClass = 0;
+    std::array<bool, MAX_CLASS> classEnabled{};
+    std::array<std::wstring, MAX_CLASS> classNames{};
+    std::array<std::wstring, 5> statNames{};
+    std::array<std::wstring, 5> statValues{};
+    int statCount = 4;
+    std::wstring description;
+};
 
 class CCharMakeWin : public CWin
 {
@@ -39,6 +54,9 @@ public:
     void Show(bool bShow);
     bool CursorInWin(int nArea);
     void UpdateDisplay();
+
+    // Read-only projection for the reconstructed RmlUi character-create panel.
+    void BuildSnapshot(CCharMakeSnapshot& snapshot) const;
 
 protected:
     void PreRelease();

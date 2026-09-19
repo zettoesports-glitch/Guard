@@ -1,7 +1,11 @@
 #include "stdafx.h"
 #include "UI/Modern/PC/RmlPcUiHost.h"
 
+#include "UI/Modern/PC/Character/RmlCharacterCreatePanel.h"
+#include "UI/Modern/PC/Character/RmlCharacterCreateLegacyBridge.h"
 #include "UI/Modern/PC/Character/RmlCharacterFramePanel.h"
+#include "Character/CharMakeWin.h"
+#include "UI/Legacy/UIMng.h"
 #include "UI/Modern/PC/Character/RmlPetFrameLayer.h"
 #include "UI/Modern/PC/Character/RmlPetInfoPanel.h"
 #include "UI/Modern/PC/Chat/RmlChatPanel.h"
@@ -51,6 +55,7 @@ public:
         viewportWidth_ = width;
         viewportHeight_ = height;
         login_.SetViewport(width, height);
+        characterCreate_.SetViewport(width, height);
         serverSelect_.SetViewport(width, height);
         initialized_ = true;
         return true;
@@ -82,6 +87,7 @@ public:
         friend_.Release();
         petInfo_.Release();
         petFrame_.Release();
+        characterCreate_.Release();
         characterFrame_.Release();
         party_.Release();
         topMenu_.Release();
@@ -105,6 +111,7 @@ public:
         // Login owns an explicit viewport contract, so keep it synchronized
         // directly even when it is not yet loaded.
         login_.SetViewport(width, height);
+        characterCreate_.SetViewport(width, height);
         serverSelect_.SetViewport(width, height);
     }
 
@@ -126,6 +133,12 @@ public:
         if (party_.IsLoaded()) changed |= party_.Update();
         if (chat_.IsLoaded()) changed |= chat_.Update();
 
+        if (characterCreate_.IsLoaded())
+        {
+            changed |= characterCreateLegacyBridge_.Synchronize(
+                CUIMng::Instance().m_CharMakeWin, characterCreate_);
+            changed |= characterCreate_.Update();
+        }
         if (characterFrame_.IsLoaded()) changed |= characterFrame_.Update();
         if (petFrame_.IsLoaded()) changed |= petFrame_.Update();
         if (petInfo_.IsLoaded()) changed |= petInfo_.Update();
@@ -175,6 +188,8 @@ public:
         return initialized_;
     }
 
+    Character::RmlCharacterCreatePanel characterCreate_;
+    Character::RmlCharacterCreateLegacyBridge characterCreateLegacyBridge_;
     Character::RmlCharacterFramePanel characterFrame_;
     Character::RmlPetFrameLayer petFrame_;
     Character::RmlPetInfoPanel petInfo_;
@@ -254,6 +269,7 @@ Type& RmlPcUiHost::Method() noexcept \
     return m_impl->Member; \
 }
 
+MU_PC_UI_GETTER(CharacterCreate, characterCreate_, Character::RmlCharacterCreatePanel)
 MU_PC_UI_GETTER(CharacterFrame, characterFrame_, Character::RmlCharacterFramePanel)
 MU_PC_UI_GETTER(PetFrame, petFrame_, Character::RmlPetFrameLayer)
 MU_PC_UI_GETTER(PetInfo, petInfo_, Character::RmlPetInfoPanel)

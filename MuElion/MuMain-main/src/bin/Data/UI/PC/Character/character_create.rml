@@ -1,0 +1,40 @@
+<rml>
+<head>
+    <meta name="mu-design-Panel-Size" content="857.517712 625"/>
+    <meta name="mu-design-Panel-Reference" content="640 480"/>
+    <meta name="mu-design-Preview-Camera" content="10 -500 48 -90 0 0 10"/>
+    <meta name="mu-design-Effect-Frames" content="25"/>
+    <meta name="mu-design-Effect-Fps" content="30"/>
+    <title>Reconstructed Character Create</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
+    <link type="text/rcss" href="character_create.rcss"/>
+</head>
+<body>
+<div id="panel" class="character-create-panel">
+    <div id="mcCharacterRender" class="character-preview"/>
+    <div id="tfClassTitle" class="section-title">Class</div>
+    <div id="tfNameTitle" class="section-title name-title">Name</div>
+
+    <div id="mcStrength" class="stat-row stat-0"><div id="mcStrength-tfTitle"><span id="mcStrength-tfTitle-label"/></div><div id="mcStrength-tfStat"><span id="mcStrength-tfStat-label"/></div></div>
+    <div id="mcDexterity" class="stat-row stat-1"><div id="mcDexterity-tfTitle"><span id="mcDexterity-tfTitle-label"/></div><div id="mcDexterity-tfStat"><span id="mcDexterity-tfStat-label"/></div></div>
+    <div id="mcVitality" class="stat-row stat-2"><div id="mcVitality-tfTitle"><span id="mcVitality-tfTitle-label"/></div><div id="mcVitality-tfStat"><span id="mcVitality-tfStat-label"/></div></div>
+    <div id="mcEnergy" class="stat-row stat-3"><div id="mcEnergy-tfTitle"><span id="mcEnergy-tfTitle-label"/></div><div id="mcEnergy-tfStat"><span id="mcEnergy-tfStat-label"/></div></div>
+    <div id="mcCharisma" class="stat-row stat-4"><div id="mcCharisma-tfTitle"><span id="mcCharisma-tfTitle-label"/></div><div id="mcCharisma-tfStat"><span id="mcCharisma-tfStat-label"/></div></div>
+
+    <div id="class-buttons">
+        <div id="btnClass0" class="mu-button class-button class-0"><span id="btnClass0-label"/></div>
+        <div id="btnClass1" class="mu-button class-button class-1"><span id="btnClass1-label"/></div>
+        <div id="btnClass2" class="mu-button class-button class-2"><span id="btnClass2-label"/></div>
+        <div id="btnClass3" class="mu-button class-button class-3"><span id="btnClass3-label"/></div>
+        <div id="btnClass4" class="mu-button class-button class-4"><span id="btnClass4-label"/></div>
+        <div id="btnClass5" class="mu-button class-button class-5"><span id="btnClass5-label"/></div>
+        <div id="btnClass6" class="mu-button class-button class-6"><span id="btnClass6-label"/></div>
+    </div>
+
+    <div id="taExplain"><div id="taExplain-label" class="mu-text-area"/></div>
+    <div id="tiCharacterName-frame"><input id="tiCharacterName" class="mu-text-input" type="text"/></div>
+    <div id="btnOK" class="mu-button action-button ok"><span id="btnOK-label">OK</span></div>
+    <div id="btnCancel" class="mu-button action-button cancel"><span id="btnCancel-label">Cancel</span></div>
+</div>
+</body>
+</rml>

@@ -142,3 +142,6 @@ legacy UI before parity is validated.
 ### Additional public PC document contract
 
 - `Data/UI/PC/ServerSelect/server_select.rml`
+
+
+- `Data/UI/PC/Character/character_create.rml`

@@ -300,3 +300,13 @@ and differential runtime tests succeed.
   `CServerListManager` public group/server data; server discovery and
   ownership remain legacy-side, and the modern panel does not initiate the
   network connection itself
+
+
+- reconstructed `RmlCharacterCreatePanel` for the public
+  `Character/character_create.rml` contract, including seven class choices,
+  five stat rows, 10-character name input, description, OK/Cancel and
+  viewport fitting
+- added a read-only `CCharMakeWin::BuildSnapshot` and
+  `RmlCharacterCreateLegacyBridge`; class availability, selected class,
+  localized labels/stats and visibility remain legacy-authoritative while
+  modern Create/Cancel/Class actions remain semantic intents only

@@ -2095,3 +2095,26 @@ server index, classification and displayed name. It deliberately does not call
 `SetSelectServerInfo` or start the connection: that side effect remains at
 the legacy scene/network boundary until the exact callback ownership is
 recovered.
+
+
+## RmlCharacterCreatePanel reconstruction
+
+The public MuClient document
+`Data/UI/PC/Character/character_create.rml` exposes the seven class button
+ids `btnClass0..btnClass6`, `btnOK`, `btnCancel`, the input
+`tiCharacterName`, the five stat groups, and preview/description ids. Its
+observable metadata includes the authored panel size `857.517712 x 625`,
+reference `640 x 480`, preview camera tuple, 25 effect frames and 30 FPS.
+
+The legacy `CCharMakeWin` remains authoritative for all game-side behavior.
+Its source confirms seven classes, class-specific base stats, Dark Lord's fifth
+leadership stat, 10-character input limit, minimum-name validation, forbidden
+name checks, and the eventual `SendCreateCharacter` packet. The reconstruction
+does not duplicate that packet path.
+
+A new read-only `CCharMakeSnapshot` projects only visibility, selected class,
+class availability/localized labels, stat labels/values and description.
+`RmlCharacterCreateLegacyBridge` converts that snapshot to UTF-8 and feeds
+the modern panel. The modern panel emits one-shot `SelectClass`,
+`Create(name,class)` and `Cancel` intents; applying those intents to the
+legacy window/network remains a separate callback integration step.

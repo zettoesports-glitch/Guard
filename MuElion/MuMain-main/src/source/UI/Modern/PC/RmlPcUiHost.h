@@ -7,6 +7,7 @@ namespace UI::Modern::PC
 
 namespace Character
 {
+class RmlCharacterCreatePanel;
 class RmlCharacterFramePanel;
 class RmlPetFrameLayer;
 class RmlPetInfoPanel;
@@ -60,6 +61,7 @@ public:
     [[nodiscard]] bool Update() noexcept;
     [[nodiscard]] bool IsInitialized() const noexcept;
 
+    [[nodiscard]] Character::RmlCharacterCreatePanel& CharacterCreate() noexcept;
     [[nodiscard]] Character::RmlCharacterFramePanel& CharacterFrame() noexcept;
     [[nodiscard]] Character::RmlPetFrameLayer& PetFrame() noexcept;
     [[nodiscard]] Character::RmlPetInfoPanel& PetInfo() noexcept;
