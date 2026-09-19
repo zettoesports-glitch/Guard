@@ -1514,6 +1514,7 @@ MSG MainLoop()
                 sessionRender.BeginFrame();
                 mu::GetRenderer().BeginFrame();
                 RenderScene(g_hDC);
+                sessionRender.ReplayFrame();
                 mu::GetRenderer().EndFrame();
                 sessionRender.EndFrame();
 

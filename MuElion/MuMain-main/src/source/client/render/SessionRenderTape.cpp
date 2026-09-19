@@ -186,21 +186,34 @@ std::size_t SessionRenderTape::DrawCount() const noexcept
 
 bool SessionRenderTape::Replay() const noexcept
 {
+    auto& renderer = mu::GetRenderer();
+
     for (const auto& block : m_blocks)
     {
+        const bool uiPass = block.pass == RenderTapePass::Ui || block.pass == RenderTapePass::Overlay;
+        if (uiPass)
+            renderer.Begin2DPass();
+
+        bool blockOk = true;
         for (const auto& command : block.commands)
         {
             if (command.type == RenderTapeCommandType::Draw)
             {
                 if (!ReplayDraw(command.draw))
-                    return false;
+                {
+                    blockOk = false;
+                    break;
+                }
                 continue;
             }
 
             if (command.type == RenderTapeCommandType::SkinnedDraw)
             {
                 if (!ReplaySkinnedDraw(command.skinnedDraw))
-                    return false;
+                {
+                    blockOk = false;
+                    break;
+                }
                 continue;
             }
 
@@ -208,8 +221,11 @@ bool SessionRenderTape::Replay() const noexcept
             {
                 const auto& text = command.textDraw;
                 if (text.atlasTexture == nullptr || text.vertices.empty())
-                    return false;
-                mu::GetRenderer().SubmitTextTriangles(text.vertices, text.atlasTexture, text.sampler);
+                {
+                    blockOk = false;
+                    break;
+                }
+                renderer.SubmitTextTriangles(text.vertices, text.atlasTexture, text.sampler);
                 continue;
             }
 
@@ -226,6 +242,12 @@ bool SessionRenderTape::Replay() const noexcept
             // entry point yet; preserve the command and state for the backend
             // extension instead of silently reordering it.
         }
+
+        if (uiPass)
+            renderer.End2DPass();
+
+        if (!blockOk)
+            return false;
     }
     return true;
 }

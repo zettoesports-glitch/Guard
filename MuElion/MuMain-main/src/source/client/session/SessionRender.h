@@ -31,6 +31,7 @@ public:
     void BeginFrame(std::uint32_t sessionId = 0);
     void Submit(Job job);
     void WaitIdle();
+    void ReplayFrame();
     void EndFrame();
 
     [[nodiscard]] bool IsPipelineEnabled() const noexcept { return m_pipelineEnabled; }

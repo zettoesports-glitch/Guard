@@ -2,6 +2,7 @@
 #include "client/session/SessionRender.h"
 
 #include "client/render/FrameTape.h"
+#include "client/render/LegacyRenderFacade.h"
 
 #include <algorithm>
 #include <utility>
@@ -95,9 +96,23 @@ void SessionRender::WaitIdle()
     m_idle.wait(lock, [this] { return m_pendingJobs == 0 && m_jobs.empty(); });
 }
 
-void SessionRender::EndFrame()
+void SessionRender::ReplayFrame()
 {
     WaitIdle();
+
+    if (!m_pipelineEnabled)
+        return;
+
+    auto tape = mu::pipeline::GetLegacyRenderFacade().Finalize();
+    if (tape && !tape->Replay())
+    {
+        mu::pipeline::GetFrameTape().RejectAsset(
+            0, 0, mu::pipeline::FrameRejectionReason::InvalidTapeContents, 0);
+    }
+}
+
+void SessionRender::EndFrame()
+{
     mu::pipeline::GetFrameTape().MarkPresented();
     mu::pipeline::GetFrameTape().SealFrame();
 }
