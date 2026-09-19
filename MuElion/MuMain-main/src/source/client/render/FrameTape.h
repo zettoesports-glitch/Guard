@@ -57,6 +57,7 @@ public:
 
     [[nodiscard]] std::vector<FrameTapeSample> Snapshot(std::size_t maxSamples = DefaultCapacity) const;
     [[nodiscard]] std::optional<FrameTapeRejection> LastRejection() const;
+    [[nodiscard]] std::uint64_t CurrentFrame() const;
     [[nodiscard]] std::uint64_t RejectionCount() const;
     [[nodiscard]] std::size_t Capacity() const noexcept { return m_capacity; }
 

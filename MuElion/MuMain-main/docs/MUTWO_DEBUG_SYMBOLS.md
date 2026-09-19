@@ -263,3 +263,18 @@ unsigned parameters on `DrawBmdGeometry`/`DrawRigidInstances` are
 reconstructed as vertex-start, vertex-count, index-start and index-count. This
 is a semantic reconstruction supported by the shader layout, not a claim that
 the original parameter names are known.
+
+
+## Render-tape failure diagnostics
+
+The reconstruction now writes the exact Debug-observed line shape to
+`render-tape-failures.log`:
+
+```text
+[RenderTape] failure=<n> pass=<n> source-row=<n> order=<n> frame=<n>
+```
+
+The file name and format are confirmed from the Debug executable. The current
+numeric failure-code mapping is reconstruction-local; `source-row` is kept at
+0 until the original request/source-row propagation is recovered. Pass, order
+and frame are populated from the live reconstructed tape.

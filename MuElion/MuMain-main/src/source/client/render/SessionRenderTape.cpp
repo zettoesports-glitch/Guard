@@ -2,14 +2,51 @@
 #include "client/render/SessionRenderTape.h"
 
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/FrameTape.h"
 
 #include <algorithm>
+#include <fstream>
 
 namespace mu::pipeline
 {
 
 namespace
 {
+enum class ReconstructedRenderTapeFailure : std::uint32_t
+{
+    Draw = 1,
+    SkinnedDraw = 2,
+    TextDraw = 3,
+    Clear = 4,
+};
+
+void AppendRenderTapeFailure(ReconstructedRenderTapeFailure failure,
+                             RenderTapePass pass,
+                             std::uint64_t order,
+                             std::uint32_t sourceRow = 0) noexcept
+{
+    // Exact file name and line format are recovered from Main-x64-Debug.exe.
+    // Numeric failure values are reconstruction-local until their original enum
+    // mapping is recovered.
+    try
+    {
+        std::ofstream log("render-tape-failures.log", std::ios::app);
+        if (!log)
+            return;
+
+        log << "[RenderTape] failure=" << static_cast<std::uint32_t>(failure)
+            << " pass=" << static_cast<std::uint32_t>(pass)
+            << " source-row=" << sourceRow
+            << " order=" << order
+            << " frame=" << GetFrameTape().CurrentFrame()
+            << '\n';
+    }
+    catch (...)
+    {
+        // Diagnostics must never break rendering.
+    }
+}
+
 bool ApplyBlend(RenderBlendFactor source, RenderBlendFactor destination) noexcept
 {
     auto& renderer = mu::GetRenderer();
@@ -195,12 +232,17 @@ bool SessionRenderTape::Replay() const noexcept
             renderer.Begin2DPass();
 
         bool blockOk = true;
+        std::uint64_t order = 0;
         for (const auto& command : block.commands)
         {
+            ++order;
+
             if (command.type == RenderTapeCommandType::Draw)
             {
                 if (!ReplayDraw(command.draw))
                 {
+                    AppendRenderTapeFailure(
+                        ReconstructedRenderTapeFailure::Draw, block.pass, order);
                     blockOk = false;
                     break;
                 }
@@ -211,6 +253,8 @@ bool SessionRenderTape::Replay() const noexcept
             {
                 if (!ReplaySkinnedDraw(command.skinnedDraw))
                 {
+                    AppendRenderTapeFailure(
+                        ReconstructedRenderTapeFailure::SkinnedDraw, block.pass, order);
                     blockOk = false;
                     break;
                 }
@@ -222,6 +266,8 @@ bool SessionRenderTape::Replay() const noexcept
                 const auto& text = command.textDraw;
                 if (text.atlasTexture == nullptr || text.vertices.empty())
                 {
+                    AppendRenderTapeFailure(
+                        ReconstructedRenderTapeFailure::TextDraw, block.pass, order);
                     blockOk = false;
                     break;
                 }

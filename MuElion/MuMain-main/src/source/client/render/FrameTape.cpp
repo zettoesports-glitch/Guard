@@ -120,6 +120,14 @@ std::optional<FrameTapeRejection> FrameTape::LastRejection() const
     return m_lastRejection;
 }
 
+std::uint64_t FrameTape::CurrentFrame() const
+{
+    std::scoped_lock lock(m_mutex);
+    if (m_current)
+        return m_current->frame;
+    return m_samples.empty() ? 0u : m_samples.back().frame;
+}
+
 std::uint64_t FrameTape::RejectionCount() const
 {
     std::scoped_lock lock(m_mutex);
