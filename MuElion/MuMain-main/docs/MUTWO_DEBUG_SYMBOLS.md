@@ -1985,3 +1985,33 @@ surfaces and confirm overlays, and returns one-shot close, Zen-input,
 confirm-toggle, local-slot and remote-inspect intents. It does not send
 `SendTradeCancel`, `SendSetTradeMoney`,
 `SendTradeButtonStateChange`, or equipment-item requests.
+
+
+## Inventory legacy state bridge
+
+`RmlInventoryLegacyBridge` now projects public legacy inventory state into an
+explicitly loaded `RmlInventoryPanel`, without transferring or retaining any
+`ITEM*`.
+
+The bridge reads:
+
+- visibility through `CNewUISystem::IsVisible(INTERFACE_INVENTORY)`;
+- repair availability and active repair mode from
+  `CNewUIMyInventory`;
+- personal-store availability (legacy level >= 6 rule) and current shop-window
+  visibility;
+- all 64 base cells through
+  `CNewUIInventoryCtrl::FindItem(column,row)`;
+- the exact pointed-square index through
+  `GetPointedSquareIndex()/GetIndex()`;
+- up to 12 reconstructed equipment presentation slots from
+  `CharacterMachine->Equipment[]` and
+  `CNewUIMyInventory::GetPointedItemIndex()`.
+
+Only occupied/selected/enabled presentation state is copied. `RmlMuSlot`'s
+`iconFrame` is intentionally left neutral because that field selects a CSS
+frame class and is not an item texture/type identifier. Actual item 3D/sprite
+rendering remains a separate asset/render bridge.
+
+No item pointer ownership, movement, repair, drop, equip, personal-store or
+network logic is moved out of the legacy inventory.

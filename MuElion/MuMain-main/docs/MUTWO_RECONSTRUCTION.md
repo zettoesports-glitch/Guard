@@ -100,6 +100,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - central `RmlPcUiHost` owns the reconstructed PC controllers and coordinates
 - `RmlMainFrameLegacyBridge` feeds legacy HP/MP/SD/AG, exact EXP progress,
 - `RmlMuHelperLegacyBridge` maps the real `g_MuHelper.GetConfig()` state,
+- `RmlInventoryLegacyBridge` projects legacy visibility, repair/shop state,
+  64 inventory cells and 12 equipment slots into an explicitly loaded modern
+  inventory without owning any `ITEM*`
   visibility, assigned attack/buff skills and extra-item filters into an
   explicitly loaded modern helper without sending packets
   poison state, current skill, hotkeys and cooldowns into an explicitly loaded

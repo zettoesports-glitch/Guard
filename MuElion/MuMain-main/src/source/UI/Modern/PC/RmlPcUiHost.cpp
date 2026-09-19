@@ -15,6 +15,7 @@
 #include "UI/Modern/PC/HUD/RmlMoveCommandPanel.h"
 #include "UI/Modern/PC/HUD/RmlTopMenuLayer.h"
 #include "UI/Modern/PC/Inventory/RmlInventoryPanel.h"
+#include "UI/Modern/PC/Inventory/RmlInventoryLegacyBridge.h"
 #include "UI/Modern/PC/Inventory/RmlInventoryExtensionPanel.h"
 #include "UI/Modern/PC/Inventory/RmlPrivateStorePanel.h"
 #include "UI/Modern/PC/Inventory/RmlStoragePanel.h"
@@ -129,7 +130,11 @@ public:
         if (option_.IsLoaded()) changed |= option_.Update();
         if (systemMenu_.IsLoaded()) changed |= systemMenu_.Update();
 
-        if (inventory_.IsLoaded()) changed |= inventory_.Update();
+        if (inventory_.IsLoaded())
+        {
+            changed |= inventoryLegacyBridge_.Synchronize(inventory_);
+            changed |= inventory_.Update();
+        }
         if (inventoryExtension_.IsLoaded()) changed |= inventoryExtension_.Update();
         if (privateStore_.IsLoaded()) changed |= privateStore_.Update();
         if (storage_.IsLoaded()) changed |= storage_.Update();
@@ -163,6 +168,7 @@ public:
     HUD::RmlMoveCommandPanel moveCommand_;
     HUD::RmlTopMenuLayer topMenu_;
     Inventory::RmlInventoryPanel inventory_;
+    Inventory::RmlInventoryLegacyBridge inventoryLegacyBridge_;
     Inventory::RmlInventoryExtensionPanel inventoryExtension_;
     Inventory::RmlPrivateStorePanel privateStore_;
     Inventory::RmlStoragePanel storage_;
