@@ -10,6 +10,7 @@
 #include "UI/Modern/PC/Common/RmlTooltipLayer.h"
 #include "UI/Modern/PC/Friend/RmlFriendPanel.h"
 #include "UI/Modern/PC/HUD/RmlMainFrameLayer.h"
+#include "UI/Modern/PC/HUD/RmlMainFrameLegacyBridge.h"
 #include "UI/Modern/PC/HUD/RmlMasterTreePanel.h"
 #include "UI/Modern/PC/HUD/RmlMoveCommandPanel.h"
 #include "UI/Modern/PC/HUD/RmlTopMenuLayer.h"
@@ -101,9 +102,13 @@ public:
 
         bool changed = false;
 
-        // Only loaded panels are polled. Merely initializing the host never
-        // creates documents or changes the legacy visual surface.
-        if (mainFrame_.IsLoaded()) changed |= mainFrame_.Update();
+        // Only loaded panels are synchronized/polled. Merely initializing
+        // the host never creates documents or changes the legacy surface.
+        if (mainFrame_.IsLoaded())
+        {
+            changed |= mainFrameLegacyBridge_.Synchronize(mainFrame_);
+            changed |= mainFrame_.Update();
+        }
         if (topMenu_.IsLoaded()) changed |= topMenu_.Update();
         if (party_.IsLoaded()) changed |= party_.Update();
         if (chat_.IsLoaded()) changed |= chat_.Update();
@@ -146,6 +151,7 @@ public:
     Common::RmlTooltipLayer tooltip_;
     Friend::RmlFriendPanel friend_;
     HUD::RmlMainFrameLayer mainFrame_;
+    HUD::RmlMainFrameLegacyBridge mainFrameLegacyBridge_;
     HUD::RmlMasterTreePanel masterTree_;
     HUD::RmlMoveCommandPanel moveCommand_;
     HUD::RmlTopMenuLayer topMenu_;

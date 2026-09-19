@@ -1886,3 +1886,38 @@ contract, but starts at `Panel-Initial = 360 40`.
 only close/exit/primary/secondary-slot intents. The global vault index offset,
 auto-move and request packets remain in `CNewUIStorageInventoryExt` and the
 main storage controller.
+
+
+## Main-frame legacy state bridge
+
+The reconstructed PC host now includes a one-way
+`RmlMainFrameLegacyBridge`. It does not load or show the modern HUD. It is
+invoked only when `RmlMainFrameLayer` has already been explicitly loaded,
+preserving the legacy frame as the default visual surface.
+
+The bridge deliberately reads the same public state used by
+`CNewUIMainFrameWindow`:
+
+- `CNewUIMainFrameWindow::IsVisible()`;
+- `CharacterAttribute` Life/Mana/Shield/SkillMana values;
+- master maxima from `Master_Level_Data`;
+- the exact normal/master experience lower-bound formulas from
+  `CNewUIMainFrameWindow::RenderExperience()`;
+- poison state through `g_isCharacterBuff(..., eDeBuff_Poison)`;
+- current skill from `Hero->CurrentSkill`;
+- hotkeys through `CNewUIMainFrameWindow::GetSkillHotKey()`;
+- skill-index lookup and hotkey-page state through the public
+  `CNewUISkillList` API;
+- cooldown ratio from `CharacterAttribute->SkillDelay` and
+  `SkillAttribute[].Delay`.
+
+A source-level detail was confirmed while building the bridge:
+`CNewUISkillList::IsSkillListUp()` returns the private
+`m_bHotKeySkillListUp`, selecting hotkey page 1..5 versus 6..0. It does
+**not** expose the separate `m_bSkillList` full chooser visibility. The
+bridge therefore synchronizes the correct hotkey page and builds the filtered
+skill collection, but intentionally keeps the reconstructed full skill chooser
+hidden instead of inferring a private boolean from mouse state.
+
+This remains a read-only bridge. Modern main-frame button actions are not yet
+forwarded into legacy window/game commands.

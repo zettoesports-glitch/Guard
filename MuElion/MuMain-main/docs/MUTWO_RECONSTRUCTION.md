@@ -98,6 +98,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 ### RmlUi
 
 - central `RmlPcUiHost` owns the reconstructed PC controllers and coordinates
+- `RmlMainFrameLegacyBridge` feeds legacy HP/MP/SD/AG, exact EXP progress,
+  poison state, current skill, hotkeys and cooldowns into an explicitly loaded
+  modern main frame without auto-enabling it
   initialize/update/resize/shutdown without auto-loading any document
 - Windows lifecycle updates the host before the RmlUi context update and
   releases all document owners before `RmlUiRuntime::Shutdown`
