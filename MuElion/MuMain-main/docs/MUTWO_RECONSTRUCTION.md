@@ -117,6 +117,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   mouse latch and exact `icon-frame-N` CSS switching
 - reconstructed `RmlChatPanel::Impl` controller with exact document path,
 - reconstructed `RmlFriendPanel` main/chat/write/read presentation with
+- reconstructed `RmlPartyFrameLayer` with five member slots, proportional
+  HP/MP gauges, leader/visibility states, drag/minimize and semantic
+  select/leave requests
   recovered design metrics, movable windows, rows, scrollbar and semantic
   one-shot actions while preserving legacy `CUIWindowMgr` ownership
   21 design keys, recovered message-class switch, retained message rows,

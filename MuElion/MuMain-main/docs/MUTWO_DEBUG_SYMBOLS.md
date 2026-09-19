@@ -1410,3 +1410,23 @@ logic.
 
 The message content is authored into DOM text nodes rather than interpreted as
 RML, so game/server text cannot inject markup into the modern document.
+
+
+## RmlPartyFrameLayer reconstruction
+
+The observable party document defines five fixed member slots and a compact
+drag/minimize header. The recovered presentation keys include the 640x480
+reference space, 150x45 member rows, HP/MP gauge geometry, leader crown,
+leave-button geometry, and initial Y=38.
+
+The legacy `CNewUIPartyListWindow` confirms the behavioral ownership split:
+party membership lives in the global `Party[]` model, the legacy window only
+renders/selects it, and the leave control is available when the local user is
+party leader or the row is the local user. Member HP is represented in ten
+steps in the legacy mini-list.
+
+The modern `RmlPartyFrameLayer` keeps those authority decisions outside the
+presentation. Each member state supplies normalized HP/MP, leader,
+out-of-sight/selection state, and an explicit `canLeave` flag. Interaction is
+returned as semantic one-shot requests: minimize, select member, or leave
+member. No party packet or global `Party[]` mutation is performed by RmlUi.

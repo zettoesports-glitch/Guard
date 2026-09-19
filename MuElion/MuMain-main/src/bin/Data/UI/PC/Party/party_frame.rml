@@ -1,9 +1,47 @@
 <rml>
 <head>
+    <meta name="mu-design-PartyFrame-ReferenceWidth" content="640.0"/>
+    <meta name="mu-design-PartyFrame-ReferenceHeight" content="480.0"/>
+    <meta name="mu-design-PartyFrame-HeaderWidth" content="147.0"/>
+    <meta name="mu-design-PartyFrame-HeaderHeight" content="19.0"/>
+    <meta name="mu-design-PartyFrame-MemberX" content="-1"/>
+    <meta name="mu-design-PartyFrame-MemberWidth" content="150.0"/>
+    <meta name="mu-design-PartyFrame-MemberHeight" content="45"/>
+    <meta name="mu-design-PartyFrame-FirstRowY" content="17"/>
+    <meta name="mu-design-PartyFrame-RowStep" content="45"/>
+    <meta name="mu-design-PartyFrame-MinimizeX" content="132"/>
+    <meta name="mu-design-PartyFrame-MinimizeY" content="3"/>
+    <meta name="mu-design-PartyFrame-MinimizeSize" content="13.0"/>
+    <meta name="mu-design-PartyFrame-HpX" content="25"/>
+    <meta name="mu-design-PartyFrame-HpY" content="23"/>
+    <meta name="mu-design-PartyFrame-HpWidth" content="120.0"/>
+    <meta name="mu-design-PartyFrame-HpHeight" content="6.0"/>
+    <meta name="mu-design-PartyFrame-MpX" content="25"/>
+    <meta name="mu-design-PartyFrame-MpY" content="32"/>
+    <meta name="mu-design-PartyFrame-MpWidth" content="120.0"/>
+    <meta name="mu-design-PartyFrame-MpHeight" content="6.0"/>
+    <meta name="mu-design-PartyFrame-CrownX" content="0.95"/>
+    <meta name="mu-design-PartyFrame-CrownY" content="20.85"/>
+    <meta name="mu-design-PartyFrame-CrownWidth" content="24.0"/>
+    <meta name="mu-design-PartyFrame-CrownHeight" content="19.0"/>
+    <meta name="mu-design-PartyFrame-LeaveX" content="128"/>
+    <meta name="mu-design-PartyFrame-LeaveY" content="3"/>
+    <meta name="mu-design-PartyFrame-LeaveSize" content="18.0"/>
+    <meta name="mu-design-PartyFrame-BackgroundHeight" content="42.0"/>
+    <meta name="mu-design-PartyFrame-InitialY" content="38"/>
     <title>Reconstructed Party Frame</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="party_frame.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-party-party-frame">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="party-frame" class="party-frame">
+        <div id="party-dragbar" class="party-dragbar"/>
+        <div id="party-minimize" class="mu-button party-minimize">_</div>
+        <div id="party-member-0" class="party-member"><div id="party-background-0" class="party-background"/><div id="party-channel-0" class="party-channel"/><div id="party-name-0" class="party-name"/><div class="party-gauge-clip"><div id="party-hp-0" class="party-hp"/></div><div class="party-gauge-clip"><div id="party-mp-0" class="party-mp"/></div><div id="party-crown-0" class="party-crown">L</div><div id="party-leave-0" class="mu-button party-leave">X</div><div id="party-overlay-0" class="party-overlay"/></div>
+        <div id="party-member-1" class="party-member"><div id="party-background-1" class="party-background"/><div id="party-channel-1" class="party-channel"/><div id="party-name-1" class="party-name"/><div class="party-gauge-clip"><div id="party-hp-1" class="party-hp"/></div><div class="party-gauge-clip"><div id="party-mp-1" class="party-mp"/></div><div id="party-crown-1" class="party-crown">L</div><div id="party-leave-1" class="mu-button party-leave">X</div><div id="party-overlay-1" class="party-overlay"/></div>
+        <div id="party-member-2" class="party-member"><div id="party-background-2" class="party-background"/><div id="party-channel-2" class="party-channel"/><div id="party-name-2" class="party-name"/><div class="party-gauge-clip"><div id="party-hp-2" class="party-hp"/></div><div class="party-gauge-clip"><div id="party-mp-2" class="party-mp"/></div><div id="party-crown-2" class="party-crown">L</div><div id="party-leave-2" class="mu-button party-leave">X</div><div id="party-overlay-2" class="party-overlay"/></div>
+        <div id="party-member-3" class="party-member"><div id="party-background-3" class="party-background"/><div id="party-channel-3" class="party-channel"/><div id="party-name-3" class="party-name"/><div class="party-gauge-clip"><div id="party-hp-3" class="party-hp"/></div><div class="party-gauge-clip"><div id="party-mp-3" class="party-mp"/></div><div id="party-crown-3" class="party-crown">L</div><div id="party-leave-3" class="mu-button party-leave">X</div><div id="party-overlay-3" class="party-overlay"/></div>
+        <div id="party-member-4" class="party-member"><div id="party-background-4" class="party-background"/><div id="party-channel-4" class="party-channel"/><div id="party-name-4" class="party-name"/><div class="party-gauge-clip"><div id="party-hp-4" class="party-hp"/></div><div class="party-gauge-clip"><div id="party-mp-4" class="party-mp"/></div><div id="party-crown-4" class="party-crown">L</div><div id="party-leave-4" class="mu-button party-leave">X</div><div id="party-overlay-4" class="party-overlay"/></div>
+    </div>
 </body>
 </rml>
