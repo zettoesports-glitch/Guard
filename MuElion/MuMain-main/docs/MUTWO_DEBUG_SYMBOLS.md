@@ -1653,3 +1653,42 @@ The legacy `CNewUIMyInventory` remains authoritative for item ownership,
 drag/drop, repair eligibility, networking and equipment validation. This
 presentation controller intentionally does not send item packets or mutate
 `CNewUIInventoryCtrl` state.
+
+
+## Private Store presentation reconstruction
+
+The x64 Debug executable preserves the exact Private Store design-key set:
+
+```text
+PrivateStore-DropAllowedColor
+PrivateStore-DropBannedColor
+PrivateStore-seller-GridRect
+PrivateStore-buyer-GridRect
+PrivateStore-Width
+PrivateStore-Height
+PrivateStore-GridColumns
+PrivateStore-GridRows
+PrivateStore-InitialX
+PrivateStore-InitialY
+PrivateStore-ReferenceWidth
+PrivateStore-ReferenceHeight
+```
+
+It also preserves the document path
+`Data/UI/PC/Inventory/private_store.rml`, fixed DOM IDs
+`private-store`, `private-store-name`, `private-store-buyer-name`,
+`private-store-open`, `private-store-close-shop`,
+`private-store-close`, `private-store-drag`, and the exact dynamic slot
+prefix `private-store-slot-`. The strings `private-store-seller-` and
+`private-store-buyer-` additionally confirm distinct seller/buyer
+presentation paths.
+
+No dedicated RmlUi private-store class RTTI name is currently present in the
+Debug evidence. The local `RmlPrivateStorePanel` name is therefore semantic,
+while document/ID/design contracts are evidence-derived.
+
+The reconstruction materializes an 8x4 (32-slot) grid, seller/buyer mode,
+25-character store-name input, drag/close/open/close-shop controls, and
+Debug-matched allowed/banned drop colors. All actions and slot clicks are
+one-shot requests; pricing, item legality, purchase/open requests and network
+ownership remain in the legacy private-store code.

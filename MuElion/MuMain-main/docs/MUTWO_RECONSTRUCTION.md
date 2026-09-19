@@ -225,6 +225,8 @@ and differential runtime tests succeed.
   item ownership and networking in `CNewUIMyInventory`
 - reconstructed `RmlOptionPanel` with checkbox/radio/select controls for
 - reconstructed Inventory/Expanded Inventory presentation with Debug-derived
+- reconstructed Private Store presentation with exact Debug design keys,
+  8x4 slot grid, seller/buyer mode, drop-state colors and one-shot actions
   dimensions, grid/equipment contracts, 64 base slots, 128 extension slots,
   drag/button controls and one-shot requests; legacy item ownership preserved
   legacy and modern options, 0..10 volume meters, 0..4 effect level and typed

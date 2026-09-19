@@ -1,0 +1,58 @@
+body { margin:0px; width:100%; height:100%; overflow:hidden; font-family:Arial; }
+.private-store, .private-store div, .private-store span, .private-store input { position:absolute; box-sizing:border-box; }
+.private-store { left:21px; top:40px; width:327px; height:289px; pointer-events:auto; }
+#private-store-background { left:0px; top:0px; width:327px; height:289px; background-color:#171a20f0; border-width:1px; border-color:#6b6048; pointer-events:none; }
+#private-store-title { left:60px; top:43px; width:200px; height:18px; line-height:18px; color:#e6d5a6; text-align:center; pointer-events:none; }
+#private-store-name-label { left:47px; top:75px; width:80px; height:18px; line-height:18px; color:#bdbdbd; pointer-events:none; }
+#private-store-name, #private-store-buyer-name { left:125px; top:73px; width:150px; height:21px; line-height:19px; color:#f0eee2; background-color:#101010cc; border-width:1px; border-color:#554d3b; padding-left:4px; pointer-events:auto; }
+#private-store-buyer-name { pointer-events:none; }
+#private-store-drag { left:18px; top:24px; width:275px; height:48px; drag:drag; cursor:move; pointer-events:auto; }
+.mu-button { pointer-events:auto; border-width:1px; border-color:#665b43; background-color:#282c34; color:#d8d8d8; text-align:center; }
+.mu-button:hover { border-color:#9a8659; color:#fff0c0; }
+.mu-button.disabled { opacity:.45; pointer-events:none; }
+.private-store-action { top:237px; width:90px; height:30px; line-height:30px; }
+#private-store-open { left:62px; }
+#private-store-close-shop { left:158px; }
+#private-store-close { left:273px; top:42px; width:19px; height:19px; line-height:19px; }
+#private-store-grid-background { left:58.5px; top:118.5px; width:208px; height:104px; background-color:#0d1116; border-width:1px; border-color:#474238; pointer-events:none; }
+.private-store-slot { width:26px; height:26px; pointer-events:auto; border-width:1px; border-color:#4e493e; background-color:#11151b; }
+.private-store-slot:hover { border-color:#b39a63; }
+.private-store-slot.drop-allowed { border-color:#1a66cc; background-color:#102846; }
+.private-store-slot.drop-banned { border-color:#ff0000; background-color:#451212; }
+.private-store-slot.drop-neutral { border-color:#4e493e; background-color:#11151b; }
+.private-store.seller #private-store-buyer-name { display:none; }
+.private-store.buyer #private-store-name { display:none; }
+.private-store.buyer #private-store-open,
+.private-store.buyer #private-store-close-shop { display:none; }
+#private-store-slot-0 { left:58.5px; top:118.5px; }
+#private-store-slot-1 { left:84.5px; top:118.5px; }
+#private-store-slot-2 { left:110.5px; top:118.5px; }
+#private-store-slot-3 { left:136.5px; top:118.5px; }
+#private-store-slot-4 { left:162.5px; top:118.5px; }
+#private-store-slot-5 { left:188.5px; top:118.5px; }
+#private-store-slot-6 { left:214.5px; top:118.5px; }
+#private-store-slot-7 { left:240.5px; top:118.5px; }
+#private-store-slot-8 { left:58.5px; top:144.5px; }
+#private-store-slot-9 { left:84.5px; top:144.5px; }
+#private-store-slot-10 { left:110.5px; top:144.5px; }
+#private-store-slot-11 { left:136.5px; top:144.5px; }
+#private-store-slot-12 { left:162.5px; top:144.5px; }
+#private-store-slot-13 { left:188.5px; top:144.5px; }
+#private-store-slot-14 { left:214.5px; top:144.5px; }
+#private-store-slot-15 { left:240.5px; top:144.5px; }
+#private-store-slot-16 { left:58.5px; top:170.5px; }
+#private-store-slot-17 { left:84.5px; top:170.5px; }
+#private-store-slot-18 { left:110.5px; top:170.5px; }
+#private-store-slot-19 { left:136.5px; top:170.5px; }
+#private-store-slot-20 { left:162.5px; top:170.5px; }
+#private-store-slot-21 { left:188.5px; top:170.5px; }
+#private-store-slot-22 { left:214.5px; top:170.5px; }
+#private-store-slot-23 { left:240.5px; top:170.5px; }
+#private-store-slot-24 { left:58.5px; top:196.5px; }
+#private-store-slot-25 { left:84.5px; top:196.5px; }
+#private-store-slot-26 { left:110.5px; top:196.5px; }
+#private-store-slot-27 { left:136.5px; top:196.5px; }
+#private-store-slot-28 { left:162.5px; top:196.5px; }
+#private-store-slot-29 { left:188.5px; top:196.5px; }
+#private-store-slot-30 { left:214.5px; top:196.5px; }
+#private-store-slot-31 { left:240.5px; top:196.5px; }
