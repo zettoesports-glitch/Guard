@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <limits>
 
 namespace mu::pipeline
 {
@@ -369,6 +370,24 @@ bool SessionRenderTapeRecording::AppendClear(bool color, bool depth, bool stenci
     return true;
 }
 
+std::optional<SessionRenderTapeRecording::TrailSampleReservation>
+SessionRenderTapeRecording::ReserveTrailSamples(std::uint64_t count) noexcept
+{
+    if (count == 0 || count > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+        return std::nullopt;
+
+    const auto requested = static_cast<std::size_t>(count);
+    if (m_trailSamples.size() > std::numeric_limits<std::size_t>::max() - requested)
+        return std::nullopt;
+
+    const std::size_t offset = m_trailSamples.size();
+    m_trailSamples.resize(offset + requested);
+    return TrailSampleReservation{
+        static_cast<std::uint64_t>(offset),
+        std::span<RenderTapeFloat4>(m_trailSamples).subspan(offset, requested)
+    };
+}
+
 std::optional<SessionRenderTape> SessionRenderTapeRecording::Finalize() noexcept
 {
     if (m_blocks.empty())
@@ -377,6 +396,7 @@ std::optional<SessionRenderTape> SessionRenderTapeRecording::Finalize() noexcept
     SessionRenderTape result(std::move(m_blocks));
     m_blocks.clear();
     m_currentBlock.reset();
+    m_trailSamples.clear();
     return result;
 }
 
@@ -384,6 +404,7 @@ void SessionRenderTapeRecording::Reset() noexcept
 {
     m_blocks.clear();
     m_currentBlock.reset();
+    m_trailSamples.clear();
 }
 
 } // namespace mu::pipeline

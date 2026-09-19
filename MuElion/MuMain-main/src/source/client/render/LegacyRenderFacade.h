@@ -18,6 +18,14 @@ namespace mu::pipeline
 class LegacyRenderFacade
 {
 public:
+    struct IndexedTriangleReservation
+    {
+        std::uint64_t vertexOffset = 0;
+        std::uint64_t indexOffset = 0;
+        std::span<RenderTapeVertex> vertices{};
+        std::span<std::uint32_t> indices{};
+    };
+
     explicit LegacyRenderFacade(LogicalRenderAssetTable& assets) noexcept;
 
     [[nodiscard]] bool BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept;
@@ -35,6 +43,8 @@ public:
                                                std::span<const RenderTapeVertex> vertices) noexcept;
     [[nodiscard]] bool EmitPrimitiveDraw(LegacyPrimitive primitive,
                                           std::span<const RenderTapeVertex> vertices) noexcept;
+    [[nodiscard]] std::optional<IndexedTriangleReservation> ReserveIndexedTriangles(
+        std::uint64_t vertexCount, std::uint64_t indexCount) noexcept;
 
     // Integration helpers for already-modernized MuMain paths. These keep direct
     // IMuRenderer submissions tape-compatible while the original MuTwo logical
@@ -68,6 +78,29 @@ public:
                                                 TrustedGeometryDraw& out) noexcept;
     [[nodiscard]] bool AppendTrustedGeometryDrawBatch(
         std::span<const TrustedGeometryDraw> draws) noexcept;
+    [[nodiscard]] bool DrawTerrainInstances(
+        const LogicalGeometryAssetLease& geometry, unsigned int first,
+        unsigned int count, const RenderTapeTerrainConstants& constants) noexcept;
+    [[nodiscard]] bool DrawGrassGeometry(
+        const LogicalGeometryAssetLease& geometry, unsigned int first,
+        unsigned int count, std::uint64_t runId) noexcept;
+
+    [[nodiscard]] std::uint64_t BeginQuadInstanceRun() noexcept;
+    [[nodiscard]] std::optional<SessionRenderTapeRecording::TrailSampleReservation>
+        ReserveTrailSamples(std::uint64_t count) noexcept;
+    [[nodiscard]] bool DrawTrailInstance(
+        const LogicalGeometryAssetLease& geometry,
+        const RenderTapeTrailInstance& instance, std::uint64_t runId,
+        bool alternate) noexcept;
+    [[nodiscard]] bool DrawParticleInstance(
+        const LogicalGeometryAssetLease& geometry,
+        const RenderTapeParticleInstance& instance, std::uint64_t runId) noexcept;
+    [[nodiscard]] bool DrawQuadInstance(
+        const LogicalGeometryAssetLease& geometry,
+        const RenderTapeQuadInstance& instance, std::uint64_t runId) noexcept;
+    [[nodiscard]] bool DrawSpriteInstance(
+        const LogicalGeometryAssetLease& geometry,
+        const RenderTapeQuadInstance& instance, std::uint64_t runId) noexcept;
 
     [[nodiscard]] std::optional<unsigned int> AppendBoneMatrices(
         std::span<const RenderTapeBoneMatrix> bones, bool reuseExisting) noexcept;
@@ -81,6 +114,12 @@ public:
         unsigned int firstVertex, unsigned int vertexCount,
         unsigned int firstIndex, unsigned int indexCount,
         std::span<const RenderTapeRigidInstance> instances,
+        const RenderTapeBmdConstants& constants) noexcept;
+    [[nodiscard]] bool DrawBmdShadowGeometry(
+        const LogicalGeometryAssetLease& geometry,
+        const LogicalGeometryAssetLease& shadowGeometry,
+        unsigned int firstVertex, unsigned int vertexCount,
+        unsigned int firstIndex, unsigned int indexCount,
         const RenderTapeBmdConstants& constants) noexcept;
 
     [[nodiscard]] bool MatrixMode(LegacyMatrixMode mode) noexcept;
@@ -189,6 +228,11 @@ private:
     std::vector<RenderTapeState> m_attribStack;
     std::vector<ClientAttribSnapshot> m_clientAttribStack;
     std::vector<RenderTapeBoneMatrix> m_boneMatrices;
+    std::vector<RenderTapeVertex> m_reservedTriangleVertices;
+    std::vector<std::uint32_t> m_reservedTriangleIndices;
+
+    std::uint64_t m_nextQuadInstanceRun = 1;
+    std::uint64_t m_currentQuadInstanceRun = 0;
 
     int m_fogMode = static_cast<int>(RenderFogMode::Linear);
     float m_fogStart = 0.0f;

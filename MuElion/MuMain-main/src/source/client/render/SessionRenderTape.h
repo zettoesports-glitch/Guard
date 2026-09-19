@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -178,12 +179,19 @@ private:
 class SessionRenderTapeRecording
 {
 public:
+    struct TrailSampleReservation
+    {
+        std::uint64_t offset = 0;
+        std::span<RenderTapeFloat4> samples{};
+    };
+
     [[nodiscard]] bool BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept;
     [[nodiscard]] bool EndPass() noexcept;
     [[nodiscard]] bool AppendDraw(RenderTapeDraw draw) noexcept;
     [[nodiscard]] bool AppendSkinnedDraw(RenderTapeSkinnedDraw draw) noexcept;
     [[nodiscard]] bool AppendTextDraw(RenderTapeTextDraw draw) noexcept;
     [[nodiscard]] bool AppendClear(bool color, bool depth, bool stencil, const RenderTapeState& state) noexcept;
+    [[nodiscard]] std::optional<TrailSampleReservation> ReserveTrailSamples(std::uint64_t count) noexcept;
     [[nodiscard]] std::optional<SessionRenderTape> Finalize() noexcept;
     void Reset() noexcept;
 
@@ -192,6 +200,7 @@ public:
 private:
     std::vector<RenderTapeBlock> m_blocks;
     std::optional<std::size_t> m_currentBlock;
+    std::vector<RenderTapeFloat4> m_trailSamples;
 };
 
 } // namespace mu::pipeline

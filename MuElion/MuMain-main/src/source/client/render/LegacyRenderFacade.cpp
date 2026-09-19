@@ -157,6 +157,9 @@ std::optional<SessionRenderTape> LegacyRenderFacade::Finalize() noexcept
 
     auto tape = m_recording.Finalize();
     m_boneMatrices.clear();
+    m_reservedTriangleVertices.clear();
+    m_reservedTriangleIndices.clear();
+    m_currentQuadInstanceRun = 0;
     return tape;
 }
 
@@ -206,6 +209,36 @@ bool LegacyRenderFacade::TexCoord2(float u, float v) noexcept
 {
     m_current.texCoord = {u, v};
     return true;
+}
+
+std::optional<LegacyRenderFacade::IndexedTriangleReservation>
+LegacyRenderFacade::ReserveIndexedTriangles(
+    std::uint64_t vertexCount, std::uint64_t indexCount) noexcept
+{
+    if (vertexCount == 0 || indexCount == 0 ||
+        vertexCount > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()) ||
+        indexCount > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+        return std::nullopt;
+
+    const auto vertices = static_cast<std::size_t>(vertexCount);
+    const auto indices = static_cast<std::size_t>(indexCount);
+    if (m_reservedTriangleVertices.size() >
+            std::numeric_limits<std::size_t>::max() - vertices ||
+        m_reservedTriangleIndices.size() >
+            std::numeric_limits<std::size_t>::max() - indices)
+        return std::nullopt;
+
+    const std::size_t vertexOffset = m_reservedTriangleVertices.size();
+    const std::size_t indexOffset = m_reservedTriangleIndices.size();
+    m_reservedTriangleVertices.resize(vertexOffset + vertices);
+    m_reservedTriangleIndices.resize(indexOffset + indices);
+
+    return IndexedTriangleReservation{
+        static_cast<std::uint64_t>(vertexOffset),
+        static_cast<std::uint64_t>(indexOffset),
+        std::span<RenderTapeVertex>(m_reservedTriangleVertices).subspan(vertexOffset, vertices),
+        std::span<std::uint32_t>(m_reservedTriangleIndices).subspan(indexOffset, indices)
+    };
 }
 
 std::uint32_t LegacyRenderFacade::PackColor(const std::array<float, 4>& color) noexcept
@@ -804,6 +837,183 @@ bool LegacyRenderFacade::AppendTrustedGeometryDrawBatch(
     return true;
 }
 
+bool LegacyRenderFacade::DrawTerrainInstances(
+    const LogicalGeometryAssetLease& geometry, unsigned int first,
+    unsigned int count, const RenderTapeTerrainConstants& constants) noexcept
+{
+    (void)constants;
+    // The private MuTwo path consumes facade-owned terrain cell/light/instance
+    // buffers. The current MuMain world renderer already materializes those
+    // vertices on CPU, so this compatibility entry point safely reuses the
+    // validated geometry range until the native storage-buffer path is wired.
+    return DrawGeometry(geometry, first, count);
+}
+
+bool LegacyRenderFacade::DrawGrassGeometry(
+    const LogicalGeometryAssetLease& geometry, unsigned int first,
+    unsigned int count, std::uint64_t runId) noexcept
+{
+    if (runId == 0 || runId != m_currentQuadInstanceRun)
+        return false;
+    return DrawGeometry(geometry, first, count);
+}
+
+std::uint64_t LegacyRenderFacade::BeginQuadInstanceRun() noexcept
+{
+    std::uint64_t run = m_nextQuadInstanceRun++;
+    if (run == 0)
+    {
+        run = m_nextQuadInstanceRun++;
+        if (run == 0)
+            return 0;
+    }
+
+    m_currentQuadInstanceRun = run;
+    return run;
+}
+
+std::optional<SessionRenderTapeRecording::TrailSampleReservation>
+LegacyRenderFacade::ReserveTrailSamples(std::uint64_t count) noexcept
+{
+    return m_recording.ReserveTrailSamples(count);
+}
+
+bool LegacyRenderFacade::DrawTrailInstance(
+    const LogicalGeometryAssetLease& geometry,
+    const RenderTapeTrailInstance& instance, std::uint64_t runId,
+    bool alternate) noexcept
+{
+    (void)geometry;
+    (void)alternate;
+    if (runId == 0 || runId != m_currentQuadInstanceRun)
+        return false;
+
+    std::array<mu::Vertex3D, 4> vertices{};
+    for (std::size_t i = 0; i < vertices.size(); ++i)
+    {
+        vertices[i] = {
+            instance.corners[i][0],
+            instance.corners[i][1],
+            instance.corners[i][2],
+            0.0f, 0.0f, 1.0f,
+            instance.corners[i][3],
+            instance.vCoordinates[i],
+            PackColor(instance.color)
+        };
+    }
+    return SubmitQuad3D(vertices, geometry.TextureId());
+}
+
+bool LegacyRenderFacade::DrawParticleInstance(
+    const LogicalGeometryAssetLease& geometry,
+    const RenderTapeParticleInstance& instance, std::uint64_t runId) noexcept
+{
+    if (!geometry.IsValid() || runId == 0 || runId != m_currentQuadInstanceRun)
+        return false;
+
+    const float cx = instance.centerAndHalfWidth[0];
+    const float cy = instance.centerAndHalfWidth[1];
+    const float cz = instance.centerAndHalfWidth[2];
+    const float halfWidth = instance.centerAndHalfWidth[3];
+    const float halfHeight = instance.halfHeightAndRotation[0];
+    const float angle = instance.halfHeightAndRotation[1];
+    const float sinAngle = std::sin(angle);
+    const float cosAngle = std::cos(angle);
+
+    const auto corner = [&](float sx, float sy, float u, float v) {
+        const float ox = sx * halfWidth;
+        const float oy = sy * halfHeight;
+        const float rx = ox * cosAngle - oy * sinAngle;
+        const float ry = ox * sinAngle + oy * cosAngle;
+        return mu::Vertex3D{
+            cx + rx, cy + ry, cz,
+            0.0f, 0.0f, 1.0f,
+            u, v, PackColor(instance.color)
+        };
+    };
+
+    const float u0 = instance.uvRect[0];
+    const float v0 = instance.uvRect[1];
+    const float du = instance.uvRect[2];
+    const float dv = instance.uvRect[3];
+    const std::array<mu::Vertex3D, 4> vertices = {
+        corner(-1.0f, -1.0f, u0,      v0),
+        corner( 1.0f, -1.0f, u0 + du, v0),
+        corner( 1.0f,  1.0f, u0 + du, v0 + dv),
+        corner(-1.0f,  1.0f, u0,      v0 + dv),
+    };
+    return SubmitQuad3D(vertices, geometry.TextureId());
+}
+
+bool LegacyRenderFacade::DrawQuadInstance(
+    const LogicalGeometryAssetLease& geometry,
+    const RenderTapeQuadInstance& instance, std::uint64_t runId) noexcept
+{
+    if (!geometry.IsValid() || runId == 0 || runId != m_currentQuadInstanceRun)
+        return false;
+
+    const float cx = instance.centerAndHalfWidth[0];
+    const float cy = instance.centerAndHalfWidth[1];
+    const float cz = instance.centerAndHalfWidth[2];
+    const float halfWidth = instance.centerAndHalfWidth[3];
+    const float halfHeight = instance.halfHeightAndRotation[0];
+    float sinAngle = instance.halfHeightAndRotation[1];
+    float cosAngle = instance.halfHeightAndRotation[2];
+    if (sinAngle == 0.0f && cosAngle == 0.0f)
+        cosAngle = 1.0f;
+
+    const auto corner = [&](float sx, float sy, float u, float v) {
+        const float ox = sx * halfWidth;
+        const float oy = sy * halfHeight;
+        const float rx = ox * cosAngle - oy * sinAngle;
+        const float ry = ox * sinAngle + oy * cosAngle;
+        return mu::Vertex3D{
+            cx + rx, cy + ry, cz,
+            0.0f, 0.0f, 1.0f,
+            u, v, PackColor(instance.color)
+        };
+    };
+
+    const float u0 = instance.uvRect[0];
+    const float v0 = instance.uvRect[1];
+    const float du = instance.uvRect[2];
+    const float dv = instance.uvRect[3];
+    const std::array<mu::Vertex3D, 4> vertices = {
+        corner(-1.0f, -1.0f, u0,      v0),
+        corner( 1.0f, -1.0f, u0 + du, v0),
+        corner( 1.0f,  1.0f, u0 + du, v0 + dv),
+        corner(-1.0f,  1.0f, u0,      v0 + dv),
+    };
+    return SubmitQuad3D(vertices, geometry.TextureId());
+}
+
+bool LegacyRenderFacade::DrawSpriteInstance(
+    const LogicalGeometryAssetLease& geometry,
+    const RenderTapeQuadInstance& instance, std::uint64_t runId) noexcept
+{
+    if (!geometry.IsValid() || runId == 0 || runId != m_currentQuadInstanceRun)
+        return false;
+
+    const float cx = instance.centerAndHalfWidth[0];
+    const float cy = instance.centerAndHalfWidth[1];
+    const float halfWidth = instance.centerAndHalfWidth[3];
+    const float halfHeight = instance.halfHeightAndRotation[0];
+
+    const float u0 = instance.uvRect[0];
+    const float v0 = instance.uvRect[1];
+    const float du = instance.uvRect[2];
+    const float dv = instance.uvRect[3];
+    const std::uint32_t color = PackColor(instance.color);
+
+    const std::array<mu::Vertex2D, 4> vertices = {{
+        {cx - halfWidth, cy - halfHeight, u0,      v0,      color},
+        {cx + halfWidth, cy - halfHeight, u0 + du, v0,      color},
+        {cx + halfWidth, cy + halfHeight, u0 + du, v0 + dv, color},
+        {cx - halfWidth, cy + halfHeight, u0,      v0 + dv, color},
+    }};
+    return SubmitQuad2D(vertices, geometry.TextureId());
+}
+
 std::optional<unsigned int> LegacyRenderFacade::AppendBoneMatrices(
     std::span<const RenderTapeBoneMatrix> bones, bool reuseExisting) noexcept
 {
@@ -1047,6 +1257,22 @@ bool LegacyRenderFacade::DrawRigidInstances(
     }
 
     return SubmitTriangles(expanded, geometry.TextureId());
+}
+
+bool LegacyRenderFacade::DrawBmdShadowGeometry(
+    const LogicalGeometryAssetLease& geometry,
+    const LogicalGeometryAssetLease& shadowGeometry,
+    unsigned int firstVertex, unsigned int vertexCount,
+    unsigned int firstIndex, unsigned int indexCount,
+    const RenderTapeBmdConstants& constants) noexcept
+{
+    RenderTapeBmdConstants shadowConstants = constants;
+    shadowConstants.bmdMode[0] = 5u;
+
+    const auto& source =
+        !shadowGeometry.SkinnedVertices().empty() ? shadowGeometry : geometry;
+    return DrawBmdGeometry(source, firstVertex, vertexCount,
+                           firstIndex, indexCount, shadowConstants);
 }
 
 bool LegacyRenderFacade::MatrixMode(LegacyMatrixMode mode) noexcept { mu::GetRenderer().SetMatrixMode(static_cast<int>(mode)); return true; }

@@ -296,3 +296,29 @@ Function-body inspection adds evidence that strings/shaders alone cannot show:
 
 The C++ reconstruction now preserves these exact total sizes while leaving
 unknown CPU-only fields explicitly opaque rather than inventing names.
+
+
+## Instance layouts and run-token semantics recovered
+
+The embedded vertex shader and x64 facade bodies now provide enough evidence
+for these layouts:
+
+- `RenderTapeTrailInstance`: 6 x float4 = 96 bytes. Mode 2 indexes the first
+  four rows by corner, taking xyz+U; row 4 supplies per-corner V and row 5 color.
+- `RenderTapeQuadInstance`: 6 x float4 = 96 bytes. Mode 3 consumes center,
+  half-width/half-height + 2D rotation basis, UV rectangle and row 5 color.
+- `RenderTapeParticleInstance`: 4 x float4 = 64 bytes. Mode 7 consumes center,
+  half-size/rotation, UV rectangle and color.
+- `RenderTapeTerrainInstance`: 1 x float4 = 16 bytes, confirmed by the shader's
+  one-row-per-instance terrain modes and by RTTI for
+  `vector<RenderTapeTerrainInstance>`.
+
+The x64 `BeginQuadInstanceRun` body also confirms the token protocol:
+it returns the previous monotonically increasing run counter and stores that
+token as the active run. Grass/quad/sprite/particle/trail methods compare the
+caller token against the active token and reject stale/zero tokens.
+
+The current C++ implements this protocol. Instance methods use a CPU-expanded
+compatibility path on the existing SDL GPU renderer; this preserves functional
+draw behavior while the exact private structured-buffer upload path continues
+to be reconstructed.

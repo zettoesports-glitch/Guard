@@ -260,11 +260,53 @@ struct alignas(16) RenderTapeRigidInstance
     RenderTapeFloat4 uvAnimation{};
 };
 
+// Mode 2: six float4 rows. The first four rows contain xyz + U for each
+// corner, row 4 contains the four V coordinates, row 5 is the color.
+struct alignas(16) RenderTapeTrailInstance
+{
+    std::array<RenderTapeFloat4, 4> corners{};
+    RenderTapeFloat4 vCoordinates{};
+    RenderTapeFloat4 color{};
+};
+
+// Mode 3: six float4 rows. The shader directly observes center.xyz,
+// half-width, half-height/rotation basis, UV rectangle and row 5 color.
+// Rows 3/4 remain opaque because this build's vertex shader does not consume
+// them on this mode.
+struct alignas(16) RenderTapeQuadInstance
+{
+    RenderTapeFloat4 centerAndHalfWidth{};
+    RenderTapeFloat4 halfHeightAndRotation{};
+    RenderTapeFloat4 uvRect{};
+    RenderTapeFloat4 opaque3{};
+    RenderTapeFloat4 opaque4{};
+    RenderTapeFloat4 color{};
+};
+
+// Mode 7 consumes exactly four float4 rows per instance.
+struct alignas(16) RenderTapeParticleInstance
+{
+    RenderTapeFloat4 centerAndHalfWidth{};
+    RenderTapeFloat4 halfHeightAndRotation{};
+    RenderTapeFloat4 uvRect{};
+    RenderTapeFloat4 color{};
+};
+
+// Terrain modes index one float4 per logical terrain instance.
+struct alignas(16) RenderTapeTerrainInstance
+{
+    RenderTapeFloat4 data{};
+};
+
 static_assert(sizeof(RenderTapeBoneMatrix) == 48);
 static_assert(sizeof(RenderTapeTerrainCell) == 16);
 static_assert(sizeof(RenderTapeBmdConstants) == 232);
 static_assert(sizeof(RenderTapeTerrainConstants) == 36);
 static_assert(sizeof(RenderTapeRigidInstance) == 96);
+static_assert(sizeof(RenderTapeTrailInstance) == 96);
+static_assert(sizeof(RenderTapeQuadInstance) == 96);
+static_assert(sizeof(RenderTapeParticleInstance) == 64);
+static_assert(sizeof(RenderTapeTerrainInstance) == 16);
 
 // The GPU constant buffer is the three 4x4 matrices plus only the first
 // 192-byte shader-visible prefix of RenderTapeBmdConstants.
