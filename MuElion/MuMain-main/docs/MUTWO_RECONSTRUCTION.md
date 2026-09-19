@@ -126,6 +126,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   ownership while feeding UTF-8 messages into the modern panel
 - reconstructed `RmlDocumentHost` lifecycle wrapper with runtime-dispatched
   release and safe RmlUi deferred document closing
+- reconstructed `RmlMainFrameLayer` with exact main-frame document path,
+  nine design keys, recovered DOM IDs/state classes, gauges, six skill icons,
+  scale layout and seven button intents
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle
@@ -158,7 +161,7 @@ a license file, so UI documents are reconstructed independently.
       recovered
 - [ ] Replace the remaining neutral RML skeletons screen-by-screen with
       behaviorally reconstructed UI from observable behavior and the existing
-      MuMain UI (Chat is now materialized functionally)
+      MuMain UI (Chat and Main Frame are now materialized functionally)
 
 ## Current confidence boundary
 

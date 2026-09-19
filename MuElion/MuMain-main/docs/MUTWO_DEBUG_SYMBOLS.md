@@ -969,3 +969,81 @@ starting the `left %.3fs linear` transition and clears the deadline on
 mouseout. The reconstruction now mirrors that observable behavior with an
 interaction dirty latch plus `std::chrono::steady_clock` deadline, without
 claiming the original private clock type.
+
+
+## RmlMainFrameLayer reconstruction
+
+The x64 Debug executable exposes the exact main-frame design-key set and
+document path:
+
+```text
+Data/UI/PC/HUD/main_frame.rml
+RmlMainFrameLayer-ResizeStageHeight
+RmlMainFrameLayer-SmallStageScale
+RmlMainFrameLayer-ArtWidth
+RmlMainFrameLayer-ArtHeight
+RmlMainFrameLayer-HotSelectionX
+RmlMainFrameLayer-HotSelectionStep
+RmlMainFrameLayer-MarbleHeight
+RmlMainFrameLayer-LegacyReferenceWidth
+RmlMainFrameLayer-LegacyReferenceHeight
+```
+
+Direct x64 analysis of the DOM binding body at `0x140665830` recovers the
+main-frame element pointer sequence beginning at object offset +0x260:
+
+```text
++0x260 main-frame
++0x268 main-shell
++0x270 main-hp-background
++0x278 main-hp-clip
++0x280 main-hp
++0x288 main-mp-background
++0x290 main-mp-clip
++0x298 main-mp
++0x2a0 main-sd-clip
++0x2a8 main-sd
++0x2b0 main-ag-clip
++0x2b8 main-ag
++0x2c0 main-exp-clip
++0x2c8 main-exp
++0x2d0 main-exp-frame
++0x2d8 main-hp-text
++0x2e0 main-mp-text
++0x2e8 main-sd-text
++0x2f0 main-ag-text
++0x2f8 main-exp-current
++0x300 main-exp-next
++0x308 main-exp-slash
++0x310 main-exp-page
++0x318 main-current-selection
++0x320 main-hot-selection
++0x328 main-skill-page-labels
++0x330 main-skill-page-toggle
+```
+
+The same bind body resolves six dynamic `main-skill-icon-N` elements. The
+Debug also contains the six exact main-button IDs:
+`main-button-shop`, `main-button-character`, `main-button-inventory`,
+`main-button-quest`, `main-button-community`, and
+`main-button-system`.
+
+The recovered layout body writes the element properties `left`, `top`,
+`width`, `height`, and writes the root transform with the exact formatting
+string `scale(%.6f)`. The reconstruction retains that format and drives its
+small-stage scale from the recovered design threshold.
+
+State-class behavior is directly observable in x64 bodies:
+
+- HP fill toggles `normal` / `poisoned`;
+- experience fill selects `normal`, `master`, or `fourth`;
+- skill-page labels toggle `page-one` / `page-two`;
+- skill-page toggle switches `to-first` / `to-second`;
+- the toggle's enabled state is synchronized independently.
+
+`RmlMainFrameLayer` is reconstructed as a presentation controller. It owns
+the RML document host, retained DOM pointers and seven button wrappers, accepts
+a presentation-neutral HUD state snapshot, updates gauges/text/selection/skill
+cooldowns, and exposes button intent through a one-shot `Action`. The
+existing legacy `CNewUIMainFrameWindow` remains the source of game rules and
+network/UI toggles until a separate read-only bridge is added and validated.

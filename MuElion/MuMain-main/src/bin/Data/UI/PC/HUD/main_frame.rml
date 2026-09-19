@@ -1,11 +1,123 @@
 <rml>
 <head>
-    <title>Mu Main Modern HUD Bootstrap</title>
+    <meta name="mu-design-RmlMainFrameLayer-ResizeStageHeight" content="700"/>
+    <meta name="mu-design-RmlMainFrameLayer-SmallStageScale" content="0.95"/>
+    <meta name="mu-design-RmlMainFrameLayer-ArtWidth" content="921"/>
+    <meta name="mu-design-RmlMainFrameLayer-ArtHeight" content="106"/>
+    <meta name="mu-design-RmlMainFrameLayer-HotSelectionX" content="475"/>
+    <meta name="mu-design-RmlMainFrameLayer-HotSelectionStep" content="32"/>
+    <meta name="mu-design-RmlMainFrameLayer-MarbleHeight" content="89"/>
+    <meta name="mu-design-RmlMainFrameLayer-LegacyReferenceWidth" content="640"/>
+    <meta name="mu-design-RmlMainFrameLayer-LegacyReferenceHeight" content="480"/>
+    <title>Reconstructed MU Main Frame</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="main_frame.rcss"/>
 </head>
-<body id="mu-modern-hud">
-    <div id="modern-ui-root">
-        <map-viewport id="hud-map-viewport"></map-viewport>
+<body class="mu-modern-document">
+    <div id="main-frame" class="main-frame">
+        <div id="main-hp-background" class="marble-background hp-background"/>
+        <div id="main-hp-track">
+            <div id="main-hp-clip" class="gauge-clip marble-clip">
+                <div id="main-hp" class="marble hp normal"/>
+            </div>
+        </div>
+
+        <div id="main-mp-background" class="marble-background mp-background"/>
+        <div id="main-mp-track">
+            <div id="main-mp-clip" class="gauge-clip marble-clip">
+                <div id="main-mp" class="marble mp"/>
+            </div>
+        </div>
+
+        <div id="main-shell" class="main-shell"/>
+
+        <div id="main-sd-clip" class="gauge-clip">
+            <div id="main-sd" class="rod sd"/>
+        </div>
+        <div id="main-ag-clip" class="gauge-clip">
+            <div id="main-ag" class="rod ag"/>
+        </div>
+
+        <div id="main-exp-clip" class="gauge-clip">
+            <div id="main-exp" class="experience normal"/>
+        </div>
+        <div id="main-exp-frame" class="exp-frame"/>
+
+        <div id="main-hp-text" class="main-text marble-text"/>
+        <div id="main-mp-text" class="main-text marble-text"/>
+        <div id="main-sd-text" class="main-text rod-text"/>
+        <div id="main-ag-text" class="main-text rod-text"/>
+        <div id="main-exp-current" class="main-text exp-current"/>
+        <div id="main-exp-slash" class="main-text exp-slash">/</div>
+        <div id="main-exp-next" class="main-text exp-next"/>
+        <div id="main-exp-page" class="main-text exp-page"/>
+
+        <div id="main-skill-page-labels"
+             class="skill-page-labels page-one">
+            <i class="page-label label-1">1</i>
+            <i class="page-label label-2">2</i>
+            <i class="page-label label-3">3</i>
+            <i class="page-label label-4">4</i>
+            <i class="page-label label-5">5</i>
+        </div>
+
+        <div id="main-skill-page-toggle"
+             class="mu-button skill-page-toggle to-second">
+            <i class="arrow">&gt;</i>
+        </div>
+
+        <div id="main-current-selection"
+             class="skill-selection current"/>
+        <div id="main-hot-selection"
+             class="skill-selection hot"/>
+
+        <div id="main-button-shop"
+             class="mu-button main-button shop">Shop</div>
+        <div id="main-button-character"
+             class="mu-button main-button character">Char</div>
+        <div id="main-button-inventory"
+             class="mu-button main-button inventory">Inv</div>
+        <div id="main-button-quest"
+             class="mu-button main-button quest">Quest</div>
+        <div id="main-button-community"
+             class="mu-button main-button community">Comm</div>
+        <div id="main-button-system"
+             class="mu-button main-button system">Sys</div>
+
+        <div id="main-skill-icon-0"
+             class="mu-skill-icon hud-skill-icon">
+            <div class="skill-sheet"/>
+            <div class="skill-cooldown"/>
+        </div>
+        <div id="main-skill-icon-1"
+             class="mu-skill-icon hud-skill-icon">
+            <div class="skill-sheet"/>
+            <div class="skill-cooldown"/>
+        </div>
+        <div id="main-skill-icon-2"
+             class="mu-skill-icon hud-skill-icon">
+            <div class="skill-sheet"/>
+            <div class="skill-cooldown"/>
+        </div>
+        <div id="main-skill-icon-3"
+             class="mu-skill-icon hud-skill-icon">
+            <div class="skill-sheet"/>
+            <div class="skill-cooldown"/>
+        </div>
+        <div id="main-skill-icon-4"
+             class="mu-skill-icon hud-skill-icon">
+            <div class="skill-sheet"/>
+            <div class="skill-cooldown"/>
+        </div>
+        <div id="main-skill-icon-5"
+             class="mu-skill-icon hud-skill-icon">
+            <div class="skill-sheet"/>
+            <div class="skill-cooldown"/>
+        </div>
     </div>
+
+    <!-- Keep the already reconstructed custom minimap element alive in the
+         HUD bootstrap while the rest of the HUD is materialized. -->
+    <map-viewport id="hud-map-viewport"></map-viewport>
 </body>
 </rml>
