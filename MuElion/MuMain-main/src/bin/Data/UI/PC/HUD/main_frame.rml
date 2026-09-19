@@ -1,0 +1,11 @@
+<rml>
+<head>
+    <title>Mu Main Modern HUD Bootstrap</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body id="mu-modern-hud">
+    <div id="modern-ui-root">
+        <map-viewport id="hud-map-viewport"></map-viewport>
+    </div>
+</body>
+</rml>

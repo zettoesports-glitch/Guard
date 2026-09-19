@@ -6,6 +6,7 @@
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Core.h>
+#include <RmlUi/Core/ElementDocument.h>
 #include <RmlUi/Core/ElementInstancer.h>
 #include <RmlUi/Core/Factory.h>
 #include <RmlUi/Core/SystemInterface.h>
@@ -87,6 +88,15 @@ public:
         context_->SetDensityIndependentPixelRatio(
             static_cast<float>(scalePercent) / 100.0f);
         scalePercent_ = scalePercent;
+
+        // The Debug executable names Data/UI/PC/HUD/main_frame.rml as the HUD
+        // root. Keep bootstrap loading optional so the legacy UI still works
+        // while additional RmlUi documents are reconstructed incrementally.
+        bootstrapDocument_ =
+            context_->LoadDocument("Data/UI/PC/HUD/main_frame.rml");
+        if (bootstrapDocument_)
+            bootstrapDocument_->Show();
+
         initialized_ = true;
         return true;
     }
@@ -101,6 +111,7 @@ public:
         {
             Rml::RemoveContext(contextName_);
             context_ = nullptr;
+            bootstrapDocument_ = nullptr;
         }
 
         mapViewportInstancer_.reset();
@@ -210,6 +221,7 @@ private:
     MuSystemInterface systemInterface_;
     TapeRenderInterface& renderInterface_;
     Rml::Context* context_ = nullptr;
+    Rml::ElementDocument* bootstrapDocument_ = nullptr;
     Rml::String contextName_ = "mu-main-modern";
     int scalePercent_ = 100;
     bool initialized_ = false;
