@@ -26,6 +26,9 @@
 #include "Render/Renderer/MuRenderer.h"
 #include "client/session/SessionRender.h"
 #include "client/render/LogicalRenderAssetTable.h"
+#ifdef MU_ENABLE_MODERN_UI
+#include "UI/Modern/RmlUiRuntime.h"
+#endif
 #include "Engine/Object/ZzzOpenData.h"
 #include "Scenes/SceneCore.h"
 #include "Scenes/SceneManager.h"
@@ -174,6 +177,10 @@ void CheckHack()
 
 static void ShutdownRendererWindow()
 {
+#ifdef MU_ENABLE_MODERN_UI
+    UI::Modern::GetRmlUiRuntime().Shutdown();
+#endif
+
     // Session workers and logical assets must stop/release before renderer resources disappear.
     mu::session::GetSessionRender().Shutdown();
     mu::pipeline::GetLogicalRenderAssetTable().Clear();
@@ -1046,6 +1053,10 @@ void HandleWindowResize(int width, int height)
     OpenglWindowWidth = WindowWidth;
     OpenglWindowHeight = WindowHeight;
     UpdateResolutionDependentSystems();
+#ifdef MU_ENABLE_MODERN_UI
+    if (UI::Modern::GetRmlUiRuntime().IsInitialized())
+        (void)UI::Modern::GetRmlUiRuntime().Resize(WindowWidth, WindowHeight);
+#endif
     UpdateCursorClip();
 }
 
@@ -2056,6 +2067,18 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
         static_cast<std::size_t>(GameConfig::GetInstance().GetSessionWorkerCount()));
     mu::pipeline::GetLogicalRenderAssetTable().ConfigureSharedIdleSeconds(
         static_cast<std::uint32_t>(GameConfig::GetInstance().GetSharedAssetIdleSeconds()));
+
+#ifdef MU_ENABLE_MODERN_UI
+    if (!UI::Modern::GetRmlUiRuntime().Initialize(
+            WindowWidth, WindowHeight,
+            GameConfig::GetInstance().GetRmlScale()))
+    {
+        g_ErrorReport.Write(
+            L"WARNING: RmlUi modern runtime initialization failed; "
+            L"legacy UI remains available.\r\n");
+    }
+#endif
+
     g_ErrorReport.Write(L"> Renderer backend requested: %hs; active: %hs.\r\n",
                         rendererBackend.c_str(), mu::GetRenderer().GetGPUDriverName());
     g_ErrorReport.Write(L"> Render pipeline: %d; session workers: %d; FPS limit: %d.\r\n",

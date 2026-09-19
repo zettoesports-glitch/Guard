@@ -17,6 +17,11 @@ namespace mu::pipeline
 enum class RenderTapePass : std::uint8_t;
 }
 
+namespace UI::Modern
+{
+class RmlUiRuntime;
+}
+
 namespace mu::session
 {
 
@@ -33,6 +38,11 @@ public:
                            float rotate, float rotateLocal,
                            float uWidth, float vHeight,
                            int number);
+
+#ifdef MU_ENABLE_MODERN_UI
+    [[nodiscard]] bool SubmitModernUiPreparation(
+        UI::Modern::RmlUiRuntime& runtime) noexcept;
+#endif
 };
 
 class SessionRender

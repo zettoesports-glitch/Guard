@@ -5,6 +5,9 @@
 #include "client/render/LegacyRenderFacade.h"
 #include "client/render/FrameTargetTransfers.h"
 #include "Render/Textures/ZzzOpenglUtil.h"
+#ifdef MU_ENABLE_MODERN_UI
+#include "UI/Modern/RmlUiRuntime.h"
+#endif
 
 #include <algorithm>
 #include <utility>
@@ -17,6 +20,30 @@ bool SessionRenderUnit::BeginRenderTapePass(mu::pipeline::RenderTapePass pass) n
     mu::pipeline::SessionFogPassConstants fog{};
     return mu::pipeline::GetLegacyRenderFacade().BeginPass(pass, fog);
 }
+
+#ifdef MU_ENABLE_MODERN_UI
+bool SessionRenderUnit::SubmitModernUiPreparation(
+    UI::Modern::RmlUiRuntime& runtime) noexcept
+{
+    if (!runtime.IsInitialized())
+        return false;
+
+    auto& facade = mu::pipeline::GetLegacyRenderFacade();
+    const bool ownsPass = !facade.IsRecording();
+    if (ownsPass &&
+        !BeginRenderTapePass(mu::pipeline::RenderTapePass::Ui))
+        return false;
+
+    const auto snapshot = runtime.PrepareRenderSnapshot();
+    const bool success =
+        snapshot && snapshot->updateSucceeded && snapshot->renderSucceeded;
+
+    if (ownsPass && !facade.EndPass())
+        return false;
+
+    return success;
+}
+#endif
 
 void SessionRenderUnit::RenderPointRotate(
     int texture,

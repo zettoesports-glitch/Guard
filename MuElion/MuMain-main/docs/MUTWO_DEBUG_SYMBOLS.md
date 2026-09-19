@@ -427,3 +427,24 @@ enabled for the RmlUi font engine.
 RmlUi's SVG plugin handles SVG documents separately through lunasvg, matching
 the Debug source inventory. The higher-level `RmlUiRuntime` and
 `RmlHudMapViewport` are reconstructed in subsequent commits.
+
+
+## RmlUiRuntime reconstruction
+
+The Debug RTTI exposes:
+- `UI::Modern::RmlUiRuntime`,
+- nested `RmlUiRuntime::Impl`,
+- anonymous `UI::Modern::MuSystemInterface`,
+- `std::shared_ptr<UI::Modern::RmlUiRenderSnapshot>`,
+- `RmlUiRuntime::Impl::Execute(std::function<void()>) -> bool`,
+- `SessionRenderUnit::SubmitModernUiPreparation(RmlUiRuntime&) -> bool`.
+
+The reconstruction now mirrors that architecture. The runtime owns a RmlUi
+context, uses the tape render interface, applies `RmlScale / 100` through
+`Context::SetDensityIndependentPixelRatio`, tracks window resize, creates a
+render snapshot per preparation call, and is initialized/shut down with the SDL
+GPU renderer lifetime.
+
+`SubmitModernUiPreparation` records RmlUi rendering inside a UI tape pass
+when no pass is already active. It deliberately does not force rendering from
+the main loop until documents are loaded by the modern document hosts.
