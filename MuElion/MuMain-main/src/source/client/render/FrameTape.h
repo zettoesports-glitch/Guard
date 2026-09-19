@@ -12,11 +12,22 @@ namespace mu::pipeline
 
 enum class FrameRejectionReason : std::uint32_t
 {
-    None = 0,
-    MissingAsset = 1,
-    AssetRevisionMismatch = 2,
-    InvalidSession = 3,
-    QueueOverflow = 4,
+    Unknown = 0,
+    InvalidTapeIdentity = 1,
+    MissingLogicalAsset = 2,
+    InvalidTapeContents = 3,
+    AssetTableMismatch = 4,
+};
+
+[[nodiscard]] const char* FrameRejectionReasonName(FrameRejectionReason reason) noexcept;
+
+struct FrameTapeRejection
+{
+    std::uint64_t frame = 0;
+    std::uint32_t session = 0;
+    std::uint64_t assetId = 0;
+    std::uint64_t assetRevision = 0;
+    FrameRejectionReason reason = FrameRejectionReason::Unknown;
 };
 
 struct FrameTapeSample
@@ -45,6 +56,7 @@ public:
                      FrameRejectionReason reason, std::uint32_t session);
 
     [[nodiscard]] std::vector<FrameTapeSample> Snapshot(std::size_t maxSamples = DefaultCapacity) const;
+    [[nodiscard]] std::optional<FrameTapeRejection> LastRejection() const;
     [[nodiscard]] std::uint64_t RejectionCount() const;
     [[nodiscard]] std::size_t Capacity() const noexcept { return m_capacity; }
 
@@ -55,6 +67,7 @@ private:
     mutable std::mutex m_mutex;
     std::deque<FrameTapeSample> m_samples;
     std::optional<FrameTapeSample> m_current;
+    std::optional<FrameTapeRejection> m_lastRejection;
     std::uint64_t m_rejectionCount = 0;
 };
 

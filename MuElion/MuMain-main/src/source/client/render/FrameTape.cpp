@@ -7,6 +7,23 @@
 namespace mu::pipeline
 {
 
+const char* FrameRejectionReasonName(FrameRejectionReason reason) noexcept
+{
+    switch (reason)
+    {
+    case FrameRejectionReason::InvalidTapeIdentity:
+        return "invalid-tape-identity";
+    case FrameRejectionReason::MissingLogicalAsset:
+        return "missing-logical-asset";
+    case FrameRejectionReason::InvalidTapeContents:
+        return "invalid-tape-contents";
+    case FrameRejectionReason::AssetTableMismatch:
+        return "asset-table-mismatch";
+    default:
+        return "unknown";
+    }
+}
+
 FrameTape::FrameTape(std::size_t capacity)
     : m_capacity(std::max<std::size_t>(1, capacity))
 {
@@ -69,10 +86,18 @@ void FrameTape::SealFrame()
         m_samples.pop_front();
 }
 
-void FrameTape::RejectAsset(std::uint64_t, std::uint64_t,
-                            FrameRejectionReason, std::uint32_t)
+void FrameTape::RejectAsset(std::uint64_t assetId, std::uint64_t assetRevision,
+                            FrameRejectionReason reason, std::uint32_t session)
 {
     std::scoped_lock lock(m_mutex);
+
+    FrameTapeRejection rejection{};
+    rejection.frame = m_current ? m_current->frame : 0;
+    rejection.session = session;
+    rejection.assetId = assetId;
+    rejection.assetRevision = assetRevision;
+    rejection.reason = reason;
+    m_lastRejection = rejection;
     ++m_rejectionCount;
 }
 
@@ -87,6 +112,12 @@ std::vector<FrameTapeSample> FrameTape::Snapshot(std::size_t maxSamples) const
     const auto first = m_samples.end() - static_cast<std::ptrdiff_t>(count);
     result.insert(result.end(), first, m_samples.end());
     return result;
+}
+
+std::optional<FrameTapeRejection> FrameTape::LastRejection() const
+{
+    std::scoped_lock lock(m_mutex);
+    return m_lastRejection;
 }
 
 std::uint64_t FrameTape::RejectionCount() const
