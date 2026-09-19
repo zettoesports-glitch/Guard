@@ -1,9 +1,66 @@
 <rml>
 <head>
+    <meta name="mu-design-Panel-Size" content="327 639"/>
+    <meta name="mu-design-Panel-Reference" content="640 480"/>
+    <meta name="mu-design-Panel-Initial" content="20 20"/>
     <title>Reconstructed Guild Info</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="guild_panel.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-guild-guild-info">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document guild-info">
+<div id="panel" class="guild-panel">
+    <div id="btnDrag" class="guild-drag"/>
+    <div id="tfTitle" class="guild-title">Guild</div>
+    <div id="btnClose" class="mu-button guild-close">X</div>
+    <div id="taGuildInfo" class="guild-help guild-no-guild"/>
+
+    <div class="guild-tabs">
+        <div id="btnToggleInfo" class="mu-button guild-tab"><span id="btnToggleInfo-label">Info</span></div>
+        <div id="btnToggleMember" class="mu-button guild-tab"><span id="btnToggleMember-label">Members</span></div>
+        <div id="btnToggleUnion" class="mu-button guild-tab"><span id="btnToggleUnion-label">Union</span></div>
+        <div id="btnToggleRival" class="mu-button guild-tab"><span id="btnToggleRival-label">Rival</span></div>
+    </div>
+
+    <div id="mcInfo" class="guild-page guild-info-page">
+        <div id="mcGuildMark" class="guild-mark-grid guild-info-mark"/>
+        <div id="tfGuildName" class="guild-heading"/>
+        <div class="guild-stat"><span id="tfGuildPoint">Score</span><span id="tfGuildPointValue"/></div>
+        <div class="guild-stat"><span id="tfGuildMemberNum">Members</span><span id="tfGuildMemberNumValue"/></div>
+        <div class="guild-stat"><span id="tfRivalGuild">Rival</span><span id="tfRivalGuildValue"/></div>
+        <div id="tfNotice" class="guild-label notice-label">Notice</div>
+        <div id="taGuildNotice" class="guild-list guild-notice"/>
+        <div id="sbGuildNotice" class="mu-scrollbar guild-scroll"><div class="mu-scrollbar-track"/><div class="mu-scrollbar-down">v</div><div class="mu-scrollbar-up">^</div><div class="mu-scrollbar-thumb"/></div>
+        <div id="btnDisband" class="mu-button guild-action"><span id="btnDisband-label">Leave</span></div>
+    </div>
+
+    <div id="mcMember" class="guild-page">
+        <div class="guild-columns"><span id="tfMemberName">Name</span><span id="tfMemberPosition">Position</span><span id="tfMemberServer">Server</span></div>
+        <div id="slMember" class="guild-list"/>
+        <div id="sbMember" class="mu-scrollbar guild-scroll"><div class="mu-scrollbar-track"/><div class="mu-scrollbar-down">v</div><div class="mu-scrollbar-up">^</div><div class="mu-scrollbar-thumb"/></div>
+        <div class="guild-actions"><div id="btnPosition" class="mu-button guild-action"><span id="btnPosition-label">Position</span></div><div id="btnClear" class="mu-button guild-action"><span id="btnClear-label">Clear</span></div><div id="btnFire" class="mu-button guild-action"><span id="btnFire-label">Fire</span></div></div>
+    </div>
+
+    <div id="mcUnion" class="guild-page">
+        <div class="guild-columns"><span id="tfUnionName">Guild</span><span id="tfUnionMemNum">Members</span></div>
+        <div id="slUnion" class="guild-list"/>
+        <div id="sbUnion" class="mu-scrollbar guild-scroll"><div class="mu-scrollbar-track"/><div class="mu-scrollbar-down">v</div><div class="mu-scrollbar-up">^</div><div class="mu-scrollbar-thumb"/></div>
+        <div id="btnUnionDisbandGuild" class="mu-button guild-action"><span id="btnUnionDisbandGuild-label">Remove Guild</span></div>
+        <div id="btnUnionDisbandUnion" class="mu-button guild-action guild-action-right"><span id="btnUnionDisbandUnion-label">Disband Union</span></div>
+    </div>
+    <div id="mcUnionNone" class="guild-page"><div id="taUnionMent" class="guild-help">No union information.</div></div>
+
+    <div id="mcRival" class="guild-page">
+        <div id="tfRivalName" class="guild-heading">Rival Guilds</div>
+        <div id="slRival" class="guild-list"/>
+        <div id="sbRival" class="mu-scrollbar guild-scroll"><div class="mu-scrollbar-track"/><div class="mu-scrollbar-down">v</div><div class="mu-scrollbar-up">^</div><div class="mu-scrollbar-thumb"/></div>
+        <div id="btnRivalAdd" class="mu-button guild-action"><span id="btnRivalAdd-label">Add</span></div>
+        <div id="btnRivalDelete" class="mu-button guild-action guild-action-right"><span id="btnRivalDelete-label">Delete</span></div>
+    </div>
+
+    <div id="member-row-template" class="guild-template"/>
+    <div id="guild-row-template" class="guild-template"/>
+    <div id="rival-row-template" class="guild-template"/>
+</div>
 </body>
 </rml>

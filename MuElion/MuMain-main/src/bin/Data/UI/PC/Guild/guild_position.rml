@@ -1,9 +1,21 @@
 <rml>
 <head>
+    <meta name="mu-design-Menu-Size" content="310.001495 290.000336"/>
+    <meta name="mu-design-Menu-Reference" content="640 480"/>
+    <meta name="mu-design-Menu-Initial" content="20 20"/>
     <title>Reconstructed Guild Position</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="guild_position.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-guild-guild-position">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document guild-position">
+<div id="menu" class="guild-position-menu">
+    <div id="tfTitle" class="guild-position-title">Guild Position</div>
+    <div id="taPosMent" class="guild-position-prompt"/>
+    <div id="btnType1" class="mu-button guild-position-type"><span id="btnType1-label">Position 1</span></div>
+    <div id="btnType2" class="mu-button guild-position-type guild-position-type2"><span id="btnType2-label">Position 2</span></div>
+    <div id="btnOk" class="mu-button guild-position-ok"><span id="btnOk-label">OK</span></div>
+    <div id="btnCancel" class="mu-button guild-position-cancel"><span id="btnCancel-label">Cancel</span></div>
+</div>
 </body>
 </rml>

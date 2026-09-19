@@ -1,0 +1,9 @@
+body { margin:0px; width:100%; height:100%; overflow:hidden; font-family:Arial; }
+.guild-position-menu { position:absolute; left:20px; top:20px; width:310px; height:290px; background-color:#11161ff2; border-width:1px; border-color:#665b3e; color:#ddd; pointer-events:auto; }
+.guild-position-title { position:absolute; left:20px; top:18px; width:270px; height:25px; text-align:center; line-height:25px; color:#f0c86a; font-size:15px; }
+.guild-position-prompt { position:absolute; left:30px; top:63px; width:250px; height:48px; white-space:normal; text-align:center; }
+.guild-position-type { position:absolute; left:42px; top:122px; width:226px; height:38px; line-height:38px; text-align:center; border-width:1px; border-color:#5d543d; }
+.guild-position-type2 { top:166px; }
+.guild-position-type.selected { color:#ffe7a0; background-color:#4b432e; }
+.guild-position-ok,.guild-position-cancel { position:absolute; bottom:24px; width:90px; height:32px; line-height:32px; text-align:center; }
+.guild-position-ok { left:55px; }.guild-position-cancel { right:55px; }

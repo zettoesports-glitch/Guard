@@ -1,0 +1,47 @@
+body { margin:0px; width:100%; height:100%; overflow:hidden; font-family:Arial; }
+.guild-panel, .guild-panel div, .guild-panel input, .guild-panel span { box-sizing:border-box; }
+.guild-panel { position:absolute; left:20px; top:20px; width:327px; height:639px; background-color:#11161fe8; border-width:1px; border-color:#665b3e; color:#d9d9d9; pointer-events:auto; }
+.guild-drag { position:absolute; left:8px; top:6px; right:38px; height:32px; drag:drag; cursor:move; }
+.guild-title { position:absolute; left:40px; top:12px; right:40px; height:24px; color:#f0c86a; text-align:center; line-height:24px; font-size:15px; }
+.guild-close { position:absolute; right:9px; top:9px; width:24px; height:24px; text-align:center; line-height:24px; }
+.guild-page { position:absolute; left:17px; top:92px; width:293px; height:490px; }
+.guild-heading { color:#f0c86a; font-size:14px; text-align:center; margin-bottom:10px; }
+.guild-help { color:#bdbdbd; font-size:12px; white-space:normal; }
+.guild-label { position:absolute; color:#cfc7ae; font-size:12px; }
+.guild-value { position:absolute; color:#f1f1f1; font-size:12px; }
+.guild-input { position:absolute; left:105px; top:24px; width:150px; height:24px; color:#fff; background-color:#080a0dcc; border-width:1px; border-color:#62583f; pointer-events:auto; }
+.mark-label { left:18px; top:76px; }
+.color-label { left:18px; top:263px; }
+.guild-mark-grid { position:absolute; left:55px; top:96px; width:160px; height:160px; display:flex; flex-direction:row; flex-wrap:wrap; }
+.guild-mark-cell { width:20px; height:20px; border-width:1px; border-color:#222; pointer-events:auto; }
+.guild-mark-preview { left:66px; top:48px; }
+.guild-colors { position:absolute; left:55px; top:286px; width:160px; height:40px; display:flex; flex-direction:row; flex-wrap:wrap; }
+.guild-color { width:20px; height:20px; border-width:1px; border-color:#222; }
+.guild-color.selected { border-width:2px; border-color:#fff0a0; }
+.palette-color-0 { background-color:#000000; }.palette-color-1 { background-color:#242424; }.palette-color-2 { background-color:#6b1b1b; }.palette-color-3 { background-color:#b83c3c; }
+.palette-color-4 { background-color:#7b4b1e; }.palette-color-5 { background-color:#db8f31; }.palette-color-6 { background-color:#a09a35; }.palette-color-7 { background-color:#e8dd58; }
+.palette-color-8 { background-color:#276b32; }.palette-color-9 { background-color:#4bbd5e; }.palette-color-10 { background-color:#24606f; }.palette-color-11 { background-color:#46aec3; }
+.palette-color-12 { background-color:#2f3c82; }.palette-color-13 { background-color:#5871d3; }.palette-color-14 { background-color:#713482; }.palette-color-15 { background-color:#c764da; }
+.check-name-label { left:40px; top:235px; }.check-name { left:115px; top:235px; }.check-master { left:40px; top:265px; width:215px; text-align:center; }
+.guild-nav { position:absolute; bottom:25px; width:80px; height:30px; text-align:center; line-height:30px; }
+.guild-prev { left:30px; }.guild-next { right:30px; }.guild-confirm { right:30px; }
+.guild-tabs { position:absolute; left:14px; top:51px; width:299px; height:34px; display:flex; flex-direction:row; }
+.guild-tab { width:74px; height:30px; line-height:30px; text-align:center; border-bottom-width:1px; border-color:#5d543d; }
+.guild-tab.selected { color:#ffe7a0; background-color:#4b432e; }
+.guild-info-page { padding-top:8px; }
+.guild-info-mark { left:95px; top:8px; width:96px; height:96px; }
+.guild-info-mark .guild-mark-cell { width:12px; height:12px; }
+.guild-stat { position:relative; top:110px; height:24px; display:flex; justify-content:space-between; padding:0 20px; }
+.notice-label { left:14px; top:204px; }.guild-notice { top:225px; }
+.guild-list { position:absolute; left:8px; top:36px; width:250px; height:330px; overflow:hidden; clip:always; background-color:#080a0d99; }
+.guild-notice { left:8px; width:250px; height:135px; }
+.guild-scroll { position:absolute; right:4px; top:36px; width:20px; height:330px; }.guild-info-page .guild-scroll { top:225px; height:135px; }
+.mu-scrollbar-track { position:absolute; left:4px; top:18px; bottom:18px; width:12px; }.mu-scrollbar-down,.mu-scrollbar-up { position:absolute; left:0px; width:20px; height:18px; text-align:center; line-height:18px; }.mu-scrollbar-down { bottom:0px; }.mu-scrollbar-up { top:0px; }.mu-scrollbar-thumb { position:absolute; left:3px; top:20px; width:14px; height:24px; background-color:#77694b; }
+.guild-columns { height:28px; display:flex; flex-direction:row; color:#e6c875; }.guild-columns span { flex:1; text-align:center; }
+.guild-row { position:relative; height:24px; line-height:24px; padding:0 5px; pointer-events:auto; display:flex; }
+.guild-row.selected { background-color:#514833; color:#fff0b0; }
+.guild-col-name { width:42%; }.guild-col-position { width:31%; }.guild-col-server { width:27%; }
+.guild-actions { position:absolute; left:0px; bottom:12px; width:270px; display:flex; gap:5px; }
+.guild-action { position:absolute; bottom:12px; width:82px; height:30px; line-height:30px; text-align:center; }
+.guild-actions .guild-action { position:relative; bottom:auto; flex:1; }
+.guild-action-right { right:8px; }.guild-template { display:none; }
