@@ -413,11 +413,31 @@ Rml::TextureHandle TapeRenderInterface::GenerateTexture(
     texture->asset = ref;
     texture->width = static_cast<std::uint32_t>(sourceDimensions.x);
     texture->height = static_cast<std::uint32_t>(sourceDimensions.y);
+    texture->ownsAsset = true;
 
     {
         std::scoped_lock lock(m_mutex);
         m_textures.emplace(handle, std::move(texture));
     }
+    return handle;
+}
+
+Rml::TextureHandle TapeRenderInterface::ImportLogicalTexture(
+    const mu::pipeline::LogicalRenderAssetMetadata& metadata)
+{
+    if (!metadata.ref.IsValid() || metadata.textureId == 0 ||
+        metadata.width == 0 || metadata.height == 0)
+        return 0;
+
+    auto texture = std::make_shared<LoadedTexture>();
+    texture->asset = metadata.ref;
+    texture->width = metadata.width;
+    texture->height = metadata.height;
+    texture->ownsAsset = false;
+
+    std::scoped_lock lock(m_mutex);
+    const Rml::TextureHandle handle = AllocateTextureHandle();
+    m_textures.emplace(handle, std::move(texture));
     return handle;
 }
 
@@ -433,7 +453,7 @@ void TapeRenderInterface::ReleaseTexture(Rml::TextureHandle textureHandle)
         m_textures.erase(it);
     }
 
-    if (texture)
+    if (texture && texture->ownsAsset)
         m_assets.Release(texture->asset);
 }
 

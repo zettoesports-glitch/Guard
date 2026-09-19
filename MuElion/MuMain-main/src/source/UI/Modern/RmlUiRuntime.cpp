@@ -2,9 +2,12 @@
 #include "UI/Modern/RmlUiRuntime.h"
 
 #include "UI/Modern/TapeRenderInterface.h"
+#include "UI/Modern/RmlHudMapViewport.h"
 
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Core.h>
+#include <RmlUi/Core/ElementInstancer.h>
+#include <RmlUi/Core/Factory.h>
 #include <RmlUi/Core/SystemInterface.h>
 
 #include <algorithm>
@@ -63,10 +66,16 @@ public:
             return false;
         }
 
+        mapViewportInstancer_ =
+            std::make_unique<Rml::ElementInstancerGeneric<RmlHudMapViewport>>();
+        Rml::Factory::RegisterElementInstancer(
+            "map-view", mapViewportInstancer_.get());
+
         context_ = Rml::CreateContext(
             contextName_, {width, height}, &renderInterface_);
         if (!context_)
         {
+            mapViewportInstancer_.reset();
             Rml::Shutdown();
             Rml::SetRenderInterface(nullptr);
             Rml::SetSystemInterface(nullptr);
@@ -92,6 +101,7 @@ public:
             context_ = nullptr;
         }
 
+        mapViewportInstancer_.reset();
         Rml::Shutdown();
         Rml::SetRenderInterface(nullptr);
         Rml::SetSystemInterface(nullptr);
@@ -203,6 +213,8 @@ private:
     bool initialized_ = false;
     std::uint64_t sequence_ = 0;
     std::shared_ptr<RmlUiRenderSnapshot> lastSnapshot_;
+    std::unique_ptr<Rml::ElementInstancerGeneric<RmlHudMapViewport>>
+        mapViewportInstancer_;
 };
 
 RmlUiRuntime::RmlUiRuntime()

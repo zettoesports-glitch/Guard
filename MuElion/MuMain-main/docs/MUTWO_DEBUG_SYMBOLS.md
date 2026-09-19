@@ -448,3 +448,18 @@ GPU renderer lifetime.
 `SubmitModernUiPreparation` records RmlUi rendering inside a UI tape pass
 when no pass is already active. It deliberately does not force rendering from
 the main loop until documents are loaded by the modern document hosts.
+
+
+## RmlHudMapViewport reconstruction
+
+The public MuClient HUD assets contain the custom CSS selector `map-view` and
+the Debug executable contains both the literal `map-view` and RTTI for
+`Rml::ElementInstancerGeneric<UI::Modern::RmlHudMapViewport>`. The modern
+runtime now registers that exact custom element tag.
+
+`RmlHudMapViewport::SetImage(const LogicalRenderAssetMetadata&) -> bool`
+matches the Debug signature. It imports the existing logical texture into
+`TapeRenderInterface` without taking ownership, creates a
+`Rml::CallbackTextureSource`, and renders a resize-aware textured quad through
+RmlUi geometry. This matches the Debug RTTI showing a SetImage lambda taking
+`const Rml::CallbackTextureInterface&`.

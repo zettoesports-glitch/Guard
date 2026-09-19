@@ -36,6 +36,11 @@ public:
                                        Rml::Vector2i sourceDimensions) override;
     void ReleaseTexture(Rml::TextureHandle texture) override;
 
+    // Import an already-created Mu logical texture into RmlUi without taking
+    // ownership of the underlying logical asset.
+    [[nodiscard]] Rml::TextureHandle ImportLogicalTexture(
+        const mu::pipeline::LogicalRenderAssetMetadata& metadata);
+
     void EnableScissorRegion(bool enable) override;
     void SetScissorRegion(Rml::Rectanglei region) override;
     void SetTransform(const Rml::Matrix4f* transform) override;
@@ -57,6 +62,7 @@ public:
         mu::pipeline::LogicalRenderAssetRef asset{};
         std::uint32_t width = 0;
         std::uint32_t height = 0;
+        bool ownsAsset = true;
     };
 
 private:
