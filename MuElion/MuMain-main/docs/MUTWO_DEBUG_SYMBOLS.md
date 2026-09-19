@@ -278,3 +278,21 @@ The file name and format are confirmed from the Debug executable. The current
 numeric failure-code mapping is reconstruction-local; `source-row` is kept at
 0 until the original request/source-row propagation is recovered. Pass, order
 and frame are populated from the live reconstructed tape.
+
+
+## Exact private-structure sizes from x64 disassembly
+
+Function-body inspection adds evidence that strings/shaders alone cannot show:
+
+- `DrawBmdGeometry` and `DrawRigidInstances` perform `rep movsb` with
+  `ECX=0xE8` from the `RenderTapeBmdConstants const&` argument. Therefore
+  the private type is exactly **232 bytes** in this build.
+- The embedded vertex shader consumes the first **192 bytes** of that BMD
+  payload (the fields documented above). The remaining **40 bytes** are
+  CPU/pipeline metadata and are currently retained as opaque bytes.
+- `DrawTerrainInstances` performs `rep movsb` with `ECX=0x24` from its
+  `RenderTapeTerrainConstants const&` argument. Therefore that private type
+  is exactly **36 bytes** in the x64 Debug build.
+
+The C++ reconstruction now preserves these exact total sizes while leaving
+unknown CPU-only fields explicitly opaque rather than inventing names.

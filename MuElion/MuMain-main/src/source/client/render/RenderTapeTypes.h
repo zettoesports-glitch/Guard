@@ -197,8 +197,9 @@ struct alignas(16) RenderTapeTerrainCell
 // type_RenderTapeVertexConstants block. The grouping under the private
 // RenderTapeBmdConstants C++ type is reconstructed from the recovered facade
 // signature; field order itself is confirmed by the embedded shader.
-struct alignas(16) RenderTapeBmdConstants
+struct alignas(8) RenderTapeBmdConstants
 {
+    // First 192 bytes: confirmed shader-visible payload.
     RenderTapeFloat4 bmdScale{};
     RenderTapeFloat4 bmdBodyOrigin{};
     RenderTapeFloat4 bmdBodyLight{};
@@ -211,6 +212,19 @@ struct alignas(16) RenderTapeBmdConstants
     RenderTapeFloat4 rigidTransform0{};
     RenderTapeFloat4 rigidTransform1{};
     RenderTapeFloat4 rigidTransform2{};
+
+    // DrawBmdGeometry/DrawRigidInstances copy 0xE8 bytes from the private
+    // argument in Main-x64-Debug.exe. The final 40 bytes are CPU-side
+    // metadata not consumed by the embedded vertex shader. Keep them opaque
+    // until their individual fields are recovered.
+    std::array<std::byte, 40> cpuMetadata{};
+};
+
+struct RenderTapeTerrainConstants
+{
+    // DrawTerrainInstances copies exactly 0x24 bytes from this argument in the
+    // x64 Debug binary. Field semantics are still being recovered.
+    std::array<std::byte, 36> raw{};
 };
 
 struct alignas(16) RenderTapeVertexConstants
@@ -248,8 +262,12 @@ struct alignas(16) RenderTapeRigidInstance
 
 static_assert(sizeof(RenderTapeBoneMatrix) == 48);
 static_assert(sizeof(RenderTapeTerrainCell) == 16);
-static_assert(sizeof(RenderTapeBmdConstants) == 192);
-static_assert(sizeof(RenderTapeVertexConstants) == 384);
+static_assert(sizeof(RenderTapeBmdConstants) == 232);
+static_assert(sizeof(RenderTapeTerrainConstants) == 36);
 static_assert(sizeof(RenderTapeRigidInstance) == 96);
+
+// The GPU constant buffer is the three 4x4 matrices plus only the first
+// 192-byte shader-visible prefix of RenderTapeBmdConstants.
+static_assert(sizeof(RenderTapeMatrix4) * 3u + 192u == 384u);
 
 } // namespace mu::pipeline
