@@ -619,6 +619,33 @@ size_t SEASON3B::CNewUIChatLogWindow::GetNumberOfShowingLines() const
     return m_nShowingLines;
 }
 
+void SEASON3B::CNewUIChatLogWindow::BuildSnapshot(
+    ChatLogSnapshot& snapshot) const
+{
+    snapshot.lines.clear();
+    snapshot.lines.reserve(m_vecAllMsgs.size());
+
+    for (const CMessageText* message : m_vecAllMsgs)
+    {
+        if (!message)
+            continue;
+
+        ChatLogSnapshotLine line;
+        line.id = message->GetID();
+        line.text = message->GetText();
+        line.type = message->GetType();
+        snapshot.lines.push_back(std::move(line));
+    }
+
+    snapshot.currentType = m_CurrentRenderMsgType;
+    snapshot.currentRenderEndLine = m_iCurrentRenderEndLine;
+    snapshot.showingLines =
+        static_cast<std::size_t>(std::max(0, m_nShowingLines));
+    snapshot.backAlpha = m_fBackAlpha;
+    snapshot.showChatLog = m_bShowChatLog;
+    snapshot.showFrame = m_bShowFrame;
+}
+
 void SEASON3B::CNewUIChatLogWindow::SetBackAlphaAuto()
 {
     m_fBackAlpha += 0.2f;

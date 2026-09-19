@@ -919,3 +919,24 @@ decimal suffix against the retained message vector and forward the selected
 message to a private callback stored by the panel. The reconstruction models
 that observable callback intent as a one-shot whisper-target request rather
 than inventing the original callback type.
+
+
+## Legacy chat snapshot bridge
+
+The existing MuMain `CNewUIChatLogWindow` remains the authoritative owner of
+chat messages and filtering/network behavior. To connect that proven game-side
+logic to the reconstructed RmlUi panel without duplicating ownership, the
+branch now exposes a read-only `ChatLogSnapshot` built from
+`m_vecAllMsgs`.
+
+The snapshot copies only value data (id, text, type, visible-line metadata,
+background alpha and show/frame flags); it never exposes or transfers the
+legacy `CMessageText*` pointers. `RmlChatLegacyBridge` converts wide text to
+UTF-8, maps the legacy message enum onto the Debug-recovered
+`RmlChatPanel::MessageKind`, fingerprints snapshots to avoid unnecessary DOM
+rebuilds, and feeds the modern presentation.
+
+The bridge is intentionally not made the source of truth for `AddText`,
+filter commands or network submission. Those remain legacy-owned until the
+Debug ownership/callback graph for the higher-level chat host is fully
+recovered.

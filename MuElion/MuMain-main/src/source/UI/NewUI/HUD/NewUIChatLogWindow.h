@@ -70,6 +70,26 @@ namespace SEASON3B
 
     typedef TMessageText<wchar_t> CMessageText;
 
+    // Read-only bridge payload used by the reconstructed RmlUi chat. The
+    // legacy vectors remain the sole owners of CMessageText objects.
+    struct ChatLogSnapshotLine
+    {
+        std::wstring id;
+        std::wstring text;
+        MESSAGE_TYPE type = TYPE_UNKNOWN;
+    };
+
+    struct ChatLogSnapshot
+    {
+        std::vector<ChatLogSnapshotLine> lines;
+        MESSAGE_TYPE currentType = TYPE_ALL_MESSAGE;
+        int currentRenderEndLine = -1;
+        std::size_t showingLines = 0;
+        float backAlpha = 0.0f;
+        bool showChatLog = false;
+        bool showFrame = false;
+    };
+
     class CNewUIChatLogWindow : public CNewUIObj
     {
     public:
@@ -183,6 +203,11 @@ namespace SEASON3B
         void SetBackAlphaAuto();
         void SetBackAlpha(float fAlpha);
         float GetBackAlpha() const;
+
+        // Copies presentation-neutral state without transferring ownership.
+        // This deliberately snapshots m_vecAllMsgs so the modern panel can
+        // reproduce its own filtering/layout while AddText remains legacy-owned.
+        void BuildSnapshot(ChatLogSnapshot& snapshot) const;
 
         void ShowFrame();
         void HideFrame();
