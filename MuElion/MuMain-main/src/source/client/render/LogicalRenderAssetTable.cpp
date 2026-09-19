@@ -127,6 +127,30 @@ bool LogicalRenderAssetTable::DefineTexture2D(LogicalRenderAssetRef ref,
     return true;
 }
 
+bool LogicalRenderAssetTable::RegisterCapturedTexture(
+    LogicalRenderAssetRef ref, std::uint32_t textureId,
+    std::uint32_t width, std::uint32_t height,
+    RenderAssetRetention retention, RenderSamplerIntent sampler) noexcept
+{
+    if (!ref.IsValid() || textureId == 0 || width == 0 || height == 0 ||
+        !mu::GetRenderer().IsTextureRegistered(textureId))
+        return false;
+
+    std::scoped_lock lock(m_mutex);
+    auto& entry = m_entries[ref.id];
+    if (entry.metadata.textureId != 0 && entry.metadata.textureId != textureId)
+        mu::GetRenderer().ReleaseTexture(entry.metadata.textureId);
+
+    entry.metadata.ref = ref;
+    entry.metadata.textureId = textureId;
+    entry.metadata.width = width;
+    entry.metadata.height = height;
+    entry.metadata.retention = retention;
+    entry.metadata.sampler = sampler;
+    entry.lastUsed = std::chrono::steady_clock::now();
+    return true;
+}
+
 std::optional<LogicalRenderAssetMetadata> LogicalRenderAssetTable::Resolve(LogicalRenderAssetRef ref) noexcept
 {
     if (!ref.IsValid())

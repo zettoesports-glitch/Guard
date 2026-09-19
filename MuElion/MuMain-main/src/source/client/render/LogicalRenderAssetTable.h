@@ -37,6 +37,12 @@ public:
                                        RenderAssetRetention retention,
                                        RenderSamplerIntent sampler) noexcept;
 
+    [[nodiscard]] bool RegisterCapturedTexture(
+        LogicalRenderAssetRef ref, std::uint32_t textureId,
+        std::uint32_t width, std::uint32_t height,
+        RenderAssetRetention retention = RenderAssetRetention::Shared,
+        RenderSamplerIntent sampler = {}) noexcept;
+
     [[nodiscard]] std::optional<LogicalRenderAssetMetadata> Resolve(LogicalRenderAssetRef ref) noexcept;
     void Touch(LogicalRenderAssetRef ref) noexcept;
     void Release(LogicalRenderAssetRef ref) noexcept;

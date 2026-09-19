@@ -146,6 +146,31 @@ struct RenderSamplerIntent
     bool repeatV = false;
 };
 
+class SessionId
+{
+public:
+    constexpr SessionId() = default;
+    explicit constexpr SessionId(std::uint64_t value) : value_(value) {}
+    [[nodiscard]] constexpr std::uint64_t Value() const noexcept { return value_; }
+    friend constexpr bool operator==(SessionId, SessionId) = default;
+private:
+    std::uint64_t value_ = 0;
+};
+
+class SessionGeneration
+{
+public:
+    constexpr SessionGeneration() = default;
+    explicit constexpr SessionGeneration(std::uint64_t value) : value_(value) {}
+    [[nodiscard]] constexpr std::uint64_t Value() const noexcept { return value_; }
+    friend constexpr bool operator==(SessionGeneration, SessionGeneration) = default;
+private:
+    std::uint64_t value_ = 0;
+};
+
+static_assert(sizeof(SessionId) == 8);
+static_assert(sizeof(SessionGeneration) == 8);
+
 struct RenderTapeRect
 {
     int x = 0;
@@ -161,6 +186,26 @@ struct LogicalRenderAssetRef
 
     [[nodiscard]] constexpr bool IsValid() const noexcept { return id != 0; }
     friend constexpr bool operator==(const LogicalRenderAssetRef&, const LogicalRenderAssetRef&) = default;
+};
+
+struct RenderTapeCopyTargetRequest
+{
+    SessionId session{};
+    SessionGeneration generation{};
+    std::uint64_t targetId = 0;
+    RenderTapeRect rect{};
+    LogicalRenderAssetRef destination{};
+};
+
+struct RenderTapeDownloadTargetRequest
+{
+    SessionId session{};
+    SessionGeneration generation{};
+    std::uint64_t targetId = 0;
+    std::uint64_t requestId = 0;
+    RenderTapeRect rect{};
+    bool reverseRows = false;
+    std::uint64_t userToken = 0;
 };
 
 struct RenderTapeVertex
