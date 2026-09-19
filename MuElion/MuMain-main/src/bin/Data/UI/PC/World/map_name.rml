@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Map Name</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-world-map-name">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Duel Watch</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-combat-duel-watch">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

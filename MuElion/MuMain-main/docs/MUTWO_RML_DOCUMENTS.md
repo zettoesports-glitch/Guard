@@ -154,3 +154,63 @@ legacy UI before parity is validated.
 - `Data/UI/PC/HUD/minimap.rml` — GPU-backed minimap layer over the recovered
   `RmlHudMapViewport`; independently authored local RML/RCSS uses the
   observable public IDs and `Map-*` design metadata.
+
+
+## Full public PC path coverage
+
+The local reconstruction tree now materializes every `.rml` path currently
+published under `Data/UI/PC` by the public MuClient repository. Files that
+have not yet received behavioral reconstruction are intentionally neutral,
+independently-authored skeletons. Their presence establishes path/load
+coverage only; it is **not** evidence that the corresponding private panel
+logic has been reconstructed.
+
+New neutral coverage in this pass:
+
+- `Data/UI/PC/Combat/duel_confirm.rml`
+- `Data/UI/PC/Combat/duel_result.rml`
+- `Data/UI/PC/Combat/duel_watch.rml`
+- `Data/UI/PC/Command/quick_command.rml`
+- `Data/UI/PC/Events/blood_castle_entry.rml`
+- `Data/UI/PC/Events/empire_guardian_entry.rml`
+- `Data/UI/PC/Events/gold_archer.rml`
+- `Data/UI/PC/Events/interaction_progress.rml`
+- `Data/UI/PC/Events/kanturu_entry.rml`
+- `Data/UI/PC/Events/kanturu_info.rml`
+- `Data/UI/PC/Events/temple_info.rml`
+- `Data/UI/PC/Events/temple_result.rml`
+- `Data/UI/PC/Events/temple_score.rml`
+- `Data/UI/PC/Gens/gens_ranking.rml`
+- `Data/UI/PC/Guild/guild_create.rml`
+- `Data/UI/PC/Guild/guild_info.rml`
+- `Data/UI/PC/Guild/guild_position.rml`
+- `Data/UI/PC/HUD/hud_map_mask.rml`
+- `Data/UI/PC/HUD/hud_map_npc_label.rml`
+- `Data/UI/PC/Help/help.rml`
+- `Data/UI/PC/Help/long_notice.rml`
+- `Data/UI/PC/Inventory/chaos_menu.rml`
+- `Data/UI/PC/Inventory/elpis_menu.rml`
+- `Data/UI/PC/Inventory/fruit_choice.rml`
+- `Data/UI/PC/Inventory/gem_attach.rml`
+- `Data/UI/PC/Inventory/gem_detach.rml`
+- `Data/UI/PC/Inventory/gem_menu.rml`
+- `Data/UI/PC/Inventory/gem_unit.rml`
+- `Data/UI/PC/Inventory/item_confirmation.rml`
+- `Data/UI/PC/Inventory/item_durability.rml`
+- `Data/UI/PC/Inventory/item_explanation.rml`
+- `Data/UI/PC/Inventory/lucky_item.rml`
+- `Data/UI/PC/Inventory/lucky_menu.rml`
+- `Data/UI/PC/Inventory/mix.rml`
+- `Data/UI/PC/Inventory/npc_shop.rml`
+- `Data/UI/PC/Inventory/seed_investigator_menu.rml`
+- `Data/UI/PC/Inventory/seed_master_menu.rml`
+- `Data/UI/PC/Inventory/trainer_menu.rml`
+- `Data/UI/PC/Inventory/trainer_recover.rml`
+- `Data/UI/PC/NPCs/gatekeeper.rml`
+- `Data/UI/PC/NPCs/npc_dialogue.rml`
+- `Data/UI/PC/Quests/npc_job_change.rml`
+- `Data/UI/PC/Quests/npc_quest_progress.rml`
+- `Data/UI/PC/Quests/quest_journal.rml`
+- `Data/UI/PC/SystemMenu/window_menu.rml`
+- `Data/UI/PC/World/map_name.rml`
+- `Data/UI/PC/World/monster_info.rml`

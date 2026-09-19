@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Hud Map Mask</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-hud-hud-map-mask">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

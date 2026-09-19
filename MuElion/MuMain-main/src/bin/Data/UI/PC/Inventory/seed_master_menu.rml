@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Seed Master Menu</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-inventory-seed-master-menu">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Item Explanation</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-inventory-item-explanation">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

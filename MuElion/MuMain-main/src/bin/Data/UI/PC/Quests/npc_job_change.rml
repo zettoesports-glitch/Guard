@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Npc Job Change</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-quests-npc-job-change">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

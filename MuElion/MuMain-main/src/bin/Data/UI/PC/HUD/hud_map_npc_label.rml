@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Hud Map Npc Label</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-hud-hud-map-npc-label">
+    <div class="mu-document-root"></div>
+</body>
+</rml>

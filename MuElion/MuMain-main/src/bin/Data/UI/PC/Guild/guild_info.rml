@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Reconstructed Guild Info</title>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+</head>
+<body class="mu-modern-document" id="mu-guild-guild-info">
+    <div class="mu-document-root"></div>
+</body>
+</rml>
