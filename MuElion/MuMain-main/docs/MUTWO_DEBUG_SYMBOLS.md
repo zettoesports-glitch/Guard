@@ -1380,3 +1380,33 @@ scrollbar, chat/invite controls, write/read forms, and movable panel behavior.
 
 All user interaction is surfaced as a one-shot semantic `Action`; no network
 packet, `CUIWindowMgr` command number, or private callback is invented.
+
+
+## RmlMessageBoxPanel reconstruction
+
+The observable `Data/UI/PC/Common/message_box.rml` contract defines one
+reusable document for normal and S16-caution message boxes. Twenty design
+values are recovered, including normal/caution dimensions, one/two-button
+positions, and input limits of 20 password characters, 8 numeric characters,
+and 10 text characters.
+
+The legacy `CNewUIMessageBoxMng` confirms that message boxes are presentation
+objects which emit semantic events (`COMMON_OK`, `COMMON_CANCEL`, Return,
+Escape, and user-defined events) back to layout callbacks. The modern
+reconstruction preserves that boundary instead of embedding game-side callback
+logic.
+
+`RmlMessageBoxPanel` now supports:
+
+- normal and caution presentation;
+- one-button and two-button layouts;
+- message-only or input-bearing variants;
+- text, numeric and password input contracts;
+- the recovered max-length values;
+- enabled/disabled OK and Cancel buttons;
+- configurable Return/Escape behavior;
+- centered viewport layout;
+- one-shot actions carrying the current input value.
+
+The message content is authored into DOM text nodes rather than interpreted as
+RML, so game/server text cannot inject markup into the modern document.

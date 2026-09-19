@@ -1,9 +1,40 @@
 <rml>
 <head>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelWidth" content="352"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelHeight" content="210"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelButtonWidth" content="70"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelButtonHeight" content="30"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelSingleButtonX" content="141"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelOkButtonX" content="96"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCancelButtonX" content="186"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelButtonY" content="164"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionWidth" content="308"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionHeight" content="190"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionButtonWidth" content="75"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionButtonHeight" content="35"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionSingleButtonX" content="109"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionOkButtonX" content="69"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionCancelButtonX" content="149"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionBottomY" content="136"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PanelCautionMessageHeight" content="84"/>
+    <meta name="mu-design-RmlMessageBoxPanel-PasswordMaxLength" content="20"/>
+    <meta name="mu-design-RmlMessageBoxPanel-NumberMaxLength" content="8"/>
+    <meta name="mu-design-RmlMessageBoxPanel-TextMaxLength" content="10"/>
     <title>Reconstructed Message Box</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="message_box.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-common-message-box">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="message-box" class="message-box">
+        <div id="message-title" class="message-title"/>
+        <div id="message-divider" class="message-divider"/>
+        <div id="message" class="message"><div id="message-content"/></div>
+        <input id="message-input" class="mu-text-input message-input" type="text"/>
+        <div id="message-bottom" class="message-bottom">
+            <div id="message-bottom-divider" class="message-bottom-divider"/>
+            <div id="ok-button" class="mu-button message-button"><span id="ok-label"/></div>
+            <div id="cancel-button" class="mu-button message-button"><span id="cancel-label"/></div>
+        </div>
+    </div>
 </body>
 </rml>

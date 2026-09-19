@@ -137,6 +137,9 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - reconstructed top-menu layer with exact document/DOM contract, nine design
   keys, independent option/action enable state and `start`/`stop` helper state
 - reconstructed `RmlTooltipLayer` with Debug-exact capacity/id binding,
+- reconstructed `RmlMessageBoxPanel` normal/caution layouts, one/two
+  buttons, safe text lines, input variants/limits and semantic OK/Cancel
+  actions matching the legacy message-box callback boundary
   line style maps, blank/bold generation, alignment/frame/min-width and position
 - reconstructed `RmlCharacterFramePanel` with seven design keys, general
   character fields, five stat sections/buttons, Pet/Master/Close intents and
