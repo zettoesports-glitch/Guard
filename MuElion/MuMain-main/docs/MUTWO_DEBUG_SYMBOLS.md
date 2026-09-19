@@ -1047,3 +1047,45 @@ a presentation-neutral HUD state snapshot, updates gauges/text/selection/skill
 cooldowns, and exposes button intent through a one-shot `Action`. The
 existing legacy `CNewUIMainFrameWindow` remains the source of game rules and
 network/UI toggles until a separate read-only bridge is added and validated.
+
+
+## Top menu layer reconstruction
+
+The Debug executable confirms the full document path
+`Data/UI/PC/HUD/top_menu.rml`, the exact nine design keys
+`TopMenu-ResizeStageHeight`, `TopMenu-SmallStageScale`,
+`TopMenu-FrameWidth`, `TopMenu-FrameHeight`,
+`TopMenu-OptionRect`, `TopMenu-ActionRect`,
+`TopMenu-ReferenceWidth`, `TopMenu-ReferenceHeight`, and
+`TopMenu-TooltipOffset`.
+
+Direct DOM binding disassembly at `0x140668a0a` recovers the eight element
+pointers in order:
+
+```text
++0x08 top-menu
++0x10 top-menu-wing-back
++0x18 top-menu-wing-controls
++0x20 top-menu-map-frame
++0x28 top-menu-map-name
++0x30 top-menu-position
++0x38 top-menu-option
++0x40 top-menu-action
+```
+
+The state synchronization body around `0x140659895` gives three independent
+booleans in the incoming state:
+
+- option-button enabled;
+- helper/action running state;
+- action-button enabled.
+
+The running boolean controls the exact mutually exclusive CSS classes
+`start` and `stop` on `top-menu-action`. The enabled booleans are
+forwarded to the two embedded button controls independently.
+
+The reconstruction implements `RmlTopMenuLayer` as a presentation controller
+with map name/coordinates, recovered scaling design inputs, two embedded
+`RmlMuButton` controls, exact start/stop class behavior, and one-shot
+`OpenOptions` / `ToggleHelper` actions. Game-side MU Helper behavior stays
+outside this layer.

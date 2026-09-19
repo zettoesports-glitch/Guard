@@ -129,6 +129,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - reconstructed `RmlMainFrameLayer` with exact main-frame document path,
   nine design keys, recovered DOM IDs/state classes, gauges, six skill icons,
   scale layout and seven button intents
+- reconstructed top-menu layer with exact document/DOM contract, nine design
+  keys, independent option/action enable state and `start`/`stop` helper state
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle
