@@ -185,7 +185,7 @@ a license file, so UI documents are reconstructed independently.
       recovered
 - [ ] Replace the remaining neutral RML skeletons screen-by-screen with
       behaviorally reconstructed UI from observable behavior and the existing
-      MuMain UI (Inventory + Expanded Inventory are now materialized) (Chat, Main Frame, Top Menu, Character/Pet, Command Window and Inventory are now materialized functionally)
+      MuMain UI (Inventory + Expanded Inventory are now materialized) (Chat, Main Frame, Top Menu, Character/Pet, Command Window, Inventory and MU Helper are now materialized functionally)
 
 ## Current confidence boundary
 
@@ -248,3 +248,8 @@ and differential runtime tests succeed.
 - reconstructed `RmlPrivateStorePanel` with seller/buyer modes, 32-slot
   grid, recovered drop colors, editable shop name and semantic open/close/
   slot actions while keeping price validation and networking in legacy code
+
+- reconstructed `RmlMuHelperPanel` main control surface with three tabs,
+  range selectors, major helper toggles, six assigned skills, ten available
+  skill choices, extra-item list/scroll and reset/save/close/configure intents
+  while preserving legacy MUHelper serialization and game-side behavior

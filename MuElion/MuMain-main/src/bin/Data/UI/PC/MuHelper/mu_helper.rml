@@ -3,26 +3,24 @@
     <meta name="mu-design-MuHelper-Width" content="327"/>
     <meta name="mu-design-MuHelper-Height" content="639"/>
     <meta name="mu-design-MuHelper-SidePanelWidth" content="306"/>
-    <meta name="mu-design-MuHelper-ReferenceWidth" content="640"/>
-    <meta name="mu-design-MuHelper-ReferenceHeight" content="480"/>
     <title>Reconstructed MU Helper</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
     <link type="text/rcss" href="../ui_assets.rcss"/>
     <link type="text/rcss" href="mu_helper.rcss"/>
 </head>
 <body class="mu-modern-document">
-<div id="mu-helper">
-    <div class="helper-background"></div>
-    <div id="text-title" class="helper-title">MU Helper</div>
-    <div id="helper-drag"></div>
-    <div id="helper-close" class="mu-button helper-close">X</div>
+    <div id="mu-helper" class="mu-helper">
+        <div class="helper-background"/>
+        <div id="helper-drag" class="helper-drag"/>
+        <div id="helper-close" class="mu-button helper-close">X</div>
 
-    <div id="tab-hunt" class="mu-button helper-tab selected">Hunt</div>
-    <div id="tab-item" class="mu-button helper-tab">Item</div>
-    <div id="tab-other" class="mu-button helper-tab">Other</div>
+        <div id="tab-hunt" class="mu-button helper-tab tab-hunt">Hunt</div>
+        <div id="tab-item" class="mu-button helper-tab tab-item">Item</div>
+        <div id="tab-other" class="mu-button helper-tab tab-other">Other</div>
 
-    <div id="page-hunt" class="helper-page">
-        <div class="range-label">Hunting range</div>
-        <div class="range-row">
+        <div id="page-hunt" class="helper-page">
+            <div class="section-title range-title">Hunting range</div>
+            <div class="range-buttons hunt-ranges">
             <div id="hunt-range-1" class="mu-button helper-range">1</div>
             <div id="hunt-range-2" class="mu-button helper-range">2</div>
             <div id="hunt-range-3" class="mu-button helper-range">3</div>
@@ -31,53 +29,39 @@
             <div id="hunt-range-6" class="mu-button helper-range">6</div>
             <div id="hunt-range-7" class="mu-button helper-range">7</div>
             <div id="hunt-range-8" class="mu-button helper-range">8</div>
+            </div>
+
+            <div id="fallback-basic" class="mu-button helper-toggle">Basic attack fallback</div>
+            <div id="long-counter" class="mu-button helper-toggle">Long range counter</div>
+            <div id="return-position" class="mu-button helper-toggle">Return to position</div>
+            <input id="return-seconds" class="mu-text-input helper-input" type="text" maxlength="4"/>
+
+            <div id="use-potion" class="mu-button helper-toggle">Use potion</div>
+            <div id="potion-settings" class="mu-button helper-gear">...</div>
+            <div id="support-party" class="mu-button helper-toggle">Support party</div>
+            <div id="party-settings" class="mu-button helper-gear">...</div>
+            <div id="auto-heal" class="mu-button helper-toggle">Auto heal</div>
+            <div id="drain-life" class="mu-button helper-toggle">Drain life</div>
+            <div id="buff-duration" class="mu-button helper-toggle">Buff duration</div>
+            <div id="combo" class="mu-button helper-toggle">Combo</div>
+            <div id="use-dark-raven" class="mu-button helper-toggle">Dark raven</div>
+
+            <div class="assigned-title">Assigned skills</div>
+            <div class="assigned-skills">
+            <div id="assigned-skill-0" class="mu-item-slot helper-slot"/>
+            <div id="assigned-skill-1" class="mu-item-slot helper-slot"/>
+            <div id="assigned-skill-2" class="mu-item-slot helper-slot"/>
+            <div id="assigned-skill-3" class="mu-item-slot helper-slot"/>
+            <div id="assigned-skill-4" class="mu-item-slot helper-slot"/>
+            <div id="assigned-skill-5" class="mu-item-slot helper-slot"/>
+            </div>
+            <div id="skill-1-settings" class="mu-button helper-gear skill-1-settings">1</div>
+            <div id="skill-2-settings" class="mu-button helper-gear skill-2-settings">2</div>
         </div>
-        <label class="check-row"><input id="fallback-basic" type="checkbox"/>Regular attack fallback</label>
-        <label class="check-row"><input id="long-counter" type="checkbox"/>Long-range counter</label>
-        <label class="check-row"><input id="return-position" type="checkbox"/>Return to original position</label>
-        <input id="return-seconds" class="mu-text-input numeric" type="text" maxlength="4"/>
 
-        <label class="check-row right"><input id="use-potion" type="checkbox"/>Use potion</label>
-        <div id="potion-settings" class="mu-button gear">...</div>
-        <label class="check-row right r2"><input id="auto-heal" type="checkbox"/>Auto heal</label>
-        <label class="check-row right r3"><input id="drain-life" type="checkbox"/>Drain life</label>
-        <label class="check-row right r4"><input id="support-party" type="checkbox"/>Support party</label>
-        <div id="party-settings" class="mu-button gear party-gear">...</div>
-
-        <div class="skill-labels">Assigned skills</div>
-        <div id="assigned-skill-0" class="mu-item-slot assigned s0"></div>
-        <div id="assigned-skill-1" class="mu-item-slot assigned s1"></div>
-        <div id="assigned-skill-2" class="mu-item-slot assigned s2"></div>
-        <div id="assigned-skill-3" class="mu-item-slot assigned s3"></div>
-        <div id="assigned-skill-4" class="mu-item-slot assigned s4"></div>
-        <div id="assigned-skill-5" class="mu-item-slot assigned s5"></div>
-        <div id="skill-1-settings" class="mu-button gear skill1-gear">...</div>
-        <div id="skill-2-settings" class="mu-button gear skill2-gear">...</div>
-
-        <label class="check-row lower"><input id="combo" type="checkbox"/>Use combo</label>
-        <label class="check-row lower l2"><input id="use-dark-raven" type="checkbox"/>Use Dark Raven</label>
-        <label class="radio-row"><input id="dark-mode-0" type="radio" name="dark-mode"/>Cease</label>
-        <label class="radio-row d2"><input id="dark-mode-1" type="radio" name="dark-mode"/>Auto</label>
-        <label class="radio-row d3"><input id="dark-mode-2" type="radio" name="dark-mode"/>Together</label>
-        <label class="check-row lower l3"><input id="buff-duration" type="checkbox"/>Buff duration</label>
-
-        <div id="skill-picker">
-            <div id="available-skill-0" class="mu-item-slot available a0"></div>
-            <div id="available-skill-1" class="mu-item-slot available a1"></div>
-            <div id="available-skill-2" class="mu-item-slot available a2"></div>
-            <div id="available-skill-3" class="mu-item-slot available a3"></div>
-            <div id="available-skill-4" class="mu-item-slot available a4"></div>
-            <div id="available-skill-5" class="mu-item-slot available a5"></div>
-            <div id="available-skill-6" class="mu-item-slot available a6"></div>
-            <div id="available-skill-7" class="mu-item-slot available a7"></div>
-            <div id="available-skill-8" class="mu-item-slot available a8"></div>
-            <div id="available-skill-9" class="mu-item-slot available a9"></div>
-        </div>
-    </div>
-
-    <div id="page-item" class="helper-page">
-        <div class="range-label">Obtaining range</div>
-        <div class="range-row">
+        <div id="page-item" class="helper-page">
+            <div class="section-title range-title">Obtaining range</div>
+            <div class="range-buttons obtain-ranges">
             <div id="obtain-range-1" class="mu-button helper-range">1</div>
             <div id="obtain-range-2" class="mu-button helper-range">2</div>
             <div id="obtain-range-3" class="mu-button helper-range">3</div>
@@ -86,42 +70,57 @@
             <div id="obtain-range-6" class="mu-button helper-range">6</div>
             <div id="obtain-range-7" class="mu-button helper-range">7</div>
             <div id="obtain-range-8" class="mu-button helper-range">8</div>
-        </div>
-        <label class="item-check"><input id="repair-item" type="checkbox"/>Repair items</label>
-        <label class="item-check i2"><input id="pick-all" type="checkbox"/>Pick all</label>
-        <label class="item-check i3"><input id="pick-selected" type="checkbox"/>Pick selected</label>
-        <label class="item-check i4"><input id="pick-jewel" type="checkbox"/>Jewels</label>
-        <label class="item-check i5"><input id="pick-ancient" type="checkbox"/>Ancient</label>
-        <label class="item-check i6"><input id="pick-zen" type="checkbox"/>Zen</label>
-        <label class="item-check i7"><input id="pick-excellent" type="checkbox"/>Excellent</label>
-        <label class="item-check i8"><input id="pick-extra" type="checkbox"/>Extra items</label>
+            </div>
+            <div id="repair-item" class="mu-button helper-toggle">Repair item</div>
+            <div id="pick-all" class="mu-button helper-toggle">Pick all</div>
+            <div id="pick-selected" class="mu-button helper-toggle">Selected items</div>
+            <div id="pick-jewel" class="mu-button helper-toggle">Jewel</div>
+            <div id="pick-ancient" class="mu-button helper-toggle">Ancient</div>
+            <div id="pick-zen" class="mu-button helper-toggle">Zen</div>
+            <div id="pick-excellent" class="mu-button helper-toggle">Excellent</div>
+            <div id="pick-extra" class="mu-button helper-toggle">Extra item</div>
 
-        <input id="item-name" class="mu-text-input item-name" type="text" maxlength="32"/>
-        <div id="item-add" class="mu-button item-action">Add</div>
-        <div id="item-list">
-            <div id="item-row-0" class="mu-button item-row"></div>
-            <div id="item-row-1" class="mu-button item-row"></div>
-            <div id="item-row-2" class="mu-button item-row"></div>
-            <div id="item-row-3" class="mu-button item-row"></div>
-            <div id="item-row-4" class="mu-button item-row"></div>
+            <input id="item-name" class="mu-text-input item-name" type="text" maxlength="32"/>
+            <div id="item-add" class="mu-button item-action add">Add</div>
+            <div id="item-list" class="item-list">
+            <div id="item-row-0" class="mu-button item-row"/>
+            <div id="item-row-1" class="mu-button item-row"/>
+            <div id="item-row-2" class="mu-button item-row"/>
+            <div id="item-row-3" class="mu-button item-row"/>
+            <div id="item-row-4" class="mu-button item-row"/>
+            </div>
+            <div id="item-scroll" class="mu-scrollbar helper-scroll">
+                <div class="mu-scrollbar-track"/>
+                <div class="mu-scrollbar-button scroll-down">v</div>
+                <div class="mu-scrollbar-button scroll-up">^</div>
+                <div class="mu-scrollbar-thumb"/>
+            </div>
+            <div id="item-delete" class="mu-button item-action delete">Delete</div>
         </div>
-        <div id="item-scroll" class="mu-scrollbar">
-            <div class="mu-scrollbar-track"></div>
-            <div class="mu-scrollbar-button down">v</div>
-            <div class="mu-scrollbar-button up">^</div>
-            <div class="mu-scrollbar-thumb"></div>
+
+        <div id="page-other" class="helper-page">
+            <div id="accept-friend" class="mu-button helper-toggle">Auto accept friend</div>
+            <div id="accept-guild" class="mu-button helper-toggle">Auto accept guild</div>
+            <div id="self-defense" class="mu-button helper-toggle">Self defense</div>
+            <div class="manual-yield-label">Manual yield seconds</div>
+            <input id="manual-yield-seconds" class="mu-text-input manual-yield" type="text" maxlength="3"/>
         </div>
-        <div id="item-delete" class="mu-button item-action delete">Delete</div>
+
+        <div id="skill-picker" class="skill-picker">
+            <div id="available-skill-0" class="mu-item-slot available-slot"/>
+            <div id="available-skill-1" class="mu-item-slot available-slot"/>
+            <div id="available-skill-2" class="mu-item-slot available-slot"/>
+            <div id="available-skill-3" class="mu-item-slot available-slot"/>
+            <div id="available-skill-4" class="mu-item-slot available-slot"/>
+            <div id="available-skill-5" class="mu-item-slot available-slot"/>
+            <div id="available-skill-6" class="mu-item-slot available-slot"/>
+            <div id="available-skill-7" class="mu-item-slot available-slot"/>
+            <div id="available-skill-8" class="mu-item-slot available-slot"/>
+            <div id="available-skill-9" class="mu-item-slot available-slot"/>
+        </div>
+
+        <div id="helper-reset" class="mu-button helper-bottom reset">Reset</div>
+        <div id="helper-save" class="mu-button helper-bottom save">Save</div>
     </div>
-
-    <div id="page-other" class="helper-page">
-        <label class="other-check"><input id="accept-friend" type="checkbox"/>Accept friend requests</label>
-        <label class="other-check o2"><input id="accept-guild" type="checkbox"/>Accept guild requests</label>
-        <label class="other-check o3"><input id="self-defense" type="checkbox"/>Self defense</label>
-    </div>
-
-    <div id="helper-reset" class="mu-button helper-bottom reset">Reset</div>
-    <div id="helper-save" class="mu-button helper-bottom save">Save</div>
-</div>
 </body>
 </rml>

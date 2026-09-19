@@ -8,23 +8,18 @@
 #include "UI/Modern/RmlMuSlot.h"
 #include "UI/Modern/RmlUiDesign.h"
 
-#include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Core.h>
 #include <RmlUi/Core/Element.h>
 #include <RmlUi/Core/ElementDocument.h>
 #include <RmlUi/Core/FileInterface.h>
-#include <RmlUi/Core/StringUtilities.h>
 #include <RmlUi/Core/StreamMemory.h>
 #include <RmlUi/Core/Elements/ElementFormControlInput.h>
 
 #include <algorithm>
 #include <array>
-#include <charconv>
-#include <memory>
+#include <cstdio>
 #include <sstream>
-#include <string_view>
 #include <utility>
-#include <vector>
 
 namespace UI::Modern::PC::MuHelper
 {
@@ -34,6 +29,91 @@ namespace
 constexpr const char* kDocumentPath =
     "Data/UI/PC/MuHelper/mu_helper.rml";
 
+constexpr std::array<const char*, 21> kOptionIds{
+    "fallback-basic",
+    "long-counter",
+    "return-position",
+    "use-potion",
+    "support-party",
+    "auto-heal",
+    "drain-life",
+    "buff-duration",
+    "combo",
+    "use-dark-raven",
+    "repair-item",
+    "pick-all",
+    "pick-selected",
+    "pick-jewel",
+    "pick-ancient",
+    "pick-zen",
+    "pick-excellent",
+    "pick-extra",
+    "accept-friend",
+    "accept-guild",
+    "self-defense",
+};
+
+constexpr std::array<RmlMuHelperPanel::Option, 21> kOptions{
+    RmlMuHelperPanel::Option::FallbackBasic,
+    RmlMuHelperPanel::Option::LongCounter,
+    RmlMuHelperPanel::Option::ReturnPosition,
+    RmlMuHelperPanel::Option::UsePotion,
+    RmlMuHelperPanel::Option::SupportParty,
+    RmlMuHelperPanel::Option::AutoHeal,
+    RmlMuHelperPanel::Option::DrainLife,
+    RmlMuHelperPanel::Option::BuffDuration,
+    RmlMuHelperPanel::Option::UseCombo,
+    RmlMuHelperPanel::Option::UseDarkRaven,
+    RmlMuHelperPanel::Option::RepairItem,
+    RmlMuHelperPanel::Option::PickAll,
+    RmlMuHelperPanel::Option::PickSelected,
+    RmlMuHelperPanel::Option::PickJewel,
+    RmlMuHelperPanel::Option::PickAncient,
+    RmlMuHelperPanel::Option::PickZen,
+    RmlMuHelperPanel::Option::PickExcellent,
+    RmlMuHelperPanel::Option::PickExtra,
+    RmlMuHelperPanel::Option::AcceptFriend,
+    RmlMuHelperPanel::Option::AcceptGuild,
+    RmlMuHelperPanel::Option::SelfDefense,
+};
+
+Rml::String PixelValue(float value)
+{
+    std::array<char, 64> buffer{};
+    std::snprintf(
+        buffer.data(), buffer.size(), "%.3fpx",
+        static_cast<double>(value));
+    return Rml::String(buffer.data());
+}
+
+Rml::String ScaleValue(float value)
+{
+    std::array<char, 64> buffer{};
+    std::snprintf(
+        buffer.data(), buffer.size(), "scale(%.6f)",
+        static_cast<double>(value));
+    return Rml::String(buffer.data());
+}
+
+template <typename T>
+bool ParseScalar(
+    const RmlUiDesign::Values& values,
+    const char* key,
+    T& output)
+{
+    const auto it = values.find(key);
+    if (it == values.end())
+        return false;
+
+    std::istringstream stream(it->second);
+    T parsed{};
+    if (!(stream >> parsed))
+        return false;
+
+    output = parsed;
+    return true;
+}
+
 RmlUiDesign::Values LoadDesignValues()
 {
     Rml::FileInterface* files = Rml::GetFileInterface();
@@ -41,7 +121,8 @@ RmlUiDesign::Values LoadDesignValues()
         return {};
 
     Rml::String contents;
-    if (!files->LoadFile(kDocumentPath, contents) || contents.empty())
+    if (!files->LoadFile(kDocumentPath, contents) ||
+        contents.empty())
         return {};
 
     Rml::StreamMemory stream(
@@ -50,137 +131,36 @@ RmlUiDesign::Values LoadDesignValues()
     return RmlUiDesign::Parse(&stream);
 }
 
-template <typename T>
-bool ParseScalar(const RmlUiDesign::Values& values,
-                 const char* key, T& output)
-{
-    const auto it = values.find(key);
-    if (it == values.end())
-        return false;
-    std::istringstream stream(it->second);
-    T value{};
-    if (!(stream >> value))
-        return false;
-    output = value;
-    return true;
-}
-
-Rml::Element* ElementById(
-    Rml::ElementDocument* document, const char* id)
+Rml::Element* RequiredElement(
+    Rml::ElementDocument* document,
+    const Rml::String& id)
 {
     return document ? document->GetElementById(id) : nullptr;
 }
 
-Rml::ElementFormControlInput* InputById(
-    Rml::ElementDocument* document, const char* id)
+Rml::ElementFormControlInput* InputElement(
+    Rml::ElementDocument* document,
+    const char* id)
 {
     return dynamic_cast<Rml::ElementFormControlInput*>(
-        ElementById(document, id));
+        RequiredElement(document, id));
 }
 
-void SetChecked(Rml::ElementDocument* document,
-                const char* id, bool checked)
-{
-    if (Rml::Element* element = ElementById(document, id))
-    {
-        if (checked)
-            element->SetAttribute("checked", "");
-        else
-            element->RemoveAttribute("checked");
-    }
-}
-
-bool IsChecked(Rml::ElementDocument* document, const char* id)
-{
-    if (Rml::Element* element = ElementById(document, id))
-        return element->HasAttribute("checked");
-    return false;
-}
-
-int ParseInt(Rml::ElementFormControlInput* input, int fallback)
+int ParseInputInt(
+    Rml::ElementFormControlInput* input,
+    int fallback,
+    int minimum,
+    int maximum)
 {
     if (!input)
         return fallback;
 
-    const std::string value = input->GetValue();
-    int parsed = fallback;
-    const auto [end, error] = std::from_chars(
-        value.data(), value.data() + value.size(), parsed);
-    if (error != std::errc{} || end != value.data() + value.size())
-        return fallback;
-    return parsed;
-}
+    std::istringstream stream(input->GetValue());
+    int value = fallback;
+    if (!(stream >> value))
+        value = fallback;
 
-std::wstring Utf8ToWide(const std::string& input)
-{
-    std::wstring result;
-    for (const char* p = input.data(), *end = p + input.size(); p < end;)
-    {
-        const Rml::Character codePoint =
-            Rml::StringUtilities::ToCharacter(p, end);
-        const std::size_t bytes =
-            std::max<std::size_t>(1, Rml::StringUtilities::BytesUTF8(codePoint));
-        p = std::min(end, p + bytes);
-
-        if constexpr (sizeof(wchar_t) == 2)
-        {
-            if (codePoint <= 0xffff)
-            {
-                result.push_back(static_cast<wchar_t>(codePoint));
-            }
-            else
-            {
-                const char32_t value =
-                    static_cast<char32_t>(codePoint) - 0x10000u;
-                result.push_back(static_cast<wchar_t>(
-                    0xd800u + (value >> 10u)));
-                result.push_back(static_cast<wchar_t>(
-                    0xdc00u + (value & 0x3ffu)));
-            }
-        }
-        else
-        {
-            result.push_back(static_cast<wchar_t>(codePoint));
-        }
-    }
-    return result;
-}
-
-std::string WideToUtf8(const std::wstring& input)
-{
-    std::string result;
-    for (std::size_t i = 0; i < input.size(); ++i)
-    {
-        char32_t codePoint = static_cast<char32_t>(input[i]);
-        if constexpr (sizeof(wchar_t) == 2)
-        {
-            const std::uint16_t first =
-                static_cast<std::uint16_t>(input[i]);
-            if (first >= 0xd800u && first <= 0xdbffu &&
-                i + 1 < input.size())
-            {
-                const std::uint16_t second =
-                    static_cast<std::uint16_t>(input[i + 1]);
-                if (second >= 0xdc00u && second <= 0xdfffu)
-                {
-                    codePoint =
-                        0x10000u +
-                        ((static_cast<char32_t>(first - 0xd800u) << 10u) |
-                         static_cast<char32_t>(second - 0xdc00u));
-                    ++i;
-                }
-            }
-        }
-        result += Rml::StringUtilities::ToUTF8(
-            static_cast<Rml::Character>(codePoint));
-    }
-    return result;
-}
-
-void SetEncodedText(Rml::Element* element, const std::string& text)
-{
-    if (element)
-        element->SetInnerRML(Rml::StringUtilities::EncodeRml(text));
+    return std::clamp(value, minimum, maximum);
 }
 
 } // namespace
@@ -193,11 +173,12 @@ public:
         float width = 327.0f;
         float height = 639.0f;
         float sidePanelWidth = 306.0f;
-        float referenceWidth = 640.0f;
-        float referenceHeight = 480.0f;
     };
 
-    Impl() : host_(kDocumentPath) {}
+    Impl()
+        : host_(kDocumentPath)
+    {
+    }
 
     ~Impl()
     {
@@ -221,229 +202,397 @@ public:
             return false;
 
         ReadDesign();
-        if (!Bind())
+        if (!BindElements())
         {
             Release();
             return false;
         }
 
-        visible_ = show;
-        ApplyMetrics();
-        ApplyConfigToDom();
-        ApplyTab();
-        RefreshExtraItems(true);
-        return true;
+        if (show)
+            state_.visible = true;
+        return ApplyState(state_);
     }
 
     [[nodiscard]] bool Show()
     {
         if (!host_.IsLoaded() && !Load(false))
             return false;
-        visible_ = true;
-        return host_.Show();
+
+        state_.visible = true;
+        const bool shown = host_.Show();
+        if (shown)
+            (void)ApplyState(state_);
+        return shown;
     }
 
     [[nodiscard]] bool Hide()
     {
-        visible_ = false;
+        state_.visible = false;
+        if (root_)
+            root_->SetProperty("display", "none");
         return host_.Hide();
     }
 
     void Release()
     {
         mover_.Unbind();
-        itemScroll_.Unbind();
+        closeButton_.Unbind();
+        resetButton_.Unbind();
+        saveButton_.Unbind();
+        itemAddButton_.Unbind();
+        itemDeleteButton_.Unbind();
+        potionConfigButton_.Unbind();
+        partyConfigButton_.Unbind();
+        skillConfigButtons_[0].Unbind();
+        skillConfigButtons_[1].Unbind();
 
-        for (RmlMuButton* button : Buttons())
-            button->Unbind();
-
+        for (auto& button : tabButtons_)
+            button.Unbind();
         for (auto& button : huntRangeButtons_)
-            if (button) button->Unbind();
+            button.Unbind();
         for (auto& button : obtainRangeButtons_)
-            if (button) button->Unbind();
+            button.Unbind();
+        for (auto& button : optionButtons_)
+            button.Unbind();
         for (auto& button : itemRowButtons_)
-            if (button) button->Unbind();
+            button.Unbind();
         for (auto& slot : assignedSlots_)
-            if (slot) slot->Unbind();
+            slot.Unbind();
         for (auto& slot : availableSlots_)
-            if (slot) slot->Unbind();
+            slot.Unbind();
 
-        huntRangeButtons_.clear();
-        obtainRangeButtons_.clear();
-        itemRowButtons_.clear();
-        assignedSlots_.clear();
-        availableSlots_.clear();
+        itemScroll_.Unbind();
 
         root_ = nullptr;
         drag_ = nullptr;
-        itemInput_ = nullptr;
-        returnSecondsInput_ = nullptr;
-        document_ = nullptr;
-        host_.Release();
+        pageHunt_ = nullptr;
+        pageItem_ = nullptr;
+        pageOther_ = nullptr;
+        itemList_ = nullptr;
+        skillPicker_ = nullptr;
+        returnSeconds_ = nullptr;
+        manualYieldSeconds_ = nullptr;
+        itemName_ = nullptr;
+        itemRowElements_.fill(nullptr);
+        assignedSlotElements_.fill(nullptr);
+        availableSlotElements_.fill(nullptr);
+        optionElements_.fill(nullptr);
 
+        document_ = nullptr;
         pendingAction_.reset();
-        pendingSkillSlot_.reset();
+        host_.Release();
     }
 
     [[nodiscard]] bool IsLoaded() const noexcept
     {
-        return host_.IsLoaded() && document_;
+        return host_.IsLoaded() && document_ != nullptr;
     }
 
-    void SetConfig(const MUHelper::ConfigData& config)
+    [[nodiscard]] bool ApplyState(const State& state)
     {
-        config_ = config;
-        extraItemsDirty_ = true;
-        ApplyConfigToDom();
-    }
+        state_ = state;
+        state_.huntRange = std::clamp(state_.huntRange, 1, 8);
+        state_.obtainingRange =
+            std::clamp(state_.obtainingRange, 1, 8);
 
-    [[nodiscard]] MUHelper::ConfigData GetConfig() const
-    {
-        return config_;
-    }
+        if (!IsLoaded())
+            return false;
 
-    void SetTab(Tab tab)
-    {
-        if (tab_ == tab)
-            return;
-        tab_ = tab;
-        ApplyTab();
-    }
+        const bool visible =
+            state_.visible &&
+            state_.viewportWidth > 0 &&
+            state_.viewportHeight > 0;
 
-    [[nodiscard]] Tab GetTab() const noexcept
-    {
-        return tab_;
-    }
+        root_->SetProperty("display", visible ? "block" : "none");
+        if (!visible)
+            return true;
 
-    void SetAssignedSkillFrame(std::size_t index, int frame)
-    {
-        if (index < assignedSlots_.size() && assignedSlots_[index])
-            assignedSlots_[index]->SetIconFrame(frame);
-    }
+        ApplyLayout();
+        SyncTabs();
+        SyncRanges();
+        SyncOptions();
+        SyncInputs();
+        SyncSkills();
+        SyncExtraItems(true);
 
-    void SetAvailableSkillFrame(std::size_t index, int frame)
-    {
-        if (index < availableSlots_.size() && availableSlots_[index])
-            availableSlots_[index]->SetIconFrame(frame);
+        document_->UpdateDocument();
+        return true;
     }
 
     [[nodiscard]] bool Update()
     {
-        if (!document_)
+        if (!IsLoaded())
             return false;
 
         bool changed = false;
-        for (RmlMuButton* button : Buttons())
-            changed |= button->Update();
 
-        changed |= PollRangeButtons();
-        changed |= PollItemRows();
-        changed |= PollSkillSlots();
+        changed |= closeButton_.Update();
+        changed |= resetButton_.Update();
+        changed |= saveButton_.Update();
+        changed |= itemAddButton_.Update();
+        changed |= itemDeleteButton_.Update();
+        changed |= potionConfigButton_.Update();
+        changed |= partyConfigButton_.Update();
+        changed |= skillConfigButtons_[0].Update();
+        changed |= skillConfigButtons_[1].Update();
 
-        if (tabHuntButton_.ConsumeClicked())
+        for (auto& button : tabButtons_)
+            changed |= button.Update();
+        for (auto& button : huntRangeButtons_)
+            changed |= button.Update();
+        for (auto& button : obtainRangeButtons_)
+            changed |= button.Update();
+        for (auto& button : optionButtons_)
+            changed |= button.Update();
+        for (auto& button : itemRowButtons_)
+            changed |= button.Update();
+        for (auto& slot : assignedSlots_)
+            changed |= slot.Update();
+        for (auto& slot : availableSlots_)
+            changed |= slot.Update();
+
+        for (std::size_t i = 0; i < tabButtons_.size(); ++i)
         {
-            tab_ = Tab::Hunt;
-            ApplyTab();
+            if (!tabButtons_[i].ConsumeClicked())
+                continue;
+
+            state_.tab = static_cast<Tab>(i);
+            pendingAction_ = Action{
+                ActionType::SelectTab,
+                Option::FallbackBasic,
+                i,
+                static_cast<int>(i),
+                false,
+                {}};
+            SyncTabs();
             changed = true;
         }
-        if (tabItemButton_.ConsumeClicked())
+
+        for (std::size_t i = 0; i < huntRangeButtons_.size(); ++i)
         {
-            tab_ = Tab::Item;
-            ApplyTab();
+            if (!huntRangeButtons_[i].ConsumeClicked())
+                continue;
+
+            state_.huntRange = static_cast<int>(i + 1u);
+            pendingAction_ = Action{
+                ActionType::SetHuntRange,
+                Option::FallbackBasic,
+                i,
+                state_.huntRange,
+                false,
+                {}};
+            SyncRanges();
             changed = true;
         }
-        if (tabOtherButton_.ConsumeClicked())
+
+        for (std::size_t i = 0; i < obtainRangeButtons_.size(); ++i)
         {
-            tab_ = Tab::Other;
-            ApplyTab();
+            if (!obtainRangeButtons_[i].ConsumeClicked())
+                continue;
+
+            state_.obtainingRange = static_cast<int>(i + 1u);
+            pendingAction_ = Action{
+                ActionType::SetObtainingRange,
+                Option::FallbackBasic,
+                i,
+                state_.obtainingRange,
+                false,
+                {}};
+            SyncRanges();
+            changed = true;
+        }
+
+        for (std::size_t i = 0; i < optionButtons_.size(); ++i)
+        {
+            if (!optionButtons_[i].ConsumeClicked())
+                continue;
+
+            const Option option = kOptions[i];
+            const bool value = !GetOption(option);
+            SetOption(option, value);
+            pendingAction_ = Action{
+                ActionType::ToggleOption,
+                option,
+                i,
+                0,
+                value,
+                {}};
+            SyncOptions();
+            changed = true;
+        }
+
+        if (closeButton_.ConsumeClicked())
+        {
+            pendingAction_ = Action{ActionType::Close};
             changed = true;
         }
 
         if (resetButton_.ConsumeClicked())
         {
-            pendingAction_ = Action::Reset;
+            pendingAction_ = Action{ActionType::Reset};
             changed = true;
         }
+
         if (saveButton_.ConsumeClicked())
         {
-            PullConfigFromDom();
-            pendingAction_ = Action::Save;
-            changed = true;
-        }
-        if (closeButton_.ConsumeClicked())
-        {
-            pendingAction_ = Action::Close;
-            changed = true;
-        }
-        if (potionSettingsButton_.ConsumeClicked())
-            pendingAction_ = Action::PotionSettings;
-        if (skill1SettingsButton_.ConsumeClicked())
-            pendingAction_ = Action::Skill1Settings;
-        if (skill2SettingsButton_.ConsumeClicked())
-            pendingAction_ = Action::Skill2Settings;
-        if (partySettingsButton_.ConsumeClicked())
-            pendingAction_ = Action::PartySettings;
+            state_.maxSecondsAway =
+                ParseInputInt(returnSeconds_, state_.maxSecondsAway, 0, 9999);
+            state_.manualYieldSeconds =
+                ParseInputInt(
+                    manualYieldSeconds_,
+                    state_.manualYieldSeconds,
+                    0,
+                    999);
 
-        if (itemAddButton_.ConsumeClicked() && itemInput_)
+            pendingAction_ = Action{ActionType::Save};
+            changed = true;
+        }
+
+        if (potionConfigButton_.ConsumeClicked())
         {
-            const std::wstring item = Utf8ToWide(itemInput_->GetValue());
-            if (!item.empty())
+            pendingAction_ =
+                Action{ActionType::ConfigurePotion};
+            changed = true;
+        }
+
+        for (std::size_t i = 0; i < skillConfigButtons_.size(); ++i)
+        {
+            if (skillConfigButtons_[i].ConsumeClicked())
             {
-                config_.aExtraItems.insert(item);
-                itemInput_->SetValue("");
-                extraItemsDirty_ = true;
+                pendingAction_ = Action{
+                    ActionType::ConfigureSkill,
+                    Option::FallbackBasic,
+                    i + 1u,
+                    static_cast<int>(i + 1u),
+                    false,
+                    {}};
+                changed = true;
+            }
+        }
+
+        if (partyConfigButton_.ConsumeClicked())
+        {
+            pendingAction_ =
+                Action{ActionType::ConfigureParty};
+            changed = true;
+        }
+
+        for (std::size_t i = 0; i < assignedSlots_.size(); ++i)
+        {
+            if (assignedSlots_[i].ConsumeClicked())
+            {
+                selectedSkillSlot_ = i;
+                pendingAction_ = Action{
+                    ActionType::SelectAssignedSkill,
+                    Option::FallbackBasic,
+                    i,
+                    state_.assignedSkills[i],
+                    false,
+                    {}};
+                SyncSkills();
+                changed = true;
+            }
+
+            if (assignedSlots_[i].ConsumeSecondaryClicked())
+            {
+                pendingAction_ = Action{
+                    ActionType::RemoveAssignedSkill,
+                    Option::FallbackBasic,
+                    i,
+                    state_.assignedSkills[i],
+                    false,
+                    {}};
+                changed = true;
+            }
+        }
+
+        const std::size_t availableCount = std::min(
+            availableSlots_.size(), state_.availableSkills.size());
+        for (std::size_t i = 0; i < availableCount; ++i)
+        {
+            if (availableSlots_[i].ConsumeClicked())
+            {
+                pendingAction_ = Action{
+                    ActionType::ChooseAvailableSkill,
+                    Option::FallbackBasic,
+                    selectedSkillSlot_,
+                    state_.availableSkills[i],
+                    false,
+                    {}};
+                changed = true;
+            }
+        }
+
+        if (itemAddButton_.ConsumeClicked() && itemName_)
+        {
+            const std::string value = itemName_->GetValue();
+            if (!value.empty())
+            {
+                pendingAction_ = Action{
+                    ActionType::AddExtraItem,
+                    Option::FallbackBasic,
+                    0,
+                    0,
+                    false,
+                    value};
+                itemName_->SetValue("");
+                changed = true;
+            }
+        }
+
+        for (std::size_t i = 0; i < itemRowButtons_.size(); ++i)
+        {
+            if (!itemRowButtons_[i].ConsumeClicked())
+                continue;
+
+            const std::size_t absolute = itemScrollStart_ + i;
+            if (absolute < state_.extraItems.size())
+            {
+                selectedExtraItem_ = absolute;
+                SyncExtraItems(false);
                 changed = true;
             }
         }
 
         if (itemDeleteButton_.ConsumeClicked() &&
-            selectedExtraItem_ < config_.aExtraItems.size())
+            selectedExtraItem_ &&
+            *selectedExtraItem_ < state_.extraItems.size())
         {
-            auto it = config_.aExtraItems.begin();
-            std::advance(it, static_cast<std::ptrdiff_t>(selectedExtraItem_));
-            config_.aExtraItems.erase(it);
-            if (selectedExtraItem_ >= config_.aExtraItems.size() &&
-                selectedExtraItem_ > 0)
-                --selectedExtraItem_;
-            extraItemsDirty_ = true;
+            pendingAction_ = Action{
+                ActionType::DeleteExtraItem,
+                Option::FallbackBasic,
+                *selectedExtraItem_,
+                0,
+                false,
+                state_.extraItems[*selectedExtraItem_]};
             changed = true;
         }
 
         const std::size_t maximum =
-            config_.aExtraItems.size() > 5
-                ? config_.aExtraItems.size() - 5
-                : 0;
+            state_.extraItems.size() > itemRowButtons_.size()
+                ? state_.extraItems.size() - itemRowButtons_.size()
+                : 0u;
         (void)itemScroll_.SetState(
-            extraItemScroll_, maximum, 5, 5, maximum > 0, true);
+            itemScrollStart_,
+            maximum,
+            itemRowButtons_.size(),
+            itemRowButtons_.size(),
+            maximum > 0,
+            true);
         if (const auto request = itemScroll_.ConsumeRequestedPosition())
         {
-            extraItemScroll_ = std::min(*request, maximum);
-            extraItemsDirty_ = true;
-            changed = true;
-        }
-
-        PullConfigFromDom();
-
-        if (extraItemsDirty_)
-        {
-            RefreshExtraItems(false);
+            itemScrollStart_ = std::min(*request, maximum);
+            SyncExtraItems(false);
             changed = true;
         }
 
         changed |= mover_.ConsumePositionChanged();
-        return changed ||
-            pendingAction_.has_value() ||
-            pendingSkillSlot_.has_value();
+        return changed;
     }
 
     [[nodiscard]] std::optional<Action> ConsumeAction()
     {
         return std::exchange(pendingAction_, std::nullopt);
-    }
-
-    [[nodiscard]] std::optional<SkillSlotRequest> ConsumeSkillSlotRequest()
-    {
-        return std::exchange(pendingSkillSlot_, std::nullopt);
     }
 
 private:
@@ -452,25 +601,33 @@ private:
         const auto values = LoadDesignValues();
         (void)ParseScalar(values, "MuHelper-Width", design_.width);
         (void)ParseScalar(values, "MuHelper-Height", design_.height);
-        (void)ParseScalar(values, "MuHelper-SidePanelWidth", design_.sidePanelWidth);
-        (void)ParseScalar(values, "MuHelper-ReferenceWidth", design_.referenceWidth);
-        (void)ParseScalar(values, "MuHelper-ReferenceHeight", design_.referenceHeight);
+        (void)ParseScalar(
+            values, "MuHelper-SidePanelWidth",
+            design_.sidePanelWidth);
     }
 
-    [[nodiscard]] bool Bind()
+    [[nodiscard]] bool BindElements()
     {
-        root_ = ElementById(document_, "mu-helper");
-        drag_ = ElementById(document_, "helper-drag");
-        itemInput_ = InputById(document_, "item-name");
-        returnSecondsInput_ = InputById(document_, "return-seconds");
-        if (!root_ || !drag_ || !itemInput_ || !returnSecondsInput_)
+        root_ = RequiredElement(document_, "mu-helper");
+        drag_ = RequiredElement(document_, "helper-drag");
+        pageHunt_ = RequiredElement(document_, "page-hunt");
+        pageItem_ = RequiredElement(document_, "page-item");
+        pageOther_ = RequiredElement(document_, "page-other");
+        skillPicker_ = RequiredElement(document_, "skill-picker");
+        itemList_ = RequiredElement(document_, "item-list");
+
+        returnSeconds_ = InputElement(document_, "return-seconds");
+        manualYieldSeconds_ =
+            InputElement(document_, "manual-yield-seconds");
+        itemName_ = InputElement(document_, "item-name");
+
+        if (!root_ || !drag_ || !pageHunt_ || !pageItem_ ||
+            !pageOther_ || !skillPicker_ || !itemList_ ||
+            !returnSeconds_ || !manualYieldSeconds_ || !itemName_)
             return false;
 
-        itemInput_->SetAttribute("maxlength", 32);
-        returnSecondsInput_->SetAttribute("maxlength", 4);
-
         auto bindButton = [&](RmlMuButton& button, const char* id) {
-            Rml::Element* element = ElementById(document_, id);
+            Rml::Element* element = RequiredElement(document_, id);
             if (!element)
                 return false;
             button.Bind(element);
@@ -478,418 +635,358 @@ private:
         };
 
         if (!bindButton(closeButton_, "helper-close") ||
-            !bindButton(tabHuntButton_, "tab-hunt") ||
-            !bindButton(tabItemButton_, "tab-item") ||
-            !bindButton(tabOtherButton_, "tab-other") ||
             !bindButton(resetButton_, "helper-reset") ||
             !bindButton(saveButton_, "helper-save") ||
             !bindButton(itemAddButton_, "item-add") ||
             !bindButton(itemDeleteButton_, "item-delete") ||
-            !bindButton(potionSettingsButton_, "potion-settings") ||
-            !bindButton(skill1SettingsButton_, "skill-1-settings") ||
-            !bindButton(skill2SettingsButton_, "skill-2-settings") ||
-            !bindButton(partySettingsButton_, "party-settings"))
+            !bindButton(potionConfigButton_, "potion-settings") ||
+            !bindButton(partyConfigButton_, "party-settings") ||
+            !bindButton(skillConfigButtons_[0], "skill-1-settings") ||
+            !bindButton(skillConfigButtons_[1], "skill-2-settings"))
             return false;
 
-        huntRangeButtons_.clear();
-        obtainRangeButtons_.clear();
-        for (int range = 1; range <= 8; ++range)
-        {
-            auto hunt = std::make_unique<RmlMuButton>();
-            auto obtain = std::make_unique<RmlMuButton>();
-
-            Rml::Element* huntElement = ElementById(
-                document_, (Rml::String("hunt-range-") +
-                            std::to_string(range)).c_str());
-            Rml::Element* obtainElement = ElementById(
-                document_, (Rml::String("obtain-range-") +
-                            std::to_string(range)).c_str());
-            if (!huntElement || !obtainElement)
+        static constexpr std::array<const char*, 3> tabIds{
+            "tab-hunt", "tab-item", "tab-other"};
+        for (std::size_t i = 0; i < tabIds.size(); ++i)
+            if (!bindButton(tabButtons_[i], tabIds[i]))
                 return false;
 
-            hunt->Bind(huntElement);
-            obtain->Bind(obtainElement);
-            huntRangeButtons_.push_back(std::move(hunt));
-            obtainRangeButtons_.push_back(std::move(obtain));
-        }
-
-        itemRowButtons_.clear();
-        for (int row = 0; row < 5; ++row)
+        for (std::size_t i = 0; i < huntRangeButtons_.size(); ++i)
         {
-            auto button = std::make_unique<RmlMuButton>();
-            Rml::Element* element = ElementById(
-                document_, (Rml::String("item-row-") +
-                            std::to_string(row)).c_str());
-            if (!element)
+            const std::string hunt =
+                "hunt-range-" + std::to_string(i + 1u);
+            const std::string obtain =
+                "obtain-range-" + std::to_string(i + 1u);
+
+            if (!bindButton(huntRangeButtons_[i], hunt.c_str()) ||
+                !bindButton(obtainRangeButtons_[i], obtain.c_str()))
                 return false;
-            button->Bind(element);
-            itemRowButtons_.push_back(std::move(button));
         }
 
-        assignedSlots_.clear();
-        for (int slot = 0; slot < 6; ++slot)
+        for (std::size_t i = 0; i < optionButtons_.size(); ++i)
         {
-            auto control = std::make_unique<RmlMuSlot>();
-            Rml::Element* element = ElementById(
-                document_, (Rml::String("assigned-skill-") +
-                            std::to_string(slot)).c_str());
-            if (!element)
+            optionElements_[i] =
+                RequiredElement(document_, kOptionIds[i]);
+            if (!optionElements_[i])
                 return false;
-            control->Bind(element);
-            assignedSlots_.push_back(std::move(control));
+            optionButtons_[i].Bind(optionElements_[i]);
         }
 
-        availableSlots_.clear();
-        for (int slot = 0; slot < 10; ++slot)
+        for (std::size_t i = 0; i < assignedSlots_.size(); ++i)
         {
-            auto control = std::make_unique<RmlMuSlot>();
-            Rml::Element* element = ElementById(
-                document_, (Rml::String("available-skill-") +
-                            std::to_string(slot)).c_str());
-            if (!element)
+            assignedSlotElements_[i] = RequiredElement(
+                document_,
+                "assigned-skill-" + std::to_string(i));
+            if (!assignedSlotElements_[i])
                 return false;
-            control->Bind(element);
-            availableSlots_.push_back(std::move(control));
+            assignedSlots_[i].Bind(assignedSlotElements_[i]);
         }
 
-        if (!itemScroll_.Bind(ElementById(document_, "item-scroll")))
+        for (std::size_t i = 0; i < availableSlots_.size(); ++i)
+        {
+            availableSlotElements_[i] = RequiredElement(
+                document_,
+                "available-skill-" + std::to_string(i));
+            if (!availableSlotElements_[i])
+                return false;
+            availableSlots_[i].Bind(availableSlotElements_[i]);
+        }
+
+        for (std::size_t i = 0; i < itemRowButtons_.size(); ++i)
+        {
+            itemRowElements_[i] = RequiredElement(
+                document_,
+                "item-row-" + std::to_string(i));
+            if (!itemRowElements_[i])
+                return false;
+            itemRowButtons_[i].Bind(itemRowElements_[i]);
+        }
+
+        if (!itemScroll_.Bind(RequiredElement(document_, "item-scroll")))
             return false;
+
+        returnSeconds_->SetAttribute("maxlength", 4);
+        manualYieldSeconds_->SetAttribute("maxlength", 3);
+        itemName_->SetAttribute("maxlength", 32);
 
         mover_.Bind(root_, drag_);
         return true;
     }
 
-    [[nodiscard]] std::array<RmlMuButton*, 12> Buttons()
+    void ApplyLayout()
     {
-        return {
-            &closeButton_,
-            &tabHuntButton_, &tabItemButton_, &tabOtherButton_,
-            &resetButton_, &saveButton_,
-            &itemAddButton_, &itemDeleteButton_,
-            &potionSettingsButton_, &skill1SettingsButton_,
-            &skill2SettingsButton_, &partySettingsButton_
-        };
-    }
+        const float viewportWidth =
+            static_cast<float>(state_.viewportWidth);
+        const float viewportHeight =
+            static_cast<float>(state_.viewportHeight);
 
-    void ApplyMetrics()
-    {
-        if (!document_ || !root_)
-            return;
+        const float scale = std::clamp(
+            std::min(
+                viewportWidth / std::max(1.0f, design_.width),
+                viewportHeight / std::max(1.0f, design_.height)),
+            0.25f, 1.0f);
 
-        const Rml::Vector2i dimensions =
-            document_->GetContext()
-                ? document_->GetContext()->GetDimensions()
-                : Rml::Vector2i{};
+        root_->SetProperty("width", PixelValue(design_.width));
+        root_->SetProperty("height", PixelValue(design_.height));
+        root_->SetProperty("transform-origin", "0 0");
+        root_->SetProperty("transform", ScaleValue(scale));
+
         mover_.SetMetrics(
-            static_cast<float>(dimensions.x),
-            static_cast<float>(dimensions.y),
+            viewportWidth / scale,
+            viewportHeight / scale,
             design_.width,
             design_.height,
             0.0f,
             0.0f);
-    }
 
-    void ApplyTab()
-    {
-        if (!document_)
-            return;
-
-        const bool hunt = tab_ == Tab::Hunt;
-        const bool item = tab_ == Tab::Item;
-        const bool other = tab_ == Tab::Other;
-
-        if (Rml::Element* page = ElementById(document_, "page-hunt"))
-            page->SetProperty("display", hunt ? "block" : "none");
-        if (Rml::Element* page = ElementById(document_, "page-item"))
-            page->SetProperty("display", item ? "block" : "none");
-        if (Rml::Element* page = ElementById(document_, "page-other"))
-            page->SetProperty("display", other ? "block" : "none");
-
-        if (Rml::Element* tab = ElementById(document_, "tab-hunt"))
-            tab->SetClass("selected", hunt);
-        if (Rml::Element* tab = ElementById(document_, "tab-item"))
-            tab->SetClass("selected", item);
-        if (Rml::Element* tab = ElementById(document_, "tab-other"))
-            tab->SetClass("selected", other);
-    }
-
-    void ApplyConfigToDom()
-    {
-        if (!document_)
-            return;
-
-        SetChecked(document_, "fallback-basic", config_.bFallbackBasicAttack);
-        SetChecked(document_, "long-counter", config_.bLongRangeCounterAttack);
-        SetChecked(document_, "return-position", config_.bReturnToOriginalPosition);
-        SetChecked(document_, "use-potion", config_.bUseHealPotion);
-        SetChecked(document_, "combo", config_.bUseCombo);
-        SetChecked(document_, "use-dark-raven", config_.bUseDarkRaven);
-        SetChecked(document_, "support-party", config_.bSupportParty);
-        SetChecked(document_, "auto-heal", config_.bAutoHeal);
-        SetChecked(document_, "drain-life", config_.bUseDrainLife);
-        SetChecked(document_, "buff-duration", config_.bBuffDuration);
-
-        SetChecked(document_, "repair-item", config_.bRepairItem);
-        SetChecked(document_, "pick-all", config_.bPickAllItems);
-        SetChecked(document_, "pick-selected", config_.bPickSelectItems);
-        SetChecked(document_, "pick-jewel", config_.bPickJewel);
-        SetChecked(document_, "pick-ancient", config_.bPickAncient);
-        SetChecked(document_, "pick-zen", config_.bPickZen);
-        SetChecked(document_, "pick-excellent", config_.bPickExcellent);
-        SetChecked(document_, "pick-extra", config_.bPickExtraItems);
-
-        SetChecked(document_, "accept-friend", config_.bAutoAcceptFriend);
-        SetChecked(document_, "accept-guild", config_.bAutoAcceptGuild);
-        SetChecked(document_, "self-defense", config_.bUseSelfDefense);
-
-        for (int mode = 0; mode <= 2; ++mode)
-            SetChecked(
-                document_,
-                (std::string("dark-mode-") + std::to_string(mode)).c_str(),
-                config_.iDarkRavenMode == mode);
-
-        if (returnSecondsInput_)
-            returnSecondsInput_->SetValue(
-                std::to_string(config_.iMaxSecondsAway));
-
-        SyncRangeClasses();
-        extraItemsDirty_ = true;
-    }
-
-    void PullConfigFromDom()
-    {
-        if (!document_)
-            return;
-
-        config_.bFallbackBasicAttack = IsChecked(document_, "fallback-basic");
-        config_.bLongRangeCounterAttack = IsChecked(document_, "long-counter");
-        config_.bReturnToOriginalPosition = IsChecked(document_, "return-position");
-        config_.bUseHealPotion = IsChecked(document_, "use-potion");
-        config_.bUseCombo = IsChecked(document_, "combo");
-        config_.bUseDarkRaven = IsChecked(document_, "use-dark-raven");
-        config_.bSupportParty = IsChecked(document_, "support-party");
-        config_.bAutoHeal = IsChecked(document_, "auto-heal");
-        config_.bUseDrainLife = IsChecked(document_, "drain-life");
-        config_.bBuffDuration = IsChecked(document_, "buff-duration");
-
-        config_.bRepairItem = IsChecked(document_, "repair-item");
-        config_.bPickAllItems = IsChecked(document_, "pick-all");
-        config_.bPickSelectItems = IsChecked(document_, "pick-selected");
-        config_.bPickJewel = IsChecked(document_, "pick-jewel");
-        config_.bPickAncient = IsChecked(document_, "pick-ancient");
-        config_.bPickZen = IsChecked(document_, "pick-zen");
-        config_.bPickExcellent = IsChecked(document_, "pick-excellent");
-        config_.bPickExtraItems = IsChecked(document_, "pick-extra");
-
-        config_.bAutoAcceptFriend = IsChecked(document_, "accept-friend");
-        config_.bAutoAcceptGuild = IsChecked(document_, "accept-guild");
-        config_.bUseSelfDefense = IsChecked(document_, "self-defense");
-
-        for (int mode = 0; mode <= 2; ++mode)
+        const Rml::Vector2f current = mover_.GetPosition();
+        if (current.x == 0.0f && current.y == 0.0f)
         {
-            if (IsChecked(
+            mover_.SetPosition(
+                std::max(0.0f, viewportWidth / scale - design_.width - 20.0f),
+                20.0f);
+        }
+    }
+
+    void SyncTabs()
+    {
+        pageHunt_->SetProperty(
+            "display", state_.tab == Tab::Hunt ? "block" : "none");
+        pageItem_->SetProperty(
+            "display", state_.tab == Tab::Item ? "block" : "none");
+        pageOther_->SetProperty(
+            "display", state_.tab == Tab::Other ? "block" : "none");
+
+        for (std::size_t i = 0; i < tabButtons_.size(); ++i)
+        {
+            if (Rml::Element* element = RequiredElement(
                     document_,
-                    (std::string("dark-mode-") + std::to_string(mode)).c_str()))
+                    std::array<const char*, 3>{
+                        "tab-hunt", "tab-item", "tab-other"}[i]))
             {
-                config_.iDarkRavenMode = mode;
-                break;
+                element->SetClass(
+                    "selected", static_cast<std::size_t>(state_.tab) == i);
             }
         }
-
-        config_.iMaxSecondsAway =
-            std::max(0, ParseInt(returnSecondsInput_, config_.iMaxSecondsAway));
     }
 
-    [[nodiscard]] bool PollRangeButtons()
+    void SyncRanges()
     {
-        bool changed = false;
         for (std::size_t i = 0; i < huntRangeButtons_.size(); ++i)
         {
-            RmlMuButton* button = huntRangeButtons_[i].get();
-            if (!button)
-                continue;
-            changed |= button->Update();
-            if (button->ConsumeClicked())
-            {
-                config_.iHuntingRange = static_cast<int>(i + 1);
-                changed = true;
-            }
-        }
-        for (std::size_t i = 0; i < obtainRangeButtons_.size(); ++i)
-        {
-            RmlMuButton* button = obtainRangeButtons_[i].get();
-            if (!button)
-                continue;
-            changed |= button->Update();
-            if (button->ConsumeClicked())
-            {
-                config_.iObtainingRange = static_cast<int>(i + 1);
-                changed = true;
-            }
-        }
-        if (changed)
-            SyncRangeClasses();
-        return changed;
-    }
-
-    void SyncRangeClasses()
-    {
-        if (!document_)
-            return;
-
-        for (int range = 1; range <= 8; ++range)
-        {
-            if (Rml::Element* element = ElementById(
+            if (Rml::Element* element = RequiredElement(
                     document_,
-                    (std::string("hunt-range-") +
-                     std::to_string(range)).c_str()))
-            {
+                    "hunt-range-" + std::to_string(i + 1u)))
                 element->SetClass(
-                    "selected", config_.iHuntingRange == range);
-            }
-            if (Rml::Element* element = ElementById(
+                    "selected", state_.huntRange == static_cast<int>(i + 1u));
+
+            if (Rml::Element* element = RequiredElement(
                     document_,
-                    (std::string("obtain-range-") +
-                     std::to_string(range)).c_str()))
-            {
+                    "obtain-range-" + std::to_string(i + 1u)))
                 element->SetClass(
-                    "selected", config_.iObtainingRange == range);
-            }
+                    "selected",
+                    state_.obtainingRange == static_cast<int>(i + 1u));
         }
     }
 
-    [[nodiscard]] bool PollItemRows()
+    void SyncOptions()
     {
-        bool changed = false;
-        for (std::size_t row = 0; row < itemRowButtons_.size(); ++row)
-        {
-            RmlMuButton* button = itemRowButtons_[row].get();
-            if (!button)
-                continue;
-            changed |= button->Update();
-            if (button->ConsumeClicked())
-            {
-                const std::size_t index = extraItemScroll_ + row;
-                if (index < config_.aExtraItems.size())
-                {
-                    selectedExtraItem_ = index;
-                    extraItemsDirty_ = true;
-                    changed = true;
-                }
-            }
-        }
-        return changed;
+        for (std::size_t i = 0; i < optionElements_.size(); ++i)
+            optionElements_[i]->SetClass(
+                "checked", GetOption(kOptions[i]));
     }
 
-    [[nodiscard]] bool PollSkillSlots()
+    void SyncInputs()
     {
-        bool changed = false;
+        returnSeconds_->SetValue(std::to_string(state_.maxSecondsAway));
+        manualYieldSeconds_->SetValue(
+            std::to_string(state_.manualYieldSeconds));
+    }
+
+    void SyncSkills()
+    {
         for (std::size_t i = 0; i < assignedSlots_.size(); ++i)
         {
-            RmlMuSlot* slot = assignedSlots_[i].get();
-            if (!slot)
-                continue;
-            changed |= slot->Update();
-            if (slot->ConsumeClicked() || slot->ConsumeSecondaryClicked())
-            {
-                pendingSkillSlot_ = SkillSlotRequest{false, i};
-                changed = true;
-            }
+            const int skill = state_.assignedSkills[i];
+            Rml::Element* element = assignedSlotElements_[i];
+            element->SetClass("occupied", skill >= 0);
+            element->SetClass("selected", selectedSkillSlot_ == i);
+            element->SetAttribute("data-skill-id", skill);
+            assignedSlots_[i].SetEnabled(true);
+            assignedSlots_[i].SetVisible(true);
+            (void)assignedSlots_[i].Update();
         }
+
+        const std::size_t count = std::min(
+            availableSlots_.size(), state_.availableSkills.size());
+        skillPicker_->SetProperty(
+            "display", count > 0 ? "block" : "none");
+
         for (std::size_t i = 0; i < availableSlots_.size(); ++i)
         {
-            RmlMuSlot* slot = availableSlots_[i].get();
-            if (!slot)
-                continue;
-            changed |= slot->Update();
-            if (slot->ConsumeClicked() || slot->ConsumeSecondaryClicked())
+            const bool visible = i < count;
+            availableSlots_[i].SetVisible(visible);
+            availableSlots_[i].SetEnabled(visible);
+
+            if (availableSlotElements_[i])
             {
-                pendingSkillSlot_ = SkillSlotRequest{true, i};
-                changed = true;
+                availableSlotElements_[i]->SetClass(
+                    "occupied", visible);
+                availableSlotElements_[i]->SetAttribute(
+                    "data-skill-id",
+                    visible ? state_.availableSkills[i] : -1);
             }
+
+            (void)availableSlots_[i].Update();
         }
-        return changed;
     }
 
-    void RefreshExtraItems(bool force)
+    void SyncExtraItems(bool resetSelection)
     {
-        if (!document_ || (!extraItemsDirty_ && !force))
-            return;
-        extraItemsDirty_ = false;
+        if (resetSelection)
+        {
+            selectedExtraItem_.reset();
+            itemScrollStart_ = 0;
+        }
 
         const std::size_t maximum =
-            config_.aExtraItems.size() > 5
-                ? config_.aExtraItems.size() - 5
-                : 0;
-        extraItemScroll_ = std::min(extraItemScroll_, maximum);
+            state_.extraItems.size() > itemRowButtons_.size()
+                ? state_.extraItems.size() - itemRowButtons_.size()
+                : 0u;
+        itemScrollStart_ = std::min(itemScrollStart_, maximum);
 
-        std::vector<std::wstring> items(
-            config_.aExtraItems.begin(), config_.aExtraItems.end());
-
-        for (std::size_t row = 0; row < 5; ++row)
+        for (std::size_t i = 0; i < itemRowElements_.size(); ++i)
         {
-            Rml::Element* element = ElementById(
-                document_,
-                (std::string("item-row-") +
-                 std::to_string(row)).c_str());
-            if (!element)
-                continue;
+            Rml::Element* row = itemRowElements_[i];
+            const std::size_t absolute = itemScrollStart_ + i;
+            const bool visible = absolute < state_.extraItems.size();
 
-            const std::size_t index = extraItemScroll_ + row;
-            if (index < items.size())
-            {
-                element->SetProperty("display", "block");
-                SetEncodedText(element, WideToUtf8(items[index]));
-                element->SetClass("selected", selectedExtraItem_ == index);
-            }
-            else
-            {
-                element->SetProperty("display", "none");
-                element->SetClass("selected", false);
-            }
+            row->SetProperty("display", visible ? "block" : "none");
+            row->SetInnerRML(
+                visible ? state_.extraItems[absolute] : "");
+            row->SetClass(
+                "selected",
+                visible &&
+                selectedExtraItem_ &&
+                *selectedExtraItem_ == absolute);
+
+            itemRowButtons_[i].SetVisible(visible);
+            itemRowButtons_[i].SetEnabled(visible);
+            (void)itemRowButtons_[i].Update();
+        }
+
+        (void)itemScroll_.SetState(
+            itemScrollStart_,
+            maximum,
+            itemRowButtons_.size(),
+            itemRowButtons_.size(),
+            maximum > 0,
+            true);
+    }
+
+    [[nodiscard]] bool GetOption(Option option) const noexcept
+    {
+        switch (option)
+        {
+        case Option::FallbackBasic: return state_.fallbackBasic;
+        case Option::LongCounter: return state_.longCounter;
+        case Option::ReturnPosition: return state_.returnPosition;
+        case Option::UsePotion: return state_.usePotion;
+        case Option::SupportParty: return state_.supportParty;
+        case Option::AutoHeal: return state_.autoHeal;
+        case Option::DrainLife: return state_.drainLife;
+        case Option::BuffDuration: return state_.buffDuration;
+        case Option::UseCombo: return state_.useCombo;
+        case Option::UseDarkRaven: return state_.useDarkRaven;
+        case Option::RepairItem: return state_.repairItem;
+        case Option::PickAll: return state_.pickAll;
+        case Option::PickSelected: return state_.pickSelected;
+        case Option::PickJewel: return state_.pickJewel;
+        case Option::PickAncient: return state_.pickAncient;
+        case Option::PickZen: return state_.pickZen;
+        case Option::PickExcellent: return state_.pickExcellent;
+        case Option::PickExtra: return state_.pickExtra;
+        case Option::AcceptFriend: return state_.acceptFriend;
+        case Option::AcceptGuild: return state_.acceptGuild;
+        case Option::SelfDefense: return state_.selfDefense;
+        }
+        return false;
+    }
+
+    void SetOption(Option option, bool value) noexcept
+    {
+        switch (option)
+        {
+        case Option::FallbackBasic: state_.fallbackBasic = value; break;
+        case Option::LongCounter: state_.longCounter = value; break;
+        case Option::ReturnPosition: state_.returnPosition = value; break;
+        case Option::UsePotion: state_.usePotion = value; break;
+        case Option::SupportParty: state_.supportParty = value; break;
+        case Option::AutoHeal: state_.autoHeal = value; break;
+        case Option::DrainLife: state_.drainLife = value; break;
+        case Option::BuffDuration: state_.buffDuration = value; break;
+        case Option::UseCombo: state_.useCombo = value; break;
+        case Option::UseDarkRaven: state_.useDarkRaven = value; break;
+        case Option::RepairItem: state_.repairItem = value; break;
+        case Option::PickAll: state_.pickAll = value; break;
+        case Option::PickSelected: state_.pickSelected = value; break;
+        case Option::PickJewel: state_.pickJewel = value; break;
+        case Option::PickAncient: state_.pickAncient = value; break;
+        case Option::PickZen: state_.pickZen = value; break;
+        case Option::PickExcellent: state_.pickExcellent = value; break;
+        case Option::PickExtra: state_.pickExtra = value; break;
+        case Option::AcceptFriend: state_.acceptFriend = value; break;
+        case Option::AcceptGuild: state_.acceptGuild = value; break;
+        case Option::SelfDefense: state_.selfDefense = value; break;
         }
     }
 
     RmlDocumentHost host_;
     Rml::ElementDocument* document_ = nullptr;
+
     Rml::Element* root_ = nullptr;
     Rml::Element* drag_ = nullptr;
-    Rml::ElementFormControlInput* itemInput_ = nullptr;
-    Rml::ElementFormControlInput* returnSecondsInput_ = nullptr;
+    Rml::Element* pageHunt_ = nullptr;
+    Rml::Element* pageItem_ = nullptr;
+    Rml::Element* pageOther_ = nullptr;
+    Rml::Element* itemList_ = nullptr;
+    Rml::Element* skillPicker_ = nullptr;
 
-    RmlMuMovablePanel mover_;
-    RmlMuScrollBar itemScroll_;
+    Rml::ElementFormControlInput* returnSeconds_ = nullptr;
+    Rml::ElementFormControlInput* manualYieldSeconds_ = nullptr;
+    Rml::ElementFormControlInput* itemName_ = nullptr;
+
+    std::array<Rml::Element*, 21> optionElements_{};
+    std::array<Rml::Element*, 6> assignedSlotElements_{};
+    std::array<Rml::Element*, 10> availableSlotElements_{};
+    std::array<Rml::Element*, 5> itemRowElements_{};
+
+    std::array<RmlMuButton, 3> tabButtons_{};
+    std::array<RmlMuButton, 8> huntRangeButtons_{};
+    std::array<RmlMuButton, 8> obtainRangeButtons_{};
+    std::array<RmlMuButton, 21> optionButtons_{};
+    std::array<RmlMuButton, 5> itemRowButtons_{};
+
+    std::array<RmlMuSlot, 6> assignedSlots_{};
+    std::array<RmlMuSlot, 10> availableSlots_{};
 
     RmlMuButton closeButton_;
-    RmlMuButton tabHuntButton_;
-    RmlMuButton tabItemButton_;
-    RmlMuButton tabOtherButton_;
     RmlMuButton resetButton_;
     RmlMuButton saveButton_;
     RmlMuButton itemAddButton_;
     RmlMuButton itemDeleteButton_;
-    RmlMuButton potionSettingsButton_;
-    RmlMuButton skill1SettingsButton_;
-    RmlMuButton skill2SettingsButton_;
-    RmlMuButton partySettingsButton_;
-
-    std::vector<std::unique_ptr<RmlMuButton>> huntRangeButtons_;
-    std::vector<std::unique_ptr<RmlMuButton>> obtainRangeButtons_;
-    std::vector<std::unique_ptr<RmlMuButton>> itemRowButtons_;
-    std::vector<std::unique_ptr<RmlMuSlot>> assignedSlots_;
-    std::vector<std::unique_ptr<RmlMuSlot>> availableSlots_;
+    RmlMuButton potionConfigButton_;
+    std::array<RmlMuButton, 2> skillConfigButtons_{};
+    RmlMuButton partyConfigButton_;
+    RmlMuScrollBar itemScroll_;
+    RmlMuMovablePanel mover_;
 
     Design design_;
-    MUHelper::ConfigData config_;
-    Tab tab_ = Tab::Hunt;
-    bool visible_ = false;
-
-    std::size_t extraItemScroll_ = 0;
-    std::size_t selectedExtraItem_ = 0;
-    bool extraItemsDirty_ = true;
-
+    State state_;
+    std::size_t selectedSkillSlot_ = 0;
+    std::size_t itemScrollStart_ = 0;
+    std::optional<std::size_t> selectedExtraItem_;
     std::optional<Action> pendingAction_;
-    std::optional<SkillSlotRequest> pendingSkillSlot_;
 };
 
 RmlMuHelperPanel::RmlMuHelperPanel()
@@ -899,7 +996,8 @@ RmlMuHelperPanel::RmlMuHelperPanel()
 
 RmlMuHelperPanel::~RmlMuHelperPanel() = default;
 RmlMuHelperPanel::RmlMuHelperPanel(RmlMuHelperPanel&&) noexcept = default;
-RmlMuHelperPanel& RmlMuHelperPanel::operator=(RmlMuHelperPanel&&) noexcept = default;
+RmlMuHelperPanel& RmlMuHelperPanel::operator=(
+    RmlMuHelperPanel&&) noexcept = default;
 
 bool RmlMuHelperPanel::Load(bool show)
 {
@@ -927,40 +1025,9 @@ bool RmlMuHelperPanel::IsLoaded() const noexcept
     return m_impl && m_impl->IsLoaded();
 }
 
-void RmlMuHelperPanel::SetConfig(const MUHelper::ConfigData& config)
+bool RmlMuHelperPanel::ApplyState(const State& state)
 {
-    if (m_impl)
-        m_impl->SetConfig(config);
-}
-
-MUHelper::ConfigData RmlMuHelperPanel::GetConfig() const
-{
-    return m_impl ? m_impl->GetConfig() : MUHelper::ConfigData{};
-}
-
-void RmlMuHelperPanel::SetTab(Tab tab)
-{
-    if (m_impl)
-        m_impl->SetTab(tab);
-}
-
-RmlMuHelperPanel::Tab RmlMuHelperPanel::GetTab() const noexcept
-{
-    return m_impl ? m_impl->GetTab() : Tab::Hunt;
-}
-
-void RmlMuHelperPanel::SetAssignedSkillFrame(
-    std::size_t index, int frame)
-{
-    if (m_impl)
-        m_impl->SetAssignedSkillFrame(index, frame);
-}
-
-void RmlMuHelperPanel::SetAvailableSkillFrame(
-    std::size_t index, int frame)
-{
-    if (m_impl)
-        m_impl->SetAvailableSkillFrame(index, frame);
+    return m_impl && m_impl->ApplyState(state);
 }
 
 bool RmlMuHelperPanel::Update()
@@ -971,14 +1038,8 @@ bool RmlMuHelperPanel::Update()
 std::optional<RmlMuHelperPanel::Action>
 RmlMuHelperPanel::ConsumeAction()
 {
-    return m_impl ? m_impl->ConsumeAction() : std::nullopt;
-}
-
-std::optional<RmlMuHelperPanel::SkillSlotRequest>
-RmlMuHelperPanel::ConsumeSkillSlotRequest()
-{
     return m_impl
-        ? m_impl->ConsumeSkillSlotRequest()
+        ? m_impl->ConsumeAction()
         : std::nullopt;
 }
 

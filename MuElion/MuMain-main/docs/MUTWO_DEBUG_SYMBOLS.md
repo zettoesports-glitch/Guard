@@ -1828,3 +1828,24 @@ The panel does not call `SendLoginLongPassword` or
 `SendLoginShortPassword`. Password text is cleared on hide, cancel and after
 the login request is consumed, keeping network/authentication ownership in the
 existing login scene.
+
+
+## MU Helper presentation contract
+
+The x64 Debug executable preserves the authored keys
+`MuHelper-Width`, `MuHelper-Height`, and
+`MuHelper-SidePanelWidth`, together with the document and control identifiers
+including `mu-helper`, `helper-drag`, `helper-close`,
+`helper-reset`, and `helper-save`.
+
+The existing legacy `CNewUIMuHelper` confirms three primary tabs, hunting and
+obtaining range controls, six assigned skill slots, a selectable skill list,
+extra-item list management, reset/save/close actions and class-dependent
+advanced configuration pages. `MUHelper::ConfigData` remains the
+authoritative serialization/network domain.
+
+The reconstructed `RmlMuHelperPanel` independently authors the presentation
+and exposes semantic actions for the primary tabs, ranges, major boolean
+options, skill-slot selection, extra-item add/delete and advanced configuration
+entry points. It deliberately does not serialize packets or replace the
+existing `ConfigDataSerDe` path.
