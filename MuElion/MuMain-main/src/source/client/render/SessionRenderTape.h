@@ -1,6 +1,7 @@
 #pragma once
 
 #include "client/render/RenderTapeTypes.h"
+#include "Render/Renderer/MuRenderer.h"
 
 #include <array>
 #include <cstddef>
@@ -91,6 +92,33 @@ struct RenderTapeDraw
     std::vector<RenderTapeVertex> vertices;
 };
 
+struct RenderTapeSkinningSnapshot
+{
+    std::vector<float> boneMatrices;
+    std::uint32_t paletteVersion = 0;
+    std::array<float, 3> bodyOrigin{};
+    float bodyScale = 1.0f;
+    float boneScale = 1.0f;
+    float restPoseScale = 0.0f;
+    std::array<float, 3> lightDirection{};
+    std::array<float, 2> textureCoordinateOffset{};
+    float chromeWave = 0.0f;
+    float chromeWave2 = 0.0f;
+    std::array<float, 2> chromeLight{};
+    float chromeTimeTerm = 0.0f;
+    mu::SkinningTextureCoordinates textureCoordinates = mu::SkinningTextureCoordinates::Mesh;
+    bool translate = false;
+    bool lightEnabled = false;
+};
+
+struct RenderTapeSkinnedDraw
+{
+    std::uint32_t textureId = 0;
+    RenderTapeState state{};
+    std::vector<mu::SkinnedVertex3D> vertices;
+    RenderTapeSkinningSnapshot skinning;
+};
+
 struct RenderTapeClear
 {
     bool color = false;
@@ -102,6 +130,7 @@ struct RenderTapeClear
 enum class RenderTapeCommandType : std::uint8_t
 {
     Draw,
+    SkinnedDraw,
     Clear,
 };
 
@@ -109,6 +138,7 @@ struct RenderTapeCommand
 {
     RenderTapeCommandType type = RenderTapeCommandType::Draw;
     RenderTapeDraw draw{};
+    RenderTapeSkinnedDraw skinnedDraw{};
     RenderTapeClear clear{};
 };
 
@@ -141,6 +171,7 @@ public:
     [[nodiscard]] bool BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept;
     [[nodiscard]] bool EndPass() noexcept;
     [[nodiscard]] bool AppendDraw(RenderTapeDraw draw) noexcept;
+    [[nodiscard]] bool AppendSkinnedDraw(RenderTapeSkinnedDraw draw) noexcept;
     [[nodiscard]] bool AppendClear(bool color, bool depth, bool stencil, const RenderTapeState& state) noexcept;
     [[nodiscard]] std::optional<SessionRenderTape> Finalize() noexcept;
     void Reset() noexcept;

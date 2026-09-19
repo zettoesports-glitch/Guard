@@ -309,6 +309,108 @@ bool LegacyRenderFacade::EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<
     }
 }
 
+bool LegacyRenderFacade::SubmitTriangles(std::span<const mu::Vertex3D> vertices, std::uint32_t textureId) noexcept
+{
+    if (vertices.empty())
+        return true;
+
+    if (!m_recording.IsRecording())
+    {
+        mu::GetRenderer().RenderTriangles(vertices, textureId);
+        return true;
+    }
+
+    std::vector<RenderTapeVertex> tapeVertices;
+    tapeVertices.reserve(vertices.size());
+    for (const auto& v : vertices)
+    {
+        RenderTapeVertex out{};
+        out.position = {v.x, v.y, v.z};
+        out.normal = {v.nx, v.ny, v.nz};
+        out.texCoord = {v.u, v.v};
+        out.color = {
+            static_cast<float>(v.color & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 8u) & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 16u) & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 24u) & 0xffu) / 255.0f,
+        };
+        tapeVertices.push_back(out);
+    }
+
+    const std::uint32_t previousTexture = m_boundTextureId;
+    m_boundTextureId = textureId;
+    const bool result = EmitPrimitiveDraw(LegacyPrimitive::Triangles, tapeVertices);
+    m_boundTextureId = previousTexture;
+    return result;
+}
+
+bool LegacyRenderFacade::SubmitLines(std::span<const mu::Vertex3D> vertices, std::uint32_t textureId) noexcept
+{
+    if (vertices.empty())
+        return true;
+
+    if (!m_recording.IsRecording())
+    {
+        mu::GetRenderer().RenderLines(vertices, textureId);
+        return true;
+    }
+
+    std::vector<RenderTapeVertex> tapeVertices;
+    tapeVertices.reserve(vertices.size());
+    for (const auto& v : vertices)
+    {
+        RenderTapeVertex out{};
+        out.position = {v.x, v.y, v.z};
+        out.normal = {v.nx, v.ny, v.nz};
+        out.texCoord = {v.u, v.v};
+        out.color = {
+            static_cast<float>(v.color & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 8u) & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 16u) & 0xffu) / 255.0f,
+            static_cast<float>((v.color >> 24u) & 0xffu) / 255.0f,
+        };
+        tapeVertices.push_back(out);
+    }
+
+    const std::uint32_t previousTexture = m_boundTextureId;
+    m_boundTextureId = textureId;
+    const bool result = EmitPrimitiveDraw(LegacyPrimitive::Lines, tapeVertices);
+    m_boundTextureId = previousTexture;
+    return result;
+}
+
+bool LegacyRenderFacade::SubmitSkinnedTriangles(std::span<const mu::SkinnedVertex3D> vertices,
+                                                std::uint32_t textureId,
+                                                const mu::SkinningParameters& parameters) noexcept
+{
+    if (vertices.empty())
+        return true;
+
+    if (!m_recording.IsRecording())
+        return mu::GetRenderer().RenderSkinnedTriangles(vertices, textureId, parameters);
+
+    RenderTapeSkinnedDraw draw{};
+    draw.textureId = textureId;
+    draw.state = m_state;
+    draw.vertices.assign(vertices.begin(), vertices.end());
+    draw.skinning.boneMatrices.assign(parameters.boneMatrices.begin(), parameters.boneMatrices.end());
+    draw.skinning.paletteVersion = parameters.paletteVersion;
+    draw.skinning.bodyOrigin = {parameters.bodyOrigin[0], parameters.bodyOrigin[1], parameters.bodyOrigin[2]};
+    draw.skinning.bodyScale = parameters.bodyScale;
+    draw.skinning.boneScale = parameters.boneScale;
+    draw.skinning.restPoseScale = parameters.restPoseScale;
+    draw.skinning.lightDirection = {parameters.lightDirection[0], parameters.lightDirection[1], parameters.lightDirection[2]};
+    draw.skinning.textureCoordinateOffset = {parameters.textureCoordinateOffset[0], parameters.textureCoordinateOffset[1]};
+    draw.skinning.chromeWave = parameters.chromeWave;
+    draw.skinning.chromeWave2 = parameters.chromeWave2;
+    draw.skinning.chromeLight = {parameters.chromeLight[0], parameters.chromeLight[1]};
+    draw.skinning.chromeTimeTerm = parameters.chromeTimeTerm;
+    draw.skinning.textureCoordinates = parameters.textureCoordinates;
+    draw.skinning.translate = parameters.translate;
+    draw.skinning.lightEnabled = parameters.lightEnabled;
+    return m_recording.AppendSkinnedDraw(std::move(draw));
+}
+
 bool LegacyRenderFacade::SetClientArray(RenderClientArraySemantic semantic, std::span<const std::byte> bytes,
                                         std::uint32_t componentCount, RenderClientArrayScalarType scalarType,
                                         int stride, bool normalized) noexcept

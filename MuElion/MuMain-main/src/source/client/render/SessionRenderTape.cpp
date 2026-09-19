@@ -40,10 +40,9 @@ std::uint32_t PackColor(const std::array<float, 4>& color) noexcept
     return (byte(color[3]) << 24u) | (byte(color[2]) << 16u) | (byte(color[1]) << 8u) | byte(color[0]);
 }
 
-bool ReplayDraw(const RenderTapeDraw& draw) noexcept
+void ApplyState(const RenderTapeState& state) noexcept
 {
     auto& renderer = mu::GetRenderer();
-    const auto& state = draw.state;
 
     renderer.SetDepthTest(state.depthTestEnabled);
     renderer.SetDepthMask(state.depthWriteEnabled);
@@ -59,8 +58,7 @@ bool ReplayDraw(const RenderTapeDraw& draw) noexcept
 
     if (state.blendEnabled)
     {
-        if (!ApplyBlend(state.blendSource, state.blendDestination))
-            return false;
+        (void)ApplyBlend(state.blendSource, state.blendDestination);
     }
     else
     {
@@ -84,6 +82,14 @@ bool ReplayDraw(const RenderTapeDraw& draw) noexcept
     renderer.LoadMatrix(state.projection.data());
     renderer.SetMatrixMode(static_cast<int>(LegacyMatrixMode::ModelView));
     renderer.LoadMatrix(state.modelView.data());
+
+}
+
+bool ReplayDraw(const RenderTapeDraw& draw) noexcept
+{
+    auto& renderer = mu::GetRenderer();
+    const auto& state = draw.state;
+    ApplyState(state);
 
     const std::uint32_t textureId = state.textureEnabled ? draw.textureId : 0u;
     renderer.BindTexture(static_cast<int>(textureId));
@@ -117,6 +123,35 @@ bool ReplayDraw(const RenderTapeDraw& draw) noexcept
         return false;
     }
 }
+
+bool ReplaySkinnedDraw(const RenderTapeSkinnedDraw& draw) noexcept
+{
+    auto& renderer = mu::GetRenderer();
+    ApplyState(draw.state);
+
+    const std::uint32_t textureId = draw.state.textureEnabled ? draw.textureId : 0u;
+    renderer.BindTexture(static_cast<int>(textureId));
+
+    mu::SkinningParameters parameters{
+        .boneMatrices = draw.skinning.boneMatrices,
+        .paletteVersion = draw.skinning.paletteVersion,
+        .bodyOrigin = {draw.skinning.bodyOrigin[0], draw.skinning.bodyOrigin[1], draw.skinning.bodyOrigin[2]},
+        .bodyScale = draw.skinning.bodyScale,
+        .boneScale = draw.skinning.boneScale,
+        .restPoseScale = draw.skinning.restPoseScale,
+        .lightDirection = {draw.skinning.lightDirection[0], draw.skinning.lightDirection[1], draw.skinning.lightDirection[2]},
+        .textureCoordinateOffset = {draw.skinning.textureCoordinateOffset[0], draw.skinning.textureCoordinateOffset[1]},
+        .chromeWave = draw.skinning.chromeWave,
+        .chromeWave2 = draw.skinning.chromeWave2,
+        .chromeLight = {draw.skinning.chromeLight[0], draw.skinning.chromeLight[1]},
+        .chromeTimeTerm = draw.skinning.chromeTimeTerm,
+        .textureCoordinates = draw.skinning.textureCoordinates,
+        .translate = draw.skinning.translate,
+        .lightEnabled = draw.skinning.lightEnabled,
+    };
+
+    return renderer.RenderSkinnedTriangles(draw.vertices, textureId, parameters);
+}
 } // namespace
 
 std::size_t SessionRenderTape::DrawCount() const noexcept
@@ -124,7 +159,8 @@ std::size_t SessionRenderTape::DrawCount() const noexcept
     std::size_t count = 0;
     for (const auto& block : m_blocks)
         for (const auto& command : block.commands)
-            if (command.type == RenderTapeCommandType::Draw)
+            if (command.type == RenderTapeCommandType::Draw ||
+                command.type == RenderTapeCommandType::SkinnedDraw)
                 ++count;
     return count;
 }
@@ -138,6 +174,13 @@ bool SessionRenderTape::Replay() const noexcept
             if (command.type == RenderTapeCommandType::Draw)
             {
                 if (!ReplayDraw(command.draw))
+                    return false;
+                continue;
+            }
+
+            if (command.type == RenderTapeCommandType::SkinnedDraw)
+            {
+                if (!ReplaySkinnedDraw(command.skinnedDraw))
                     return false;
                 continue;
             }
@@ -185,6 +228,18 @@ bool SessionRenderTapeRecording::AppendDraw(RenderTapeDraw draw) noexcept
     RenderTapeCommand command{};
     command.type = RenderTapeCommandType::Draw;
     command.draw = std::move(draw);
+    m_blocks[*m_currentBlock].commands.push_back(std::move(command));
+    return true;
+}
+
+bool SessionRenderTapeRecording::AppendSkinnedDraw(RenderTapeSkinnedDraw draw) noexcept
+{
+    if (!m_currentBlock || *m_currentBlock >= m_blocks.size())
+        return false;
+
+    RenderTapeCommand command{};
+    command.type = RenderTapeCommandType::SkinnedDraw;
+    command.skinnedDraw = std::move(draw);
     m_blocks[*m_currentBlock].commands.push_back(std::move(command));
     return true;
 }

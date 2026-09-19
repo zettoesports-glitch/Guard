@@ -3,6 +3,7 @@
 #include "client/render/LogicalRenderAssetTable.h"
 #include "client/render/RenderTapeTypes.h"
 #include "client/render/SessionRenderTape.h"
+#include "Render/Renderer/MuRenderer.h"
 
 #include <array>
 #include <cstddef>
@@ -30,6 +31,15 @@ public:
     [[nodiscard]] bool Normal3(float x, float y, float z) noexcept;
     [[nodiscard]] bool TexCoord2(float u, float v) noexcept;
     [[nodiscard]] bool EmitPrimitiveDraw(LegacyPrimitive primitive, std::span<const RenderTapeVertex> vertices) noexcept;
+
+    // Integration helpers for already-modernized MuMain paths. These keep direct
+    // IMuRenderer submissions tape-compatible while the original MuTwo logical
+    // geometry asset layer is reconstructed.
+    [[nodiscard]] bool SubmitTriangles(std::span<const mu::Vertex3D> vertices, std::uint32_t textureId) noexcept;
+    [[nodiscard]] bool SubmitLines(std::span<const mu::Vertex3D> vertices, std::uint32_t textureId) noexcept;
+    [[nodiscard]] bool SubmitSkinnedTriangles(std::span<const mu::SkinnedVertex3D> vertices,
+                                              std::uint32_t textureId,
+                                              const mu::SkinningParameters& parameters) noexcept;
 
     [[nodiscard]] bool SetClientArray(RenderClientArraySemantic semantic, std::span<const std::byte> bytes,
                                       std::uint32_t componentCount, RenderClientArrayScalarType scalarType,
