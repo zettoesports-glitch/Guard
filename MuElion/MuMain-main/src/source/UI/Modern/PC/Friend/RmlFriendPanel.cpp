@@ -409,20 +409,22 @@ private:
 
             for (std::size_t field = 0; field < 4; ++field)
             {
-                const auto children =
-                    rowElements_[i]->GetElementsByClassName(
-                        "data-grid-field-" + std::to_string(field));
+                Rml::ElementList children;
+                rowElements_[i]->GetElementsByClassName(
+                    children,
+                    "data-grid-field-" + std::to_string(field));
                 if (!children.empty())
                     rowFieldElements_[i][field] = children.front();
             }
 
-            const auto checks =
-                rowElements_[i]->GetElementsByTagName("input");
+            Rml::ElementList checks;
+            rowElements_[i]->GetElementsByTagName(checks, "input");
             if (!checks.empty())
                 rowCheckElements_[i] = checks.front();
 
-            const auto mails =
-                rowElements_[i]->GetElementsByClassName("friend-mail-icon");
+            Rml::ElementList mails;
+            rowElements_[i]->GetElementsByClassName(
+                mails, "friend-mail-icon");
             if (!mails.empty())
                 rowMailElements_[i] = mails.front();
         }
@@ -460,8 +462,9 @@ private:
                 return false;
             readActionButtons_[i].Bind(action);
 
-            const auto labels =
-                action->GetElementsByClassName("mu-overflow-label");
+            Rml::ElementList labels;
+            action->GetElementsByClassName(
+                labels, "mu-overflow-label");
             if (!labels.empty())
                 readActionLabels_[i] = labels.front();
         }
