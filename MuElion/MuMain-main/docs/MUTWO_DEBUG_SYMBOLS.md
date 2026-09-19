@@ -42,6 +42,9 @@ Normal3(float,float,float) noexcept
 TexCoord2(float,float) noexcept
 EmitExpandedTriangles(LegacyPrimitive, span<RenderTapeVertex const>) noexcept
 EmitPrimitiveDraw(LegacyPrimitive, span<RenderTapeVertex const>) noexcept
+WriteTriangleFan(uint64,Writer) noexcept
+    // Debug preserves instantiations for RenderFace, RenderFaceAlpha,
+    // RenderFaceBlend, RenderFace_After and RenderSpriteUV lambdas
 ReserveIndexedTriangles(uint64,uint64)
     -> optional<LegacyRenderFacade::IndexedTriangleReservation>
 SetClientArray(RenderClientArraySemantic, span<byte const>, unsigned int,
@@ -140,6 +143,8 @@ DownloadTargetRgba8(SessionId,SessionGeneration,uint64,uint64,RenderTapeRect,boo
 
 ```text
 SessionRenderUnit::BeginRenderTapePass(RenderTapePass) noexcept
+SessionRenderUnit::RenderPointRotate(int,float,float,float,float,float,float,
+                                     float,float,float,float,float,float,int)
 
 SessionLegacyCalls::glBegin(unsigned int) const
 SessionLegacyCalls::glVertex3fv(float const*) const
@@ -357,3 +362,21 @@ The private name of the boolean is not present in recovered symbols. It is
 currently modeled as row reversal because that matches framebuffer download
 behavior, and this inference is explicitly not treated as a recovered original
 identifier.
+
+
+## SessionRenderUnit / triangle-fan helpers
+
+A second pass over Debug signature strings exposed two items that were not in
+the initial facade inventory:
+
+- `SessionRenderUnit::RenderPointRotate(...)` with the exact 14-argument
+  signature. The reconstruction delegates to the existing MuMain
+  `::RenderPointRotate`, which is already tape-aware.
+- `LegacyRenderFacade::WriteTriangleFan<uint64, lambda>` template
+  instantiations for `RenderFace`, `RenderFaceAlpha`, `RenderFaceBlend`,
+  `RenderFace_After`, and `RenderSpriteUV`. The reconstructed helper
+  centralizes fan expansion and accepts lambdas that fill or return
+  `RenderTapeVertex`.
+
+This closes every named LegacyRenderFacade/SessionRenderUnit method currently
+visible in the Debug signature-string inventory.

@@ -9,7 +9,11 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
+#include <functional>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace mu::pipeline
@@ -47,6 +51,47 @@ public:
                                           std::span<const RenderTapeVertex> vertices) noexcept;
     [[nodiscard]] std::optional<IndexedTriangleReservation> ReserveIndexedTriangles(
         std::uint64_t vertexCount, std::uint64_t indexCount) noexcept;
+
+    // Recovered template helper used by SessionRenderUnit::RenderFace,
+    // RenderFaceAlpha, RenderFaceBlend, RenderFace_After and RenderSpriteUV.
+    // The Debug executable preserves the template instantiation names but not
+    // the lambda source. Support the three useful writer forms while keeping
+    // fan expansion centralized in EmitExpandedTriangles().
+    template <typename Writer>
+    [[nodiscard]] bool WriteTriangleFan(std::uint64_t vertexCount, Writer&& writer) noexcept
+    {
+        if (vertexCount < 3 ||
+            vertexCount > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max()))
+            return false;
+
+        std::vector<RenderTapeVertex> vertices(static_cast<std::size_t>(vertexCount));
+
+        for (std::uint64_t index = 0; index < vertexCount; ++index)
+        {
+            auto& vertex = vertices[static_cast<std::size_t>(index)];
+
+            if constexpr (std::is_invocable_r_v<bool, Writer&, std::uint64_t, RenderTapeVertex&>)
+            {
+                if (!std::invoke(writer, index, vertex))
+                    return false;
+            }
+            else if constexpr (std::is_invocable_v<Writer&, std::uint64_t, RenderTapeVertex&>)
+            {
+                std::invoke(writer, index, vertex);
+            }
+            else if constexpr (std::is_invocable_r_v<RenderTapeVertex, Writer&, std::uint64_t>)
+            {
+                vertex = std::invoke(writer, index);
+            }
+            else
+            {
+                static_assert(std::is_invocable_v<Writer&, std::uint64_t, RenderTapeVertex&>,
+                              "WriteTriangleFan writer must fill or return a RenderTapeVertex");
+            }
+        }
+
+        return EmitExpandedTriangles(LegacyPrimitive::TriangleFan, vertices);
+    }
 
     // Integration helpers for already-modernized MuMain paths. These keep direct
     // IMuRenderer submissions tape-compatible while the original MuTwo logical

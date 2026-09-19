@@ -4,6 +4,7 @@
 #include "client/render/FrameTape.h"
 #include "client/render/LegacyRenderFacade.h"
 #include "client/render/FrameTargetTransfers.h"
+#include "Render/Textures/ZzzOpenglUtil.h"
 
 #include <algorithm>
 #include <utility>
@@ -15,6 +16,21 @@ bool SessionRenderUnit::BeginRenderTapePass(mu::pipeline::RenderTapePass pass) n
 {
     mu::pipeline::SessionFogPassConstants fog{};
     return mu::pipeline::GetLegacyRenderFacade().BeginPass(pass, fog);
+}
+
+void SessionRenderUnit::RenderPointRotate(
+    int texture,
+    float ix, float iy,
+    float inputWidth, float inputHeight,
+    float x, float y,
+    float width, float height,
+    float rotate, float rotateLocal,
+    float uWidth, float vHeight,
+    int number)
+{
+    ::RenderPointRotate(texture, ix, iy, inputWidth, inputHeight,
+                        x, y, width, height, rotate, rotateLocal,
+                        uWidth, vHeight, number);
 }
 
 SessionRender::~SessionRender()

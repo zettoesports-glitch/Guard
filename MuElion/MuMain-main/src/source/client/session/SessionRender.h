@@ -24,6 +24,15 @@ class SessionRenderUnit
 {
 public:
     [[nodiscard]] bool BeginRenderTapePass(mu::pipeline::RenderTapePass pass) noexcept;
+
+    void RenderPointRotate(int texture,
+                           float ix, float iy,
+                           float inputWidth, float inputHeight,
+                           float x, float y,
+                           float width, float height,
+                           float rotate, float rotateLocal,
+                           float uWidth, float vHeight,
+                           int number);
 };
 
 class SessionRender
