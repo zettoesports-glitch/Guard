@@ -39,6 +39,7 @@
 #include "Camera/OrbitalCamera.h"
 #include "Engine/Object/CullingConstants.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 
 // DevEditor function declarations
 #ifdef _EDITOR
@@ -10846,7 +10847,7 @@ void RenderBoundingBox(OBJECT* pObj)
         MakeVertex(TransformVertices[0], lightColor), MakeVertex(TransformVertices[4], lightColor),
         MakeVertex(TransformVertices[6], lightColor), MakeVertex(TransformVertices[2], lightColor),
     };
-    mu::GetRenderer().RenderLines(lineVertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitLines(lineVertices, 0u);
 
     mu::GetRenderer().PopMatrix();
 }
