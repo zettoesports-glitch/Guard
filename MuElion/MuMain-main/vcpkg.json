@@ -6,7 +6,9 @@
   "dependencies": [
     {
       "name": "curl",
-      "features": ["ssl"]
+      "features": [
+        "ssl"
+      ]
     },
     {
       "name": "directx-dxc",
@@ -15,8 +17,12 @@
     "openssl",
     {
       "name": "glslang",
-      "features": ["tools"]
+      "features": [
+        "tools"
+      ]
     },
-    "spirv-cross"
+    "spirv-cross",
+    "freetype",
+    "lunasvg"
   ]
 }

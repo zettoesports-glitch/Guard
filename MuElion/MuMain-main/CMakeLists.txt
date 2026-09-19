@@ -15,6 +15,13 @@ option(BUILD_TESTING "Build unit tests" OFF)
 option(MU_ENABLE_SHADER_COMPILATION
     "Compile HLSL shaders via glslang, SPIRV-Cross, and DXC; OFF copies checked-in shader blobs" OFF)
 
+set(MU_MODERN_UI_DEFAULT OFF)
+if(WIN32)
+    set(MU_MODERN_UI_DEFAULT ON)
+endif()
+option(MU_ENABLE_MODERN_UI
+    "Enable reconstructed MuTwo RmlUi modern UI integration" ${MU_MODERN_UI_DEFAULT})
+
 include(FetchContent)
 
 set(MU_SHADER_OUTPUT_DIR "${CMAKE_BINARY_DIR}/shaders")
@@ -191,6 +198,31 @@ FetchContent_Declare(miniaudio
     SOURCE_SUBDIR _fetchcontent_only
 )
 FetchContent_MakeAvailable(miniaudio)
+
+if(MU_ENABLE_MODERN_UI)
+    # Main-x64-Debug.exe was built after RmlUi 6.3 and exposes the same
+    # RenderInterface/CallbackTexture API. Pin the stable 6.3 commit rather
+    # than tracking master so the reconstructed ABI remains deterministic.
+    set(RMLUI_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(RMLUI_LUA_BINDINGS OFF CACHE BOOL "" FORCE)
+    set(RMLUI_FONT_ENGINE "freetype" CACHE STRING "" FORCE)
+    set(RMLUI_SVG_PLUGIN ON CACHE BOOL "" FORCE)
+    set(RMLUI_PRECOMPILED_HEADERS OFF CACHE BOOL "" FORCE)
+    set(RMLUI_COMPILER_OPTIONS OFF CACHE BOOL "" FORCE)
+
+    function(mu_fetch_rmlui)
+        # Keep RmlUi static without forcing BUILD_SHARED_LIBS globally on the
+        # rest of MuMain's FetchContent dependencies.
+        set(BUILD_SHARED_LIBS OFF)
+        FetchContent_Declare(RmlUi
+            GIT_REPOSITORY https://github.com/mikke89/RmlUi.git
+            GIT_TAG        ba95ffe8bfb6370efb2cdcca927eaad4710c5413
+            GIT_SHALLOW    FALSE
+        )
+        FetchContent_MakeAvailable(RmlUi)
+    endfunction()
+    mu_fetch_rmlui()
+endif()
 
 set(SDLTTF_SAMPLES OFF CACHE BOOL "" FORCE)
 set(SDLTTF_VENDORED ON CACHE BOOL "" FORCE)

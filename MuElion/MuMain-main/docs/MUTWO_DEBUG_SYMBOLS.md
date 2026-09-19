@@ -400,3 +400,30 @@ writer assumption:
 
 The reconstruction now follows those semantics rather than invoking the writer
 once per vertex.
+
+
+## Modern UI / RmlUi compatibility
+
+The Debug executable statically contains RmlUi and exposes RTTI for
+`UI::Modern::TapeRenderInterface`, `UI::Modern::RmlUiRuntime` and
+`UI::Modern::RmlHudMapViewport`. Its observable RenderInterface ABI matches
+RmlUi 6.3. The reconstruction pins the stable 6.3 commit
+`ba95ffe8bfb6370efb2cdcca927eaad4710c5413` (released 2026-08-22), which
+predates the 2026-09-17 MuTwo Debug build.
+
+The Debug executable also includes RmlUi SVG sources and lunasvg RTTI, so the
+modern-UI build enables RmlUi's SVG plugin and links lunasvg. FreeType is
+enabled for the RmlUi font engine.
+
+`UI::Modern::TapeRenderInterface` now implements:
+- compiled indexed geometry,
+- tape-backed arbitrary 2D triangle submission,
+- premultiplied-alpha blend semantics (ONE / ONE_MINUS_SRC_ALPHA),
+- generated RGBA8 textures backed by LogicalRenderAssetTable,
+- direct 24/32-bit uncompressed and RLE TGA loading,
+- scissor state,
+- RmlUi transform + per-draw translation.
+
+RmlUi's SVG plugin handles SVG documents separately through lunasvg, matching
+the Debug source inventory. The higher-level `RmlUiRuntime` and
+`RmlHudMapViewport` are reconstructed in subsequent commits.

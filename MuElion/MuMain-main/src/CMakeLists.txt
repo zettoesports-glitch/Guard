@@ -105,6 +105,10 @@ list(FILTER MU_CLIENT_SOURCES EXCLUDE REGEX "[/\\]Render[/\\]Renderer[/\\]MuRend
 # compiled as a second backend.
 list(FILTER MU_CLIENT_SOURCES EXCLUDE REGEX "[/\\]Render[/\\](Core|RHI|Shaders)[/\\]")
 
+if(NOT MU_ENABLE_MODERN_UI)
+  list(FILTER MU_CLIENT_SOURCES EXCLUDE REGEX "[/\\]UI[/\\]Modern[/\\]")
+endif()
+
 # Add MuEditor sources when editor is enabled
 if(ENABLE_EDITOR)
   file(GLOB_RECURSE MU_EDITOR_SOURCES
@@ -153,6 +157,10 @@ if(MSVC)
 endif()
 target_compile_definitions(MuClient PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 target_link_libraries(MuClient PUBLIC SDL3::SDL3 glm::glm spdlog::spdlog)
+if(MU_ENABLE_MODERN_UI)
+  target_link_libraries(MuClient PUBLIC RmlUi::Core)
+  target_compile_definitions(MuClient PUBLIC MU_ENABLE_MODERN_UI=1)
+endif()
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 target_link_libraries(MuClient PUBLIC OpenSSL::Crypto)
 if(TARGET SDL3_ttf::SDL3_ttf)
