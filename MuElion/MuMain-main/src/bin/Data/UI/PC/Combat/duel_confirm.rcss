@@ -1,0 +1,8 @@
+body{margin:0px;width:100%;height:100%;background-color:transparent;font-family:Arial;display:flex;align-items:center;justify-content:center}
+#menu{position:relative;display:none;width:310px;height:343px;background-color:#151515ee;border-width:1px;border-color:#665b3e}
+#tfTitle,#taDuelInfo,#btnOk,#btnCancel,#btnEnd,#tfTitle-label,#taDuelInfo-label,#btnOk-label,#btnCancel-label,#btnEnd-label{position:absolute}
+#tfTitle{left:25px;top:20px;width:260px;height:28px}#tfTitle-label{width:100%;height:28px;line-height:28px;text-align:center;color:#f3d784;font-size:18px}
+#taDuelInfo{left:30px;top:70px;width:250px;height:170px}#taDuelInfo-label{width:100%;height:100%;white-space:pre-wrap;color:#eee;text-align:center}
+.mu-button{bottom:28px;width:90px;height:28px;line-height:28px;text-align:center;pointer-events:auto;background-color:#302c22;border-width:1px;border-color:#75694c}
+#btnOk{left:55px}#btnCancel{right:55px}#btnEnd{left:110px}
+.mu-button .label{width:100%;height:100%;text-align:center;color:#eee;pointer-events:none}

@@ -13,6 +13,12 @@ class RmlPetFrameLayer;
 class RmlPetInfoPanel;
 }
 namespace Chat { class RmlChatPanel; }
+namespace Combat
+{
+class RmlDuelConfirmPanel;
+class RmlDuelResultPanel;
+class RmlDuelWatchPanel;
+}
 namespace Command
 {
 class RmlCommandWindowPanel;
@@ -81,6 +87,9 @@ public:
     [[nodiscard]] Character::RmlPetFrameLayer& PetFrame() noexcept;
     [[nodiscard]] Character::RmlPetInfoPanel& PetInfo() noexcept;
     [[nodiscard]] Chat::RmlChatPanel& Chat() noexcept;
+    [[nodiscard]] Combat::RmlDuelConfirmPanel& DuelConfirm() noexcept;
+    [[nodiscard]] Combat::RmlDuelResultPanel& DuelResult() noexcept;
+    [[nodiscard]] Combat::RmlDuelWatchPanel& DuelWatch() noexcept;
     [[nodiscard]] Command::RmlCommandWindowPanel& CommandWindow() noexcept;
     [[nodiscard]] Command::RmlQuickCommandPanel& QuickCommand() noexcept;
     [[nodiscard]] Common::RmlMessageBoxPanel& MessageBox() noexcept;

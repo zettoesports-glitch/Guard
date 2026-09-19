@@ -347,3 +347,13 @@ and differential runtime tests succeed.
 - reconstructed `RmlWindowMenuPanel` using the observable six-action
   System/Help/Guild/MoveMap/MiniMap/Gens ordering and published hotkeys, with
   `CNewUIWindowMenu` remaining authoritative for side effects
+
+
+- reconstructed the public Combat duel trio:
+  `RmlDuelConfirmPanel`, `RmlDuelResultPanel`, and
+  `RmlDuelWatchPanel`; confirm/result expose only semantic intents while the
+  existing legacy message-box callbacks remain authoritative for
+  `CDuelMgr::SendDuelRequestAnswer`
+- added a read-only `CNewUIDuelWatchWindow::BuildSnapshot` plus
+  `RmlDuelWatchLegacyBridge` for the four enabled/joinable duel channels;
+  join requests remain game/network-side

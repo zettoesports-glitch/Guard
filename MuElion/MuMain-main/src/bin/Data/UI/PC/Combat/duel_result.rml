@@ -1,9 +1,1 @@
-<rml>
-<head>
-    <title>Reconstructed Duel Result</title>
-    <link type="text/rcss" href="../ui_assets.rcss"/>
-</head>
-<body class="mu-modern-document" id="mu-combat-duel-result">
-    <div class="mu-document-root"></div>
-</body>
-</rml>
+<rml><head><title>Duel Result</title><meta name="mu-design-Menu-Size" content="310 343"/><meta name="mu-design-Menu-Reference" content="640 480"/><link type="text/rcss" href="../Common/common.rcss"/><link type="text/rcss" href="../ui_assets.rcss"/><link type="text/rcss" href="duel_result.rcss"/></head><body><div id="menu"><div id="tfTitle"><div id="tfTitle-label"/></div><div id="taDuelInfo"><div id="taDuelInfo-label"/></div><div id="btnOk" style="display:none"><span id="btnOk-label"/></div><div id="btnCancel" style="display:none"><span id="btnCancel-label"/></div><div id="btnEnd" class="mu-button"><span id="btnEnd-label" class="label"/></div></div></body></rml>

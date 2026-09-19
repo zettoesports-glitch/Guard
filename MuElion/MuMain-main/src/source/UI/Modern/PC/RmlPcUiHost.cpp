@@ -10,6 +10,10 @@
 #include "UI/Modern/PC/Character/RmlPetFrameLayer.h"
 #include "UI/Modern/PC/Character/RmlPetInfoPanel.h"
 #include "UI/Modern/PC/Chat/RmlChatPanel.h"
+#include "UI/Modern/PC/Combat/RmlDuelConfirmPanel.h"
+#include "UI/Modern/PC/Combat/RmlDuelResultPanel.h"
+#include "UI/Modern/PC/Combat/RmlDuelWatchPanel.h"
+#include "UI/Modern/PC/Combat/RmlDuelWatchLegacyBridge.h"
 #include "UI/Modern/PC/Command/RmlCommandWindowPanel.h"
 #include "UI/Modern/PC/Command/RmlQuickCommandPanel.h"
 #include "UI/Modern/PC/Command/RmlQuickCommandLegacyBridge.h"
@@ -84,6 +88,9 @@ public:
         serverSelect_.Release();
         tooltip_.Release();
         messageBox_.Release();
+        duelWatch_.Release();
+        duelResult_.Release();
+        duelConfirm_.Release();
 
         trade_.Release();
         storageSecurity_.Release();
@@ -162,6 +169,14 @@ public:
         if (topMenu_.IsLoaded()) changed |= topMenu_.Update();
         if (party_.IsLoaded()) changed |= party_.Update();
         if (chat_.IsLoaded()) changed |= chat_.Update();
+        if (duelConfirm_.IsLoaded()) changed |= duelConfirm_.Update();
+        if (duelResult_.IsLoaded()) changed |= duelResult_.Update();
+        if (duelWatch_.IsLoaded() && g_pDuelWatch)
+        {
+            changed |= duelWatchLegacyBridge_.Synchronize(
+                *g_pDuelWatch, duelWatch_);
+            changed |= duelWatch_.Update();
+        }
 
         if (characterCreate_.IsLoaded())
         {
@@ -237,6 +252,10 @@ public:
     Character::RmlPetFrameLayer petFrame_;
     Character::RmlPetInfoPanel petInfo_;
     Chat::RmlChatPanel chat_;
+    Combat::RmlDuelConfirmPanel duelConfirm_;
+    Combat::RmlDuelResultPanel duelResult_;
+    Combat::RmlDuelWatchPanel duelWatch_;
+    Combat::RmlDuelWatchLegacyBridge duelWatchLegacyBridge_;
     Command::RmlCommandWindowPanel commandWindow_;
     Command::RmlQuickCommandPanel quickCommand_;
     Command::RmlQuickCommandLegacyBridge quickCommandLegacyBridge_;
@@ -327,6 +346,9 @@ MU_PC_UI_GETTER(CharacterFrame, characterFrame_, Character::RmlCharacterFramePan
 MU_PC_UI_GETTER(PetFrame, petFrame_, Character::RmlPetFrameLayer)
 MU_PC_UI_GETTER(PetInfo, petInfo_, Character::RmlPetInfoPanel)
 MU_PC_UI_GETTER(Chat, chat_, Chat::RmlChatPanel)
+MU_PC_UI_GETTER(DuelConfirm, duelConfirm_, Combat::RmlDuelConfirmPanel)
+MU_PC_UI_GETTER(DuelResult, duelResult_, Combat::RmlDuelResultPanel)
+MU_PC_UI_GETTER(DuelWatch, duelWatch_, Combat::RmlDuelWatchPanel)
 MU_PC_UI_GETTER(CommandWindow, commandWindow_, Command::RmlCommandWindowPanel)
 MU_PC_UI_GETTER(QuickCommand, quickCommand_, Command::RmlQuickCommandPanel)
 MU_PC_UI_GETTER(MessageBox, messageBox_, Common::RmlMessageBoxPanel)

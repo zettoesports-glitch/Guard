@@ -1,9 +1,1 @@
-<rml>
-<head>
-    <title>Reconstructed Duel Watch</title>
-    <link type="text/rcss" href="../ui_assets.rcss"/>
-</head>
-<body class="mu-modern-document" id="mu-combat-duel-watch">
-    <div class="mu-document-root"></div>
-</body>
-</rml>
+<rml><head><title>Duel Watch</title><meta name="mu-design-Panel-Size" content="327 639"/><meta name="mu-design-Panel-Reference" content="640 480"/><meta name="mu-design-Panel-Initial" content="20 20"/><link type="text/rcss" href="../Common/common.rcss"/><link type="text/rcss" href="../ui_assets.rcss"/><link type="text/rcss" href="duel_watch.rcss"/></head><body><div id="panel"><div id="tfTitle"/><div id="tfExplain"/><div id="btnDrag"/><div id="btnClose" class="mu-button">X</div><div id="tfDuelTitle0"/><div id="tfProgressDuel0"/><div id="btnDuelWatch0" class="mu-button"><span id="btnDuelWatch0-label"/></div><div id="tfDuelTitle1"/><div id="tfProgressDuel1"/><div id="btnDuelWatch1" class="mu-button"><span id="btnDuelWatch1-label"/></div><div id="tfDuelTitle2"/><div id="tfProgressDuel2"/><div id="btnDuelWatch2" class="mu-button"><span id="btnDuelWatch2-label"/></div><div id="tfDuelTitle3"/><div id="tfProgressDuel3"/><div id="btnDuelWatch3" class="mu-button"><span id="btnDuelWatch3-label"/></div></div></body></rml>
