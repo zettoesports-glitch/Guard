@@ -1246,3 +1246,38 @@ skill rows backed by an arbitrary retained skill vector, reuses the recovered
 `RmlMuScrollBar`, binds the movable panel, and applies the recovered authored
 327x639 size plus initial 339,55 position. Skill rows carry a presentation
 `data-skill-id` attribute but do not trigger pet commands themselves.
+
+
+## RmlCommandWindowPanel reconstruction
+
+The observable modern command-window asset exposes the exact document path,
+nine presentation inputs, and eleven command controls:
+
+```text
+Data/UI/PC/Command/command_window.rml
+RmlCommandWindowPanel-PanelWidth
+RmlCommandWindowPanel-PanelHeight
+RmlCommandWindowPanel-ReferenceWidth
+RmlCommandWindowPanel-ReferenceHeight
+RmlCommandWindowPanel-ButtonX
+RmlCommandWindowPanel-ButtonY
+RmlCommandWindowPanel-ButtonStep
+RmlCommandWindowPanel-ButtonWidth
+RmlCommandWindowPanel-ButtonHeight
+
+command-button-0 .. command-button-10
+command-label-0 .. command-label-10
+```
+
+The legacy `CNewUICommandWindow` still owns twelve internal command button
+slots and all command execution/network rules (trade, purchase, party,
+whisper, guild relationships, friend, follow, duel, and related permission
+checks). The modern document visibly publishes only eleven button IDs, so the
+reconstruction deliberately models **11 modern commands** and does not invent
+a twelfth DOM control.
+
+`RmlCommandWindowPanel` owns the presentation document, eleven button
+wrappers, drag controller and close button. Its state supplies labels,
+visible/enabled status and optional selected command. User interaction is
+returned as one-shot `SelectCommand(index)` or `Close` intent; no network
+request or legacy command is executed by the modern panel.

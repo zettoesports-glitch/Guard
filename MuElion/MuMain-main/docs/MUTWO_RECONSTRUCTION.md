@@ -140,6 +140,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   dual HP bars, minimize action and movable presentation
 - reconstructed `RmlPetInfoPanel` with eleven design inputs, two tabs,
   five info rows, progress state, four-row scrollable skill list, drag and close
+- reconstructed `RmlCommandWindowPanel` with nine design inputs, eleven
+  modern command buttons, retained selection, drag and close intents
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle
@@ -172,7 +174,7 @@ a license file, so UI documents are reconstructed independently.
       recovered
 - [ ] Replace the remaining neutral RML skeletons screen-by-screen with
       behaviorally reconstructed UI from observable behavior and the existing
-      MuMain UI (Chat, Main Frame, Top Menu, Character Frame, Pet Frame and Pet Info are now materialized functionally)
+      MuMain UI (Chat, Main Frame, Top Menu, Character/Pet panels and Command Window are now materialized functionally)
 
 ## Current confidence boundary
 

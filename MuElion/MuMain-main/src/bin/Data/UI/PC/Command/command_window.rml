@@ -1,9 +1,36 @@
 <rml>
 <head>
+    <meta name="mu-design-RmlCommandWindowPanel-PanelWidth" content="327"/>
+    <meta name="mu-design-RmlCommandWindowPanel-PanelHeight" content="639"/>
+    <meta name="mu-design-RmlCommandWindowPanel-ReferenceWidth" content="640"/>
+    <meta name="mu-design-RmlCommandWindowPanel-ReferenceHeight" content="480"/>
+    <meta name="mu-design-RmlCommandWindowPanel-ButtonX" content="101"/>
+    <meta name="mu-design-RmlCommandWindowPanel-ButtonY" content="102"/>
+    <meta name="mu-design-RmlCommandWindowPanel-ButtonStep" content="44"/>
+    <meta name="mu-design-RmlCommandWindowPanel-ButtonWidth" content="128.000259"/>
+    <meta name="mu-design-RmlCommandWindowPanel-ButtonHeight" content="35"/>
     <title>Reconstructed Command Window</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="command_window.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-command-command-window">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="command-window" class="command-window">
+        <div id="command-window-back" class="command-window-back"/>
+        <div id="command-window-title" class="command-window-title"/>
+        <div id="command-window-drag" class="command-window-drag"/>
+        <div id="command-window-close" class="mu-button command-window-close">X</div>
+
+        <div id="command-button-0" class="mu-button command-button"><span id="command-label-0"/></div>
+        <div id="command-button-1" class="mu-button command-button"><span id="command-label-1"/></div>
+        <div id="command-button-2" class="mu-button command-button"><span id="command-label-2"/></div>
+        <div id="command-button-3" class="mu-button command-button"><span id="command-label-3"/></div>
+        <div id="command-button-4" class="mu-button command-button"><span id="command-label-4"/></div>
+        <div id="command-button-5" class="mu-button command-button"><span id="command-label-5"/></div>
+        <div id="command-button-6" class="mu-button command-button"><span id="command-label-6"/></div>
+        <div id="command-button-7" class="mu-button command-button"><span id="command-label-7"/></div>
+        <div id="command-button-8" class="mu-button command-button"><span id="command-label-8"/></div>
+        <div id="command-button-9" class="mu-button command-button"><span id="command-label-9"/></div>
+        <div id="command-button-10" class="mu-button command-button"><span id="command-label-10"/></div>
+    </div>
 </body>
 </rml>
