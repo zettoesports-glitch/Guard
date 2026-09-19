@@ -451,12 +451,6 @@ private:
         root_->SetProperty("transform-origin", "0 0");
         root_->SetProperty("transform", ScaleValue(scale));
 
-        const Rml::Vector2f current = mover_.GetPosition();
-        const bool hasMoved =
-            current.x != 0.0f || current.y != 0.0f;
-        if (!hasMoved)
-            mover_.SetPosition(design_.initialX, design_.initialY);
-
         mover_.SetMetrics(
             availableWidth / scale,
             availableHeight / scale,
@@ -464,6 +458,12 @@ private:
             design_.panelHeight,
             0.0f,
             0.0f);
+
+        const Rml::Vector2f current = mover_.GetPosition();
+        const bool hasMoved =
+            current.x != 0.0f || current.y != 0.0f;
+        if (!hasMoved)
+            mover_.SetPosition(design_.initialX, design_.initialY);
     }
 
     RmlDocumentHost host_;
