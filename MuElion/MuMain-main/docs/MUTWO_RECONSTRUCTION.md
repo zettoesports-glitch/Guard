@@ -109,6 +109,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
   enabled state and CSS synchronization
 - reconstructed `RmlMuMovablePanel` drag listener, bounds clamp, position
   state and `left/top` CSS synchronization
+- reconstructed `RmlMuOptionStepper` with embedded previous/next buttons,
+  exact key navigation and one-shot optional change delivery
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle

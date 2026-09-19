@@ -633,3 +633,43 @@ stored parent/origin offset. Applying CSS sets the position-changed latch.
 
 The reconstruction preserves these behaviors while giving semantic names to
 non-exported methods whose original private identifiers are not present.
+
+
+## RmlMuOptionStepper reconstruction
+
+RTTI exposes `UI::Modern::RmlMuOptionStepper::Listener`. Direct x64
+disassembly recovers the control layout and behavior:
+
+```text
++0x00 unique_ptr<Listener>
++0x08 Rml::Element* root
++0x10 RmlMuButton decrement
++0x28 RmlMuButton increment
++0x40 int current
++0x44 int maximum
++0x48 bool enabled
++0x4c optional<int> pending
+```
+
+Binding removes any previous `keydown` listener, attaches the listener to the
+new root, and binds the two embedded `RmlMuButton` controls. State updates
+enable the decrement button only for `enabled && current > 0` and the
+increment button only for `enabled && current < maximum`; disabling clears
+the pending optional.
+
+The recovered key parameter is exactly `key_identifier`. RmlUi 6.3 enum
+values in the Debug switch map to:
+
+- `KI_TAB`: stop propagation without changing the value
+- `KI_END`: set candidate to `maximum`
+- `KI_HOME`: set candidate to 0
+- `KI_LEFT`: decrement
+- `KI_RIGHT`: increment
+
+Recognized value-changing keys clamp to `[0, maximum]` when enabled and then
+call `Event::StopPropagation()`. Button clicks feed the same pending value.
+The consumption method updates the local current value and returns
+`std::exchange(pending, std::nullopt)`, giving one-shot change delivery.
+
+The reconstruction uses semantic public method names because private
+non-exported identifiers are not present in the executable.
