@@ -27,6 +27,7 @@
 #include "UI/NewUI/NewUISystem.h"
 #include "Render/Models/GpuSkinningPath.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Renderer/RenderUtils.h"
 #include "Core/Utilities/FrameProfiler.h"
 
@@ -1292,7 +1293,7 @@ void BMD::EndRenderCoinHeap(int coinCount)
         muVerts[static_cast<std::size_t>(i)] =
             {vertices[i][0], vertices[i][1], vertices[i][2], 0.f, 0.f, 0.f, texCoords[i][0], texCoords[i][1], color};
     }
-    mu::GetRenderer().RenderTriangles(muVerts, 0u);
+    (void)mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(muVerts, 0u);
 }
 
 void BMD::RenderMesh(int meshIndex, int renderFlags, float alpha, int blendMeshIndex, float blendMeshAlpha, float blendMeshTextureCoordU, float blendMeshTextureCoordV, int explicitTextureIndex)
@@ -1704,7 +1705,8 @@ void BMD::RenderMesh(int meshIndex, int renderFlags, float alpha, int blendMeshI
             .lightEnabled = usesCpuLighting,
         };
         gpuSkinningSubmitted =
-            mu::GetRenderer().RenderSkinnedTriangles(skinnedVertices.first(skinnedVertexCount), 0u, skinning);
+            mu::pipeline::GetLegacyRenderFacade().SubmitSkinnedTriangles(
+                skinnedVertices.first(skinnedVertexCount), 0u, skinning);
     }
 
     const Render::Models::GpuSkinningPath skinningPath =
@@ -1816,7 +1818,7 @@ void BMD::RenderMesh(int meshIndex, int renderFlags, float alpha, int blendMeshI
     }
 
     const std::size_t renderedVertexCount = static_cast<std::size_t>(target_vertex_index + 1);
-    mu::GetRenderer().RenderTriangles(rendererVertices.first(renderedVertexCount), 0u);
+    (void)mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(rendererVertices.first(renderedVertexCount), 0u);
 }
 
 void BMD::RenderMeshAlternative(int iRndExtFlag, int iParam, int i, int RenderFlag, float Alpha, int BlendMesh, float BlendMeshLight, float BlendMeshTexCoordU, float BlendMeshTexCoordV, int MeshTexture)
@@ -2147,7 +2149,7 @@ void BMD::RenderMeshAlternative(int iRndExtFlag, int iParam, int i, int RenderFl
             muVerts[vertexIndex++] = {px, py, pz, n[0], n[1], n[2], u, v, color};
         }
     }
-    mu::GetRenderer().RenderTriangles(muVerts.first(vertexIndex), 0u);
+    (void)mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(muVerts.first(vertexIndex), 0u);
 }
 
 void BMD::RenderMeshEffect(int i, int iType, int iSubType, vec3_t Angle, VOID* obj)
@@ -2598,7 +2600,7 @@ void BMD::RenderMeshTranslate(int i, int RenderFlag, float Alpha, int BlendMesh,
             muVerts[vertexIndex++] = {pos[0], pos[1], pos[2], n[0], n[1], n[2], u, v, color};
         }
     }
-    mu::GetRenderer().RenderTriangles(muVerts.first(vertexIndex), 0u);
+    (void)mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(muVerts.first(vertexIndex), 0u);
 }
 
 void BMD::RenderBodyTranslate(int Flag, float Alpha, int BlendMesh, float BlendMeshLight, float BlendMeshTexCoordU, float BlendMeshTexCoordV, int HiddenMesh, int Texture)
@@ -2706,7 +2708,7 @@ void BMD::AddClothesShadowTriangles(void* pClothes, const int clothesCount, cons
         muVerts[static_cast<std::size_t>(i)] =
             {vertices[i][0], vertices[i][1], vertices[i][2], 0.f, 0.f, 0.f, 0.f, 0.f, color};
     }
-    mu::GetRenderer().RenderTriangles(muVerts, 0u);
+    (void)mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(muVerts, 0u);
 }
 
 void BMD::AddMeshShadowTriangles(const int blendMesh, const int hiddenMesh, const int startMesh,
@@ -2757,7 +2759,7 @@ void BMD::AddMeshShadowTriangles(const int blendMesh, const int hiddenMesh, cons
         muVerts[static_cast<std::size_t>(i)] =
             {vertices[i][0], vertices[i][1], vertices[i][2], 0.f, 0.f, 0.f, 0.f, 0.f, color};
     }
-    mu::GetRenderer().RenderTriangles(muVerts, 0u);
+    (void)mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(muVerts, 0u);
 }
 
 void BMD::RenderBodyShadow(const int blendMesh, const int hiddenMesh, const int startMeshNumber,
@@ -2850,7 +2852,7 @@ void BMD::RenderObjectBoundingBox()
             EmitQuad(BoundingVertices[0], 0.f, 1.f, BoundingVertices[4], 1.f, 1.f, BoundingVertices[6], 1.f, 0.f,
                      BoundingVertices[2], 0.f, 0.f, cLight);
 
-            mu::GetRenderer().RenderTriangles(verts, 0u);
+            (void)mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(verts, 0u);
         }
     }
     mu::GetRenderer().PopMatrix();
@@ -2905,7 +2907,7 @@ void BMD::RenderBone(float(*BoneMatrix)[3][4])
     }
     if (vertexIndex != 0)
     {
-        mu::GetRenderer().RenderLines(allLines.first(vertexIndex), 0u);
+        (void)mu::pipeline::GetLegacyRenderFacade().SubmitLines(allLines.first(vertexIndex), 0u);
     }
 
     mu::GetRenderer().SetDepthFunc(GL_LEQUAL);
