@@ -15,6 +15,7 @@
 #include "UI/NewUI/Inventory/NewUIMyInventory.h"
 #include "GameLogic/Items/CSItemOption.h"
 #include "World/MapInfra/MapManager.h"
+#include "Render/Textures/ZzzTexture.h"
 
 extern BYTE m_OccupationState;
 
@@ -203,6 +204,62 @@ bool SEASON3B::CNewUIMiniMap::Render()
 bool SEASON3B::CNewUIMiniMap::Update()
 {
     return true;
+}
+
+void SEASON3B::CNewUIMiniMap::BuildSnapshot(
+    MiniMapSnapshot& snapshot) const
+{
+    snapshot = {};
+    snapshot.visible =
+        g_pNewUISystem &&
+        g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_MINI_MAP);
+    snapshot.textureReady = m_bSuccess;
+    snapshot.textureId = IMAGE_MINIMAP_INTERFACE;
+    snapshot.viewportWidth = WindowWidth;
+    snapshot.viewportHeight = WindowHeight;
+
+    if (Hero)
+    {
+        snapshot.heroX = Hero->PositionX;
+        snapshot.heroY = Hero->PositionY;
+    }
+
+    const int zoomIndex = std::clamp(m_MiniPos, 0, 5);
+    snapshot.mapWidth = static_cast<float>(m_Lenth[zoomIndex].x);
+    snapshot.mapHeight = static_cast<float>(m_Lenth[zoomIndex].y);
+
+    if (BITMAP_t* bitmap = Bitmaps.FindTexture(IMAGE_MINIMAP_INTERFACE))
+    {
+        snapshot.textureWidth =
+            static_cast<std::uint32_t>(std::max(0.0f, bitmap->Width));
+        snapshot.textureHeight =
+            static_cast<std::uint32_t>(std::max(0.0f, bitmap->Height));
+        snapshot.textureReady =
+            snapshot.textureReady &&
+            snapshot.textureWidth > 0 &&
+            snapshot.textureHeight > 0;
+    }
+    else
+    {
+        snapshot.textureReady = false;
+    }
+
+    snapshot.markers.clear();
+    snapshot.markers.reserve(MAX_MINI_MAP_DATA);
+    for (int i = 0; i < MAX_MINI_MAP_DATA; ++i)
+    {
+        const MINI_MAP& marker = m_Mini_Map_Data[i];
+        if (marker.Kind <= 0)
+            break;
+
+        MiniMapSnapshotMarker out;
+        out.kind = marker.Kind;
+        out.x = marker.Location[0];
+        out.y = marker.Location[1];
+        out.rotation = marker.Rotation;
+        out.name = marker.Name;
+        snapshot.markers.push_back(std::move(out));
+    }
 }
 
 void SEASON3B::CNewUIMiniMap::LoadImages(const wchar_t* Filename)

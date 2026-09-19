@@ -147,3 +147,10 @@ legacy UI before parity is validated.
 - `Data/UI/PC/Character/character_create.rml`
 
 - `Data/UI/PC/HUD/buff_list.rml`
+
+
+### Additional public MuClient PC contracts now materialized
+
+- `Data/UI/PC/HUD/minimap.rml` — GPU-backed minimap layer over the recovered
+  `RmlHudMapViewport`; independently authored local RML/RCSS uses the
+  observable public IDs and `Map-*` design metadata.

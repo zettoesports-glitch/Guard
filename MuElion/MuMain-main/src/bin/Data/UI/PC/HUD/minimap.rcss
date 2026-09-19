@@ -1,0 +1,124 @@
+body {
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+}
+#map-root,
+#map-host,
+#map-view,
+#map-markers,
+#map-hero,
+#map-help {
+    position: absolute;
+}
+#map-root {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    clip: always;
+    pointer-events: none;
+}
+#map-host,
+#map-markers {
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+#map-view {
+    display: none;
+    transform-origin: 0px 0px;
+}
+#map-hero {
+    display: none;
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    margin-top: -10px;
+}
+.map-hero-arrow {
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 0px;
+    height: 0px;
+    border-left-width: 6px;
+    border-right-width: 6px;
+    border-bottom-width: 16px;
+    border-color: transparent transparent #ffd75f transparent;
+    transform: rotate(-45deg);
+}
+.map-marker {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    margin-left: -9px;
+    margin-top: -9px;
+}
+.map-marker-icon {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: #e3e3e3;
+}
+.map-marker.portal .map-marker-icon {
+    width: 14px;
+    height: 14px;
+    left: 2px;
+    top: 2px;
+    border-radius: 0px;
+    border-width: 1px;
+    border-color: #79b8ff;
+    background-color: #25466f;
+}
+.map-marker-label {
+    position: absolute;
+    left: -51px;
+    top: 19px;
+    width: 120px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    color: #f0f0f0;
+    background-color: #13131388;
+    white-space: nowrap;
+    overflow: hidden;
+}
+#map-help {
+    left: 12px;
+    bottom: 12px;
+    width: 210px;
+    height: 50px;
+    color: #dddddd;
+    font-size: 12px;
+}
+.map-key {
+    top: 0px;
+    width: 22px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-width: 1px;
+    border-color: #80745b;
+    background-color: #181818cc;
+}
+#txAlphaDownKey { left: 0px; }
+#txAlphaUpKey { left: 26px; }
+#txSizeDownKey { left: 110px; }
+#txSizeUpKey { left: 136px; }
+.map-help-text {
+    position: absolute;
+    left: 0px;
+    top: 24px;
+    width: 80px;
+    height: 16px;
+    line-height: 16px;
+}
+.map-help-text.zoom { left: 110px; }

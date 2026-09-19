@@ -24,6 +24,7 @@ namespace HUD
 {
 class RmlBuffListLayer;
 class RmlMainFrameLayer;
+class RmlMiniMapLayer;
 class RmlMasterTreePanel;
 class RmlMoveCommandPanel;
 class RmlTopMenuLayer;
@@ -73,6 +74,7 @@ public:
     [[nodiscard]] Friend::RmlFriendPanel& Friend() noexcept;
     [[nodiscard]] HUD::RmlBuffListLayer& BuffList() noexcept;
     [[nodiscard]] HUD::RmlMainFrameLayer& MainFrame() noexcept;
+    [[nodiscard]] HUD::RmlMiniMapLayer& MiniMap() noexcept;
     [[nodiscard]] HUD::RmlMasterTreePanel& MasterTree() noexcept;
     [[nodiscard]] HUD::RmlMoveCommandPanel& MoveCommand() noexcept;
     [[nodiscard]] HUD::RmlTopMenuLayer& TopMenu() noexcept;

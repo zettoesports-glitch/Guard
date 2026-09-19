@@ -320,3 +320,13 @@ and differential runtime tests succeed.
   `RmlBuffListLegacyBridge`, preserving the existing tier normalization,
   hidden-buff filtering, buff/debuff ordering, reference counts and remaining
   time from the authoritative legacy buff system
+
+
+- reconstructed `RmlMiniMapLayer` over the public
+  `HUD/minimap.rml` contract, including all 25 observable Map design
+  parameters, GPU-backed `map-view`, 45-degree marker projection, hero
+  anchor, NPC/portal labels and semantic alpha/scale/close intents
+- added read-only `CNewUIMiniMap::BuildSnapshot` and
+  `RmlMiniMapLegacyBridge`; the existing legacy bitmap is registered as a
+  borrowed logical texture, so RmlUi can render it without taking ownership
+  or triggering a duplicate GPU upload

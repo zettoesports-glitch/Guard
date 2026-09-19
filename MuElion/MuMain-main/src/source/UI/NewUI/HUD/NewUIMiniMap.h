@@ -10,8 +10,37 @@
 #include "UI/NewUI/HUD/NewUIChatLogWindow.h"
 #include "UI/NewUI/Inventory/NewUIMyInventory.h"
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 namespace SEASON3B
 {
+    struct MiniMapSnapshotMarker
+    {
+        int kind = 0;
+        int x = 0;
+        int y = 0;
+        int rotation = 0;
+        std::wstring name;
+    };
+
+    struct MiniMapSnapshot
+    {
+        bool visible = false;
+        bool textureReady = false;
+        std::uint32_t textureId = 0;
+        std::uint32_t textureWidth = 0;
+        std::uint32_t textureHeight = 0;
+        int viewportWidth = 0;
+        int viewportHeight = 0;
+        int heroX = 0;
+        int heroY = 0;
+        float mapWidth = 800.0f;
+        float mapHeight = 800.0f;
+        std::vector<MiniMapSnapshotMarker> markers;
+    };
+
     class CNewUIMiniMap : public CNewUIObj
     {
     public:
@@ -72,6 +101,11 @@ namespace SEASON3B
         void OpenningProcess();
         void ClosingProcess();
         void OpenMasterLevel(const wchar_t* filename);
+
+        // Read-only projection for the reconstructed RmlUi minimap. It never
+        // exposes MINI_MAP pointers or transfers bitmap ownership.
+        void BuildSnapshot(MiniMapSnapshot& snapshot) const;
+
         CNewUIButton m_BtnToolTip;
         void LoadImages(const wchar_t* Filename);
         void UnloadImages();

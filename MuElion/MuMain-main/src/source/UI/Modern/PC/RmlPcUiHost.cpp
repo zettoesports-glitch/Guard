@@ -18,6 +18,8 @@
 #include "UI/Modern/PC/HUD/RmlBuffListLegacyBridge.h"
 #include "UI/Modern/PC/HUD/RmlMainFrameLayer.h"
 #include "UI/Modern/PC/HUD/RmlMainFrameLegacyBridge.h"
+#include "UI/Modern/PC/HUD/RmlMiniMapLayer.h"
+#include "UI/Modern/PC/HUD/RmlMiniMapLegacyBridge.h"
 #include "UI/Modern/PC/HUD/RmlMasterTreePanel.h"
 #include "UI/Modern/PC/HUD/RmlMoveCommandPanel.h"
 #include "UI/Modern/PC/HUD/RmlTopMenuLayer.h"
@@ -96,6 +98,7 @@ public:
         party_.Release();
         topMenu_.Release();
         buffList_.Release();
+        miniMap_.Release();
         mainFrame_.Release();
         chat_.Release();
         login_.Release();
@@ -140,6 +143,11 @@ public:
         {
             changed |= mainFrameLegacyBridge_.Synchronize(mainFrame_);
             changed |= mainFrame_.Update();
+        }
+        if (miniMap_.IsLoaded() && g_pNewUIMiniMap)
+        {
+            changed |= miniMapLegacyBridge_.Synchronize(
+                *g_pNewUIMiniMap, miniMap_);
         }
         if (topMenu_.IsLoaded()) changed |= topMenu_.Update();
         if (party_.IsLoaded()) changed |= party_.Update();
@@ -214,6 +222,8 @@ public:
     HUD::RmlBuffListLegacyBridge buffListLegacyBridge_;
     HUD::RmlMainFrameLayer mainFrame_;
     HUD::RmlMainFrameLegacyBridge mainFrameLegacyBridge_;
+    HUD::RmlMiniMapLayer miniMap_;
+    HUD::RmlMiniMapLegacyBridge miniMapLegacyBridge_;
     HUD::RmlMasterTreePanel masterTree_;
     HUD::RmlMoveCommandPanel moveCommand_;
     HUD::RmlTopMenuLayer topMenu_;
@@ -294,6 +304,7 @@ MU_PC_UI_GETTER(Tooltip, tooltip_, Common::RmlTooltipLayer)
 MU_PC_UI_GETTER(Friend, friend_, Friend::RmlFriendPanel)
 MU_PC_UI_GETTER(BuffList, buffList_, HUD::RmlBuffListLayer)
 MU_PC_UI_GETTER(MainFrame, mainFrame_, HUD::RmlMainFrameLayer)
+MU_PC_UI_GETTER(MiniMap, miniMap_, HUD::RmlMiniMapLayer)
 MU_PC_UI_GETTER(MasterTree, masterTree_, HUD::RmlMasterTreePanel)
 MU_PC_UI_GETTER(MoveCommand, moveCommand_, HUD::RmlMoveCommandPanel)
 MU_PC_UI_GETTER(TopMenu, topMenu_, HUD::RmlTopMenuLayer)
