@@ -1,0 +1,3784 @@
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+#include "stdafx.h"
+
+#define WIN32_LEAN_AND_MEAN
+#define WIN32_EXTRA_LEAN
+
+#include <locale.h>
+#include <zmouse.h>
+#include "UIWindows.h"
+#include "UIManager.h"
+#include "ZzzOpenglUtil.h"
+#include "ZzzTexture.h"
+#include "ZzzOpenData.h"
+#include "ZzzScene.h"
+#include "ZzzBMD.h"
+#include "ZzzInfomation.h"
+#include "ZzzObject.h"
+#include "ZzzCharacter.h"
+#include "ZzzInterface.h"
+#include "ZzzInventory.h"
+#include "zzzLodTerrain.h"
+#include "DSPlaySound.h"
+#include "wsclientinline.h"
+#include "Resource.h"
+#include <imm.h>
+#include "zzzpath.h"
+#include "Nprotect.h"
+#include "Local.h"
+#include "PersonalShopTitleImp.h"
+#include "./Utilities/Log/ErrorReport.h"
+#include "UIMapName.h"		// rozy
+#include "./ExternalObject/leaf/ExceptionHandler.h"
+#include "./Utilities/Dump/CrashReporter.h"
+#include "./Utilities/Log/muConsoleDebug.h"
+#include "ProtocolSend.h"
+#include "ProtectSysKey.h"
+#include "CBTMessageBox.h"
+#include "./ExternalObject/leaf/regkey.h"
+#include "CSChaosCastle.h"
+#include "GMHellas.h"
+#include <io.h>
+#include "Input.h"
+#include "XboxInput.h"
+#include "./Time/Timer.h"
+#include "UIMng.h"
+#ifdef MOVIE_DIRECTSHOW
+#include <dshow.h>
+#include "MovieScene.h"
+#endif // MOVIE_DIRECTSHOW
+#include "GameCensorship.h"
+#include "w_MapHeaders.h"
+#include "w_PetProcess.h"
+#include <ThemidaInclude.h>
+#include "MultiLanguage.h"
+#include "Widescreen.h"
+#include "Controller.h"
+#include "HackCheck.h"
+#include "Protocol.h"
+#include "Descriptions.h"
+#include "CustomJewel.h"
+#include "ServerName.h"
+#pragma comment(lib, "glew32.lib")
+#include "AutoClick.h"
+#include "CustomWing.h"
+#include "CustomWorld.h"
+#include "HelperSystem.h"
+#include "CustomEffects.h"
+#include "MonsterGlow.h"
+#include "MonsterName.h"
+#include "RenderModel.h"
+#include "MHPIntegration.h"
+#include <rpc.h>
+#include <rpcdce.h>
+#pragma comment(lib, "rpcrt4.lib")
+#include <dxgi.h>
+#include <string>
+#include <intrin.h>
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
+
+#pragma comment(lib,"ws2_32.lib")
+#include <CustomSetEffect.h>
+#include <DisableExcellent.h>
+#include <ItemPosition.h>
+#include <NewOptions.h>
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "wzAudio.lib")
+#include <wzAudio.h>
+#include <ServerListManager.h>
+#include "Update/InGameUpdater.h"
+#include <commctrl.h>
+#pragma comment(lib, "comctl32.lib")
+
+#define WM_TRAYICON (WM_USER + 100)
+#define ID_TRAYICON 1001
+NOTIFYICONDATA g_nid = { 0 };
+HICON g_hTrayIcon = NULL;
+bool g_bInTray = false;
+DWORD g_dwLastTrayFrameTime = 0;
+DWORD g_dwLastTrayLogicTime = 0;
+CUIMercenaryInputBox* g_pMercenaryInputBox = NULL;
+CUITextInputBox* g_pSingleTextInputBox = NULL;
+CUITextInputBox* g_pSinglePasswdInputBox = NULL;
+int g_iChatInputType = 1;
+extern BOOL g_bIMEBlock;
+CChatRoomSocketList* g_pChatRoomSocketList = NULL;
+CMultiLanguage* pMultiLanguage = NULL;
+extern DWORD g_dwTopWindow;
+#ifdef MOVIE_DIRECTSHOW
+CMovieScene* g_pMovieScene = NULL;
+#endif // MOVIE_DIRECTSHOW
+CUIManager* g_pUIManager = NULL;
+CUIMapName* g_pUIMapName = NULL;
+int EffectDisable = 0;
+int Time_Effect = 0;
+bool ashies = false;
+int weather = rand() % 3;
+HWND      g_hWnd = NULL;
+HINSTANCE g_hInst = NULL;
+HDC       g_hDC = NULL;
+HGLRC     g_hRC = NULL;
+HFONT     g_hFont = NULL;
+HFONT     g_hFontBold = NULL;
+HFONT     g_hFontBig = NULL;
+HFONT     g_hFixFont = NULL;
+CTimer* g_pTimer = NULL;
+bool      Destroy = false;
+bool      ActiveIME = false;
+BYTE* RendomMemoryDump;
+ITEM_ATTRIBUTE* ItemAttRibuteMemoryDump;
+CHARACTER* CharacterMemoryDump;
+float DepthGeral = 4.2f;
+int       RandomTable[100];
+char TextMu[] = "mu.exe";
+CErrorReport g_ErrorReport;
+BOOL g_bMinimizedEnabled = FALSE;
+int g_iScreenSaverOldValue = 60 * 15;
+extern float g_fScreenRate_x;
+extern float g_fScreenRate_y;
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+BOOL g_bUseWindowMode = TRUE;
+int g_bBorderless = 0;
+#endif
+char Mp3FileName[256];
+char g_szStartupLogin[50] = { 0 };
+char g_szStartupPassword[50] = { 0 };
+int  g_iStartupAutoLogin = 0;
+
+#define MUSIC_HELPER_COPYDATA_ID 0x4D554D53
+#define MUSIC_HELPER_CLASS_NAME "MuOnlineMusicHelperWindow"
+#define WM_MUSIC_HELPER_QUERY (WM_APP + 0x4D1)
+
+enum MUSIC_HELPER_COMMAND
+{
+	MUSIC_HELPER_PLAY = 1,
+	MUSIC_HELPER_STOP = 2,
+	MUSIC_HELPER_VOLUME = 3,
+	MUSIC_HELPER_QUIT = 4,
+	MUSIC_HELPER_POSITION = 5
+};
+
+struct MUSIC_HELPER_PACKET
+{
+	DWORD command;
+	int value;
+	char name[MAX_PATH];
+};
+
+static HANDLE g_hMusicHelperProcess = NULL;
+static HWND g_hMusicHelperWnd = NULL;
+static DWORD g_dwMusicHelperProcessId = 0;
+static HANDLE g_hMusicHelperParentProcess = NULL;
+static char g_szMusicHelperCurrentFile[MAX_PATH] = { 0 };
+
+static int ClampMusicVolumeLevel(int level)
+{
+	if (level < 0)
+		return 0;
+	if (level > 10)
+		return 10;
+	return level;
+}
+
+static void ApplyWzMusicVolumeLevel(int level)
+{
+	level = ClampMusicVolumeLevel(level);
+	wzAudioSetMixerMode(_mmInternalVolume);
+	wzAudioSetVolume(level * 10);
+}
+
+static void BuildMusicHelperWindowName(char* buffer, size_t bufferSize, DWORD parentProcessId)
+{
+	sprintf_s(buffer, bufferSize, "MuOnlineMusicHelper_%lu", parentProcessId);
+}
+
+static bool GetMusicHelperExePath(char* helperPath, size_t helperPathSize)
+{
+	if (GetModuleFileNameA(NULL, helperPath, (DWORD)helperPathSize) == 0)
+		return false;
+
+	return true;
+}
+
+static HWND FindMusicHelperWindow()
+{
+	char windowName[64] = { 0 };
+	BuildMusicHelperWindowName(windowName, sizeof(windowName), GetCurrentProcessId());
+	return FindWindowA(MUSIC_HELPER_CLASS_NAME, windowName);
+}
+
+static bool StartMusicHelper()
+{
+	if (g_hMusicHelperWnd != NULL && IsWindow(g_hMusicHelperWnd) != FALSE)
+		return true;
+
+	g_hMusicHelperWnd = FindMusicHelperWindow();
+	if (g_hMusicHelperWnd != NULL)
+		return true;
+
+	char helperPath[MAX_PATH] = { 0 };
+	if (GetMusicHelperExePath(helperPath, sizeof(helperPath)) == false)
+		return false;
+
+	char commandLine[MAX_PATH + 64] = { 0 };
+	sprintf_s(commandLine, sizeof(commandLine), "\"%s\" --music-helper %lu", helperPath, GetCurrentProcessId());
+
+	STARTUPINFOA si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&si, sizeof(si));
+	ZeroMemory(&pi, sizeof(pi));
+	si.cb = sizeof(si);
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+
+	if (CreateProcessA(helperPath, commandLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi) == FALSE)
+		return false;
+
+	g_hMusicHelperProcess = pi.hProcess;
+	g_dwMusicHelperProcessId = pi.dwProcessId;
+	CloseHandle(pi.hThread);
+
+	for (int n = 0; n < 50; ++n)
+	{
+		g_hMusicHelperWnd = FindMusicHelperWindow();
+		if (g_hMusicHelperWnd != NULL)
+			return true;
+
+		Sleep(100);
+	}
+
+	return false;
+}
+
+static bool SendMusicHelperCommand(DWORD command, int value, const char* name)
+{
+	if (StartMusicHelper() == false)
+		return false;
+
+	MUSIC_HELPER_PACKET packet;
+	ZeroMemory(&packet, sizeof(packet));
+	packet.command = command;
+	packet.value = value;
+	if (name != NULL)
+		strncpy_s(packet.name, name, sizeof(packet.name) - 1);
+
+	COPYDATASTRUCT cds;
+	ZeroMemory(&cds, sizeof(cds));
+	cds.dwData = MUSIC_HELPER_COPYDATA_ID;
+	cds.cbData = sizeof(packet);
+	cds.lpData = &packet;
+
+	DWORD_PTR result = 0;
+	if (SendMessageTimeoutA(g_hMusicHelperWnd, WM_COPYDATA, (WPARAM)g_hWnd, (LPARAM)&cds, SMTO_ABORTIFHUNG, 1000, &result) == 0)
+	{
+		g_hMusicHelperWnd = NULL;
+		return false;
+	}
+
+	return result != 0;
+}
+
+static int QueryMusicHelperPosition()
+{
+	if (g_hMusicHelperWnd == NULL || IsWindow(g_hMusicHelperWnd) == FALSE)
+		g_hMusicHelperWnd = FindMusicHelperWindow();
+
+	if (g_hMusicHelperWnd == NULL)
+		return 100;
+
+	DWORD_PTR result = 100;
+	if (SendMessageTimeoutA(g_hMusicHelperWnd, WM_MUSIC_HELPER_QUERY, MUSIC_HELPER_POSITION, 0, SMTO_ABORTIFHUNG, 1000, &result) == 0)
+	{
+		g_hMusicHelperWnd = NULL;
+		return 100;
+	}
+
+	return (int)result;
+}
+
+static void StopMusicHelper()
+{
+	if (g_hMusicHelperWnd != NULL && IsWindow(g_hMusicHelperWnd) != FALSE)
+		SendMusicHelperCommand(MUSIC_HELPER_QUIT, 0, NULL);
+
+	if (g_hMusicHelperProcess != NULL)
+	{
+		WaitForSingleObject(g_hMusicHelperProcess, 2000);
+		CloseHandle(g_hMusicHelperProcess);
+		g_hMusicHelperProcess = NULL;
+	}
+
+	g_hMusicHelperWnd = NULL;
+	g_dwMusicHelperProcessId = 0;
+}
+
+void SetMusicVolumeLevel(int level)
+{
+	level = ClampMusicVolumeLevel(level);
+	SendMusicHelperCommand(MUSIC_HELPER_VOLUME, level, NULL);
+}
+
+void StopMp3(char* Name, BOOL bEnforce)
+{
+	if (!m_MusicOnOff && !bEnforce) return;
+
+	if (Mp3FileName[0] != NULL)
+	{
+		if (strcmp(Name, Mp3FileName) == 0) {
+			SendMusicHelperCommand(MUSIC_HELPER_STOP, 0, Name);
+			Mp3FileName[0] = NULL;
+		}
+	}
+}
+
+void PlayMp3(char* Name, BOOL bEnforce)
+{
+	if (Destroy) return;
+	if (!m_MusicOnOff && !bEnforce) return;
+
+	if (strcmp(Name, Mp3FileName) == 0)
+	{
+		return;
+	}
+	else
+	{
+		if (g_pOption->m_Music == false)
+		{
+			SendMusicHelperCommand(MUSIC_HELPER_VOLUME, g_pOption->GetMusicVolumeLevel(), NULL);
+			SendMusicHelperCommand(MUSIC_HELPER_PLAY, 0, Name);
+			strcpy(Mp3FileName, Name);
+		}
+	}
+}
+
+bool IsEndMp3()
+{
+	if (100 == QueryMusicHelperPosition())
+		return true;
+	return false;
+}
+
+int GetMp3PlayPosition()
+{
+	return QueryMusicHelperPosition();
+}
+
+extern int  LogIn;
+extern char LogInID[];
+
+void CheckHack(void)
+{
+#ifdef NEW_PROTOCOL_SYSTEM
+	gProtocolSend.SendCheckOnline();
+#else
+	SendCheck();
+#endif
+}
+
+GLvoid KillGLWindow(GLvoid)
+{
+#if jdk_shader_local330
+	OGL330::Release();
+#endif
+	CoreGLCompat::Shutdown();
+
+	if (g_hRC)
+	{
+		if (!wglMakeCurrent(NULL, NULL))
+		{
+			g_ErrorReport.Write("GL - Release Of DC And RC Failed\r\n");
+			MessageBox(NULL, "Release Of DC And RC Failed.", "Error", MB_OK | MB_ICONINFORMATION);
+		}
+
+		if (!wglDeleteContext(g_hRC))
+		{
+			g_ErrorReport.Write("GL - Release Rendering Context Failed\r\n");
+			MessageBox(NULL, "Release Rendering Context Failed.", "Error", MB_OK | MB_ICONINFORMATION);
+		}
+
+		g_hRC = NULL;
+	}
+
+	if (g_hDC && !ReleaseDC(g_hWnd, g_hDC))
+	{
+		g_ErrorReport.Write("GL - OpenGL Release Error\r\n");
+		MessageBox(NULL, "OpenGL Release Error.", "Error", MB_OK | MB_ICONINFORMATION);
+		g_hDC = NULL;
+	}
+
+#if (defined WINDOWMODE)
+	if (g_bUseWindowMode == FALSE)
+	{
+		ChangeDisplaySettings(NULL, 0);
+		ShowCursor(TRUE);
+	}
+#else
+#ifdef ENABLE_FULLSCREEN
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+	if (g_bUseWindowMode == FALSE)
+#endif	// USER_WINDOW_MODE
+	{
+		ChangeDisplaySettings(NULL, 0);
+		ShowCursor(TRUE);
+	}
+#endif //ENABLE_FULLSCREEN
+#endif	//WINDOWMODE(#else)
+}
+
+
+BOOL GetFileNameOfFilePath(char* lpszFile, char* lpszPath)
+{
+	int iFind = (int)'\\';
+	char* lpFound = lpszPath;
+	char* lpOld = lpFound;
+	while (lpFound)
+	{
+		lpOld = lpFound;
+		lpFound = strchr(lpFound + 1, iFind);
+	}
+
+	if (strchr(lpszPath, iFind))
+	{
+		strcpy(lpszFile, lpOld + 1);
+	}
+	else
+	{
+		strcpy(lpszFile, lpOld);
+	}
+
+	BOOL bCheck = TRUE;
+	for (char* lpTemp = lpszFile; bCheck; ++lpTemp)
+	{
+		switch (*lpTemp)
+		{
+		case '\"':
+		case '\\':
+		case '/':
+		case ' ':
+			*lpTemp = '\0';
+		case '\0':
+			bCheck = FALSE;
+			break;
+		}
+	}
+
+	return (TRUE);
+}
+
+HANDLE g_hMainExe = INVALID_HANDLE_VALUE;
+HANDLE g_hLimitSemaphore = NULL;
+
+BOOL OpenMainExe(void)
+{
+#ifdef _DEBUG
+	return (TRUE);
+#endif
+	char lpszFile[MAX_PATH];
+	char* lpszCommandLine = GetCommandLine();
+	GetFileNameOfFilePath(lpszFile, lpszCommandLine);
+
+	g_hMainExe = CreateFile((char*)lpszFile, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+	return (INVALID_HANDLE_VALUE != g_hMainExe);
+}
+
+void CloseMainExe(void)
+{
+	CloseHandle(g_hMainExe);
+}
+
+WORD DecryptCheckSumKey(WORD wSource)
+{
+	WORD wAcc = wSource ^ 0xB479;
+	return ((wAcc >> 10) << 4) | (wAcc & 0xF);
+}
+
+DWORD GenerateCheckSum(BYTE* pbyBuffer, DWORD dwSize, WORD wKey)
+{
+	DWORD dwKey = (DWORD)wKey;
+	DWORD dwResult = dwKey << 9;
+	for (DWORD dwChecked = 0; dwChecked <= dwSize - 4; dwChecked += 4)
+	{
+		DWORD dwTemp;
+		memcpy(&dwTemp, pbyBuffer + dwChecked, sizeof(DWORD));
+
+		switch ((dwChecked / 4 + wKey) % 3)
+		{
+		case 0:
+			dwResult ^= dwTemp;
+			break;
+		case 1:
+			dwResult += dwTemp;
+			break;
+		case 2:
+			dwResult <<= (dwTemp % 11);
+			dwResult ^= dwTemp;
+			break;
+		}
+
+		if (0 == (dwChecked % 4))
+		{
+			dwResult ^= ((dwKey + dwResult) >> ((dwChecked / 4) % 16 + 3));
+		}
+	}
+
+	return (dwResult);
+}
+
+DWORD GetCheckSum(WORD wKey)
+{
+	wKey = DecryptCheckSumKey(wKey);
+
+	char lpszFile[MAX_PATH];
+
+	strcpy(lpszFile, "data\\local\\Gameguard.csr");
+
+	HANDLE hFile = CreateFile((char*)lpszFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	if (INVALID_HANDLE_VALUE == hFile)
+	{
+		return (0);
+	}
+
+	DWORD dwSize = GetFileSize(hFile, NULL);
+	BYTE* pbyBuffer = new BYTE[dwSize];
+	DWORD dwNumber;
+	ReadFile(hFile, pbyBuffer, dwSize, &dwNumber, 0);
+	CloseHandle(hFile);
+
+	DWORD dwCheckSum = GenerateCheckSum(pbyBuffer, dwSize, wKey);
+	delete[] pbyBuffer;
+
+	return (dwCheckSum);
+}
+
+
+BOOL GetFileVersion(char* lpszFileName, WORD* pwVersion)
+{
+	DWORD dwHandle;
+	DWORD dwLen = GetFileVersionInfoSize(lpszFileName, &dwHandle);
+	if (dwLen <= 0)
+	{
+		return (FALSE);
+	}
+
+	BYTE* pbyData = new BYTE[dwLen];
+	if (!GetFileVersionInfo(lpszFileName, dwHandle, dwLen, pbyData))
+	{
+		delete[] pbyData;
+		return (FALSE);
+	}
+
+	VS_FIXEDFILEINFO* pffi;
+	UINT uLen;
+	if (!VerQueryValue(pbyData, "\\", (LPVOID*)&pffi, &uLen))
+	{
+		delete[] pbyData;
+		return (FALSE);
+	}
+
+	pwVersion[0] = HIWORD(pffi->dwFileVersionMS);
+	pwVersion[1] = LOWORD(pffi->dwFileVersionMS);
+	pwVersion[2] = HIWORD(pffi->dwFileVersionLS);
+	pwVersion[3] = LOWORD(pffi->dwFileVersionLS);
+
+	delete[] pbyData;
+	return (TRUE);
+}
+
+extern PATH* path;
+
+void DestroyWindow()
+{
+	leaf::CRegKey regkey;
+	regkey.SetKey(leaf::CRegKey::_HKEY_CURRENT_USER, "SOFTWARE\\MuOnline\\Config");
+	regkey.WriteDword("VolumeLevel", g_pOption->GetVolumeLevel());
+	regkey.WriteDword("MusicVolumeLevel", g_pOption->GetMusicVolumeLevel());
+
+	CUIMng::Instance().Release();
+
+#ifdef MOVIE_DIRECTSHOW
+	if (g_pMovieScene)
+	{
+		g_pMovieScene->Destroy();
+	}
+#endif // MOVIE_DIRECTSHOW
+
+	//. release font handle
+	if (g_hFont)
+		DeleteObject((HGDIOBJ)g_hFont);
+
+	if (g_hFontBold)
+		DeleteObject((HGDIOBJ)g_hFontBold);
+
+	if (g_hFontBig)
+		DeleteObject((HGDIOBJ)g_hFontBig);
+
+	if (g_hFixFont)
+		::DeleteObject((HGDIOBJ)g_hFixFont);
+
+	ReleaseCharacters();
+
+	if (path != NULL)
+	{
+		delete path;
+	}
+	SAFE_DELETE(GateAttribute);
+
+	for (int i = 0; i < MAX_SKILLS; ++i)
+	{
+	}
+	SAFE_DELETE(SkillAttribute);
+
+	SAFE_DELETE(CharacterMachine);
+
+	DeleteWaterTerrain();
+
+#ifdef MOVIE_DIRECTSHOW
+	if (SceneFlag != MOVIE_SCENE)
+#endif // MOVIE_DIRECTSHOW
+	{
+		gMapManager.DeleteObjects();
+
+		for (int i = MODEL_LOGO; i < MAX_MODELS; i++)
+		{
+			Models[i].Release();
+		}
+
+		Bitmaps.UnloadAllImages();
+	}
+
+	SAFE_DELETE_ARRAY(CharacterMemoryDump);
+	SAFE_DELETE_ARRAY(ItemAttRibuteMemoryDump);
+	SAFE_DELETE_ARRAY(RendomMemoryDump);
+	SAFE_DELETE_ARRAY(ModelsDump);
+
+#ifdef DYNAMIC_FRUSTRUM
+	DeleteAllFrustrum();
+#endif //DYNAMIC_FRUSTRUM
+
+	SAFE_DELETE(g_pMercenaryInputBox);
+	SAFE_DELETE(g_pSingleTextInputBox);
+	SAFE_DELETE(g_pSinglePasswdInputBox);
+
+	SAFE_DELETE(g_pChatRoomSocketList);
+	SAFE_DELETE(g_pUIMapName);	// rozy
+	SAFE_DELETE(g_pTimer);
+	SAFE_DELETE(g_pUIManager);
+
+#ifdef MOVIE_DIRECTSHOW
+	SAFE_DELETE(g_pMovieScene);
+#endif // MOVIE_DIRECTSHOW
+
+	SAFE_DELETE(pMultiLanguage);
+	BoostRest(g_BuffSystem);
+	BoostRest(g_MapProcess);
+	BoostRest(g_petProcess);
+
+	g_ErrorReport.Write("Destroy");
+
+	HWND shWnd = FindWindow(NULL, "MuPlayer");
+	if (shWnd)
+		SendMessage(shWnd, WM_DESTROY, 0, 0);
+
+	if (g_hLimitSemaphore)
+	{
+		ReleaseSemaphore(g_hLimitSemaphore, 1, NULL);
+		CloseHandle(g_hLimitSemaphore);
+		g_hLimitSemaphore = NULL;
+	}
+}
+void DestroySound()
+{
+	for (int i = 0; i < MAX_BUFFER; i++)
+		ReleaseBuffer(i);
+
+	FreeDirectSound();
+	StopMusicHelper();
+}
+
+int g_iInactiveTime = 0;
+int g_iNoMouseTime = 0;
+int g_iInactiveWarning = 0;
+bool g_bWndActive = false;
+bool HangulDelete = false;
+int Hangul = 0;
+bool g_bEnterPressed = false;
+
+int g_iMousePopPosition_x = 0;
+int g_iMousePopPosition_y = 0;
+
+extern int TimeRemain;
+extern bool EnableFastInput;
+void MainScene(HDC hDC);
+
+void TrayAddIcon(HWND hWnd)
+{
+	if (g_hTrayIcon == NULL)
+		g_hTrayIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
+
+	ZeroMemory(&g_nid, sizeof(g_nid));
+	g_nid.cbSize = sizeof(NOTIFYICONDATA);
+	g_nid.hWnd = hWnd;
+	g_nid.uID = ID_TRAYICON;
+	g_nid.uCallbackMessage = WM_TRAYICON;
+	g_nid.hIcon = g_hTrayIcon;
+
+	std::string tooltip = std::string(gProtect->m_MainInfo.WindowName) + "\r\n";
+
+	if (Hero && CharacterAttribute && CharacterAttribute->Name[0] != '\0')
+	{
+		tooltip += std::string("Personagem: ") + CharacterAttribute->Name + "\r\n";
+		tooltip += std::string("Level: ") + std::to_string(CharacterAttribute->Level) + "\r\n";
+		tooltip += std::string("Resets: ") + std::to_string(CharacterAttribute->ViewResets) + "\r\n";
+
+		if (gProtect->m_MainInfo.m_GetHWID != 0 && gProtect->m_MainInfo.m_ShowHWID != 0)
+		{
+			char LocalHardwareID[36] = { 0 };
+			if (GetLocalComputerHardwareId(LocalHardwareID, sizeof(LocalHardwareID)))
+			{
+				tooltip += std::string("HWID: ") + LocalHardwareID + "\r\n";
+			}
+		}
+	}
+	else
+	{
+		tooltip += "Aguardando login...\r\n";
+	}
+
+	strncpy_s(g_nid.szTip, sizeof(g_nid.szTip), tooltip.c_str(), _TRUNCATE);
+
+	std::string balloon = "";
+
+	if (Hero && CharacterAttribute && CharacterAttribute->Name[0] != '\0')
+	{
+		balloon += std::string("Personagem: ") + CharacterAttribute->Name + "\r\n";
+		balloon += std::string("Level: ") + std::to_string(CharacterAttribute->Level) + "\r\n";
+		balloon += std::string("Resets: ") + std::to_string(CharacterAttribute->ViewResets) + "\r\n";
+
+		if (gProtect->m_MainInfo.m_GetHWID != 0 && gProtect->m_MainInfo.m_ShowHWID != 0)
+		{
+			char LocalHardwareID[36] = { 0 };
+			if (GetLocalComputerHardwareId(LocalHardwareID, sizeof(LocalHardwareID)))
+			{
+				balloon += std::string("HWID: ") + LocalHardwareID + "\r\n";
+			}
+		}
+	}
+	else
+	{
+		balloon = "Aguardando login...";
+	}
+
+	strncpy_s(g_nid.szInfoTitle, sizeof(g_nid.szInfoTitle), gProtect->m_MainInfo.WindowName, _TRUNCATE);
+	strncpy_s(g_nid.szInfo, sizeof(g_nid.szInfo), balloon.c_str(), _TRUNCATE);
+
+	g_nid.uTimeout = 7000;
+	g_nid.dwInfoFlags = NIIF_INFO;
+	g_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_INFO;
+
+	Shell_NotifyIcon(NIM_ADD, &g_nid);
+}
+
+void TrayRemoveIcon()
+{
+	if (g_nid.hWnd)
+		Shell_NotifyIcon(NIM_DELETE, &g_nid);
+}
+
+void TrayUpdateTooltip()
+{
+	if (!g_bInTray) return;
+
+	std::string tooltip = std::string(gProtect->m_MainInfo.WindowName) + "\r\n";
+
+	if (Hero && CharacterAttribute && CharacterAttribute->Name[0] != '\0')
+	{
+		tooltip += std::string("Personagem: ") + CharacterAttribute->Name + "\r\n";
+		tooltip += std::string("Level: ") + std::to_string(CharacterAttribute->Level) + "\r\n";
+		tooltip += std::string("Resets: ") + std::to_string(CharacterAttribute->ViewResets) + "\r\n";
+
+		if (gProtect->m_MainInfo.m_GetHWID != 0 && gProtect->m_MainInfo.m_ShowHWID != 0)
+		{
+			char LocalHardwareID[36] = { 0 };
+			if (GetLocalComputerHardwareId(LocalHardwareID, sizeof(LocalHardwareID)))
+			{
+				tooltip += std::string("HWID: ") + LocalHardwareID + "\r\n";
+			}
+		}
+	}
+	else
+	{
+		tooltip += "Aguardando login...\r\n";
+	}
+
+	strncpy_s(g_nid.szTip, sizeof(g_nid.szTip), tooltip.c_str(), _TRUNCATE);
+	g_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_INFO;
+
+	Shell_NotifyIcon(NIM_MODIFY, &g_nid);
+}
+LONG FAR PASCAL WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_SYSKEYDOWN:
+	{
+		if (wParam == VK_F4 && (GetKeyState(VK_MENU) & 0x8000))
+		{
+			PostMessage(hwnd, WM_CLOSE, 0, 0);
+			return 0;
+		}
+
+		if (wParam == VK_RETURN && (GetKeyState(VK_MENU) & 0x8000))
+		{
+			static bool isBorderless = (g_bBorderless == 1);
+			isBorderless = !isBorderless;
+
+			g_bBorderless = isBorderless ? 1 : 0;
+
+			char szIniFilePath[256 + 20] = "";
+			char szCurrentDir[256];
+	if (szCurrentDir[strlen(szCurrentDir) - 1] == 92)
+			strcpy(szIniFilePath, szCurrentDir);
+			if (szCurrentDir[strlen(szCurrentDir) - 1] == 92)
+				strcat(szIniFilePath, "config.ini");
+			else
+				strcat(szIniFilePath, "\\Data\\Custom\\config.ini");
+
+			WritePrivateProfileString("AntiLagOptions", "Borderless",
+				g_bBorderless ? "1" : "0", szIniFilePath);
+
+			LONG windowStyle = GetWindowLong(hwnd, GWL_STYLE);
+			RECT rcClient;
+			GetClientRect(hwnd, &rcClient);
+
+			if (isBorderless)
+			{
+				windowStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+				windowStyle |= WS_POPUP | WS_CLIPCHILDREN;
+				AdjustWindowRect(&rcClient, WS_POPUP | WS_CLIPCHILDREN, FALSE);
+			}
+			else
+			{
+				windowStyle &= ~WS_POPUP;
+				windowStyle |= WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN;
+				AdjustWindowRect(&rcClient, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN, FALSE);
+			}
+
+			SetWindowLong(hwnd, GWL_STYLE, windowStyle);
+
+			SetWindowPos(hwnd, HWND_TOP,
+				(GetSystemMetrics(SM_CXSCREEN) - (rcClient.right - rcClient.left)) / 2,
+				(GetSystemMetrics(SM_CYSCREEN) - (rcClient.bottom - rcClient.top)) / 2,
+				rcClient.right - rcClient.left,
+				rcClient.bottom - rcClient.top,
+				SWP_NOZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
+			return 0;
+		}
+		return 0;
+	}
+	break;
+
+	case WM_KEYDOWN:
+	{
+		if (wParam == VK_F12)
+		{
+			if (!g_bInTray)
+			{
+				ShowWindow(hwnd, SW_HIDE);
+				TrayAddIcon(hwnd);
+				g_bInTray = true;
+				g_dwLastTrayFrameTime = GetTickCount();
+				g_dwLastTrayLogicTime = GetTickCount();
+			}
+			else
+			{
+				ShowWindow(hwnd, SW_RESTORE);
+				SetForegroundWindow(hwnd);
+				TrayRemoveIcon();
+				g_bInTray = false;
+			}
+			return 0;
+		}
+	}
+	break;
+
+	case WM_TRAYICON:
+	{
+		if (lParam == WM_LBUTTONDBLCLK || lParam == WM_LBUTTONUP)
+		{
+			if (g_bInTray)
+			{
+				ShowWindow(hwnd, SW_RESTORE);
+				SetForegroundWindow(hwnd);
+				TrayRemoveIcon();
+				g_bInTray = false;
+			}
+		}
+		return 0;
+	}
+
+#if defined PROTECT_SYSTEMKEY && defined NDEBUG
+#ifndef FOR_WORK
+	case WM_SYSCOMMAND:
+	{
+		if (wParam == SC_KEYMENU || wParam == SC_SCREENSAVE)
+		{
+			return 0;
+		}
+	}
+	break;
+#endif // !FOR_WORK
+#endif // PROTECT_SYSTEMKEY && NDEBUG
+	case WM_ACTIVATE:
+		if (LOWORD(wParam) == WA_INACTIVE)
+		{
+			// N�o desativa o jogo quando perde foco (fullscreen continua rodando)
+			// Apenas reseta os bot�es do mouse no Window Mode
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+			if (g_bUseWindowMode == TRUE)
+			{
+				MouseLButton = false;
+				MouseLButtonPop = false;
+				MouseRButton = false;
+				MouseRButtonPop = false;
+				MouseRButtonPush = false;
+				MouseLButtonDBClick = false;
+				MouseMButton = false;
+				MouseMButtonPop = false;
+				MouseMButtonPush = false;
+				MouseWheel = 0;
+			}
+#endif
+		}
+		else
+		{
+			g_bWndActive = true;
+		}
+		break;
+	case WM_TIMER:
+		//MessageBox(NULL,GlobalText[16],"Error",MB_OK);
+		switch (wParam)
+		{
+		case HACK_TIMER:
+			// PKD_ADD_BINARY_PROTECTION
+			VM_START
+				CheckHack();
+			VM_END
+				break;
+		case WINDOWMINIMIZED_TIMER:
+			PostMessage(g_hWnd, WM_CLOSE, 0, 0);
+			break;
+		case CHATCONNECT_TIMER:
+			g_pFriendMenu->SendChatRoomConnectCheck();
+			break;
+		case SLIDEHELP_TIMER:
+			if (g_bWndActive)
+			{
+				if (g_pSlideHelpMgr)
+					g_pSlideHelpMgr->CreateSlideText();
+			}
+			break;
+		}
+		break;
+	case WM_USER_MEMORYHACK:
+		//SetTimer( g_hWnd, WINDOWMINIMIZED_TIMER, 1*1000, NULL);
+		KillGLWindow();
+		break;
+	case WM_NPROTECT_EXIT_TWO:
+		SendHackingChecked(0x04, 0);
+		SetTimer(g_hWnd, WINDOWMINIMIZED_TIMER, 1 * 1000, NULL);
+		MessageBox(NULL, GlobalText[16], "Error", MB_OK);
+		break;
+	case WM_ASYNCSELECTMSG:
+		switch (WSAGETSELECTEVENT(lParam))
+		{
+		case FD_CONNECT:
+			break;
+		case FD_READ:
+			SocketClient.nRecv();
+			break;
+		case FD_WRITE:
+			SocketClient.FDWriteSend();
+			break;
+		case FD_CLOSE:
+			g_pChatListBox->AddText("", GlobalText[3], SEASON3B::TYPE_SYSTEM_MESSAGE);
+#ifdef CONSOLE_DEBUG
+			switch (WSAGETSELECTERROR(lParam))
+			{
+			case WSAECONNRESET:
+				g_ConsoleDebug->Write(MCD_ERROR, "The connection was reset by the remote side.");
+				g_ErrorReport.Write("The connection was reset by the remote side.\r\n");
+				g_ErrorReport.WriteCurrentTime();
+				break;
+			case WSAECONNABORTED:
+				g_ConsoleDebug->Write(MCD_ERROR, "The connection was terminated due to a time-out or other failure.");
+				g_ErrorReport.Write("The connection was terminated due to a time-out or other failure.\r\n");
+				g_ErrorReport.WriteCurrentTime();
+				break;
+			}
+#endif // CONSOLE_DEBUG
+			SocketClient.Close();
+
+#ifdef NEW_PROTOCOL_SYSTEM
+			gProtocolSend.DisconnectServer();
+#endif	
+
+			CUIMng::Instance().PopUpMsgWin(MESSAGE_SERVER_LOST);
+			break;
+		}
+		break;
+	case WM_CTLCOLOREDIT:
+		SetBkColor((HDC)wParam, RGB(0, 0, 0));
+		SetTextColor((HDC)wParam, RGB(255, 255, 255));
+		return (LRESULT)GetStockObject(BLACK_BRUSH);
+		break;
+	case WM_ERASEBKGND:
+		return TRUE;
+		break;
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hDC = BeginPaint(hwnd, &ps);
+		EndPaint(hwnd, &ps);
+	}
+	return 0;
+	break;
+	case WM_CLOSE:
+	{
+		Destroy = true;
+		if (gProtect->m_MainInfo.m_AutoUpdateCpanel != 0)
+			InGameUpdate_Shutdown();
+		TerminateProcess(GetCurrentProcess(), 0);
+		return 0;
+	}
+	break;
+	case WM_DESTROY:
+	{
+		Destroy = true;
+		if (gProtect->m_MainInfo.m_AutoUpdateCpanel != 0)
+			InGameUpdate_Shutdown();
+		SocketClient.Close();
+
+#ifdef NEW_PROTOCOL_SYSTEM
+		gProtocolSend.DisconnectServer();
+#endif	
+		TrayRemoveIcon();
+		DestroySound();
+		//DestroyWindow();
+		KillGLWindow();
+		CloseMainExe();
+		PostQuitMessage(0);
+	}
+	break;
+	case WM_SETCURSOR:
+		ShowCursor(false);
+		break;
+#if (defined WINDOWMODE)
+	case WM_SIZE:
+		if (SIZE_MINIMIZED == wParam && g_bUseWindowMode == FALSE)
+		{
+			if (!(g_bMinimizedEnabled))
+			{
+				DWORD dwMess[SIZE_ENCRYPTION_KEY];
+				for (int i = 0; i < SIZE_ENCRYPTION_KEY; ++i)
+				{
+					dwMess[i] = GetTickCount();
+				}
+				g_SimpleModulusCS.LoadKeyFromBuffer((BYTE*)dwMess, FALSE, FALSE, FALSE, TRUE);
+			}
+		}
+		break;
+#else
+#ifdef NDEBUG
+#ifndef FOR_WORK
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+	case WM_SIZE:
+		if (SIZE_MINIMIZED == wParam
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+			&& g_bUseWindowMode == FALSE
+#endif
+			)
+		{
+			if (!(g_bMinimizedEnabled))
+			{
+				SendHackingChecked(0x05, 0);
+				DWORD dwMess[SIZE_ENCRYPTION_KEY];
+				for (int i = 0; i < SIZE_ENCRYPTION_KEY; ++i)
+				{
+					dwMess[i] = GetTickCount();
+				}
+				g_SimpleModulusCS.LoadKeyFromBuffer((BYTE*)dwMess, FALSE, FALSE, FALSE, TRUE);
+			}
+		}
+		break;
+#endif
+#endif
+#endif
+#endif
+	default:
+		if (msg >= WM_CHATROOMMSG_BEGIN && msg < WM_CHATROOMMSG_END)
+			g_pChatRoomSocketList->ProcessSocketMessage(msg - WM_CHATROOMMSG_BEGIN, WSAGETSELECTEVENT(lParam));
+		break;
+	}
+
+	MouseLButtonDBClick = false;
+	if (MouseLButtonPop == true && (g_iMousePopPosition_x != MouseX || g_iMousePopPosition_y != MouseY))
+		MouseLButtonPop = false;
+	switch (msg)
+	{
+	case WM_MOUSEMOVE:
+	{
+		static int WindowLeft = 640;
+		WindowLeft = WindowWidth / g_fScreenRate_y;
+		MouseX = (float)LOWORD(lParam) / g_fScreenRate_y;
+		MouseY = (float)HIWORD(lParam) / g_fScreenRate_y;
+		if (MouseX < 0)
+			MouseX = 0;
+		if (MouseX > GetWindowsX)
+			MouseX = GetWindowsX;
+		if (MouseY < 0)
+			MouseY = 0;
+		if (MouseY > GetWindowsY)
+			MouseY = GetWindowsY;
+	}
+	break;
+	case WM_LBUTTONDOWN:
+		g_iNoMouseTime = 0;
+		MouseLButtonPop = false;
+		if (!MouseLButton)
+			MouseLButtonPush = true;
+		MouseLButton = true;
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+		SetCapture(g_hWnd);
+#endif
+		break;
+	case WM_LBUTTONUP:
+		g_iNoMouseTime = 0;
+		MouseLButtonPush = false;
+		//if(MouseLButton) MouseLButtonPop = true;
+		MouseLButtonPop = true;
+		MouseLButton = false;
+		g_iMousePopPosition_x = MouseX;
+		g_iMousePopPosition_y = MouseY;
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+		ReleaseCapture();
+#endif
+		break;
+	case WM_RBUTTONDOWN:
+		g_iNoMouseTime = 0;
+		MouseRButtonPop = false;
+		if (!MouseRButton) MouseRButtonPush = true;
+		MouseRButton = true;
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+		SetCapture(g_hWnd);
+#endif
+		break;
+	case WM_RBUTTONUP:
+		g_iNoMouseTime = 0;
+		MouseRButtonPush = false;
+		if (MouseRButton) MouseRButtonPop = true;
+		MouseRButton = false;
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+		ReleaseCapture();
+#endif
+		break;
+	case WM_LBUTTONDBLCLK:
+		g_iNoMouseTime = 0;
+		MouseLButtonDBClick = true;
+		break;
+	case WM_MBUTTONDOWN:
+		g_iNoMouseTime = 0;
+		MouseMButtonPop = false;
+		if (!MouseMButton) MouseMButtonPush = true;
+		MouseMButton = true;
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+		SetCapture(g_hWnd);
+#endif
+		break;
+	case WM_MBUTTONUP:
+		g_iNoMouseTime = 0;
+		MouseMButtonPush = false;
+		if (MouseMButton) MouseMButtonPop = true;
+		MouseRButton = false;
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+		ReleaseCapture();
+#endif
+		break;
+	case WM_MOUSEWHEEL:
+	{
+		MouseWheel = (short)HIWORD(wParam) / WHEEL_DELTA;
+	}
+	break;
+	case WM_IME_NOTIFY:
+	{
+		if (g_iChatInputType == 1)
+		{
+			switch (wParam)
+			{
+			case IMN_SETCONVERSIONMODE:
+				if (GetFocus() == g_hWnd)
+				{
+					CheckTextInputBoxIME(IME_CONVERSIONMODE);
+				}
+				break;
+			case IMN_SETSENTENCEMODE:
+				if (GetFocus() == g_hWnd)
+				{
+					CheckTextInputBoxIME(IME_SENTENCEMODE);
+				}
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	break;
+	case WM_CHAR:
+	{
+		switch (wParam)
+		{
+		case VK_RETURN:
+		{
+			SetEnterPressed(true);
+		}
+		break;
+		}
+	}
+	break;
+	}
+
+	if (g_BuffSystem) {
+		LRESULT result;
+		TheBuffStateSystem().HandleWindowMessage(msg, wParam, lParam, result);
+	}
+
+	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+static int GetConfiguredSwapInterval()
+{
+	char szCurrentDir[MAX_PATH] = { 0 };
+	char szIniFilePath[MAX_PATH + 32] = { 0 };
+
+	GetCurrentDirectoryA(MAX_PATH, szCurrentDir);
+	strcpy_s(szIniFilePath, szCurrentDir);
+
+	if (szCurrentDir[strlen(szCurrentDir) - 1] == 92)
+	{
+		strcat_s(szIniFilePath, "Data\\Custom\\config.ini");
+	}
+	else
+	{
+		strcat_s(szIniFilePath, "\\Data\\Custom\\config.ini");
+	}
+
+	// [2026-08-30] VSync desligado por default. Teto de FPS passa a ser so o FpsLimit (gsteady_clock).
+	return GetPrivateProfileIntA("OpenGL", "VSync", 0, szIniFilePath) != 0 ? 1 : 0;
+}
+bool CreateOpenglWindow()
+{
+	PIXELFORMATDESCRIPTOR pfd;
+
+	memset(&pfd, 0, sizeof(pfd));
+	pfd.nSize = sizeof(pfd);
+	pfd.nVersion = 1;
+	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	pfd.iPixelType = PFD_TYPE_RGBA;
+	pfd.cColorBits = 32;
+	pfd.cDepthBits = 24;
+	pfd.cStencilBits = 8;
+
+	if (!(g_hDC = GetDC(g_hWnd)))
+	{
+		g_ErrorReport.Write("OpenGL Get DC Error - ErrorCode : %d\r\n", GetLastError());
+		KillGLWindow();
+		MessageBox(NULL, GlobalText[4], "OpenGL Get DC Error.", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+
+	GLuint PixelFormat;
+
+	if (!(PixelFormat = ChoosePixelFormat(g_hDC, &pfd)))
+	{
+		g_ErrorReport.Write("OpenGL Choose Pixel Format Error - ErrorCode : %d\r\n", GetLastError());
+		KillGLWindow();
+		MessageBox(NULL, GlobalText[4], "OpenGL Choose Pixel Format Error.", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+
+	if (!SetPixelFormat(g_hDC, PixelFormat, &pfd))
+	{
+		g_ErrorReport.Write("OpenGL Set Pixel Format Error - ErrorCode : %d\r\n", GetLastError());
+		KillGLWindow();
+		MessageBox(NULL, GlobalText[4], "OpenGL Set Pixel Format Error.", MB_OK | MB_ICONEXCLAMATION);
+		return FALSE;
+	}
+
+	typedef HGLRC(WINAPI* MuWglCreateContextAttribsARB)(HDC, HGLRC, const int*);
+	const int WGL_CONTEXT_MAJOR_VERSION_ARB_VALUE = 0x2091;
+	const int WGL_CONTEXT_MINOR_VERSION_ARB_VALUE = 0x2092;
+	const int WGL_CONTEXT_PROFILE_MASK_ARB_VALUE = 0x9126;
+	const int WGL_CONTEXT_CORE_PROFILE_BIT_ARB_VALUE = 0x00000001;
+
+	HGLRC bootstrapContext = wglCreateContext(g_hDC);
+	if (bootstrapContext == NULL || !wglMakeCurrent(g_hDC, bootstrapContext))
+	{
+		g_ErrorReport.Write("OpenGL bootstrap context error - ErrorCode : %d\r\n", GetLastError());
+		if (bootstrapContext != NULL) wglDeleteContext(bootstrapContext);
+		return FALSE;
+	}
+
+	MuWglCreateContextAttribsARB createContextAttribs =
+		reinterpret_cast<MuWglCreateContextAttribsARB>(wglGetProcAddress("wglCreateContextAttribsARB"));
+	if (createContextAttribs == NULL)
+	{
+		wglMakeCurrent(NULL, NULL);
+		wglDeleteContext(bootstrapContext);
+		g_ErrorReport.Write("wglCreateContextAttribsARB not available.\r\n");
+		MessageBox(NULL, "OpenGL 3.3 Core nao e suportado por este computador.", "OpenGL", MB_OK | MB_ICONERROR);
+		return FALSE;
+	}
+
+	// [2026-09-01] Prefer 4.6 Core; fall back to older Core versions. 3.3 e o piso do shim.
+	// Sem Compatibility e sem FORWARD_COMPATIBLE: Core + GLSL 330 precisam continuar funcionando.
+	static const int kCoreVersions[][2] =
+	{
+		{ 4, 6 },
+		{ 4, 5 },
+		{ 4, 3 },
+		{ 3, 3 },
+	};
+	const int kCoreVersionCount = sizeof(kCoreVersions) / sizeof(kCoreVersions[0]);
+
+	int requestedMajor = 0;
+	int requestedMinor = 0;
+	g_hRC = NULL;
+	for (int i = 0; i < kCoreVersionCount; ++i)
+	{
+		const int major = kCoreVersions[i][0];
+		const int minor = kCoreVersions[i][1];
+		const int contextAttributes[] =
+		{
+			WGL_CONTEXT_MAJOR_VERSION_ARB_VALUE, major,
+			WGL_CONTEXT_MINOR_VERSION_ARB_VALUE, minor,
+			WGL_CONTEXT_PROFILE_MASK_ARB_VALUE, WGL_CONTEXT_CORE_PROFILE_BIT_ARB_VALUE,
+			0
+		};
+
+		HGLRC coreContext = createContextAttribs(g_hDC, NULL, contextAttributes);
+		if (coreContext != NULL)
+		{
+			g_hRC = coreContext;
+			requestedMajor = major;
+			requestedMinor = minor;
+			g_ErrorReport.Write("OpenGL %d.%d Core context created.\r\n", major, minor);
+			break;
+		}
+
+		g_ErrorReport.Write("OpenGL %d.%d Core not available - ErrorCode : %d\r\n", major, minor, GetLastError());
+	}
+
+	wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(bootstrapContext);
+
+	if (g_hRC == NULL || !wglMakeCurrent(g_hDC, g_hRC))
+	{
+		g_ErrorReport.Write("OpenGL Core context error - ErrorCode : %d\r\n", GetLastError());
+		if (g_hRC != NULL)
+		{
+			wglDeleteContext(g_hRC);
+			g_hRC = NULL;
+		}
+		MessageBox(NULL, "Falha ao criar o contexto OpenGL 3.3 Core (minimo).", "OpenGL", MB_OK | MB_ICONERROR);
+		return FALSE;
+	}
+
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK)
+	{
+		MessageBox(NULL, "Erro ao inicializar o OpenGL.", "Erro", MB_OK | MB_ICONERROR);
+		return false;
+	}
+	glGetError();
+
+	{
+		const GLubyte* vendor = glGetString(GL_VENDOR);
+		const GLubyte* renderer = glGetString(GL_RENDERER);
+		const GLubyte* version = glGetString(GL_VERSION);
+		const GLubyte* glsl = glGetString(GL_SHADING_LANGUAGE_VERSION);
+		GLint actualMajor = requestedMajor;
+		GLint actualMinor = requestedMinor;
+		glGetIntegerv(GL_MAJOR_VERSION, &actualMajor);
+		glGetIntegerv(GL_MINOR_VERSION, &actualMinor);
+		g_ErrorReport.Write("OpenGL runtime %d.%d Core (requested %d.%d)\r\n",
+			actualMajor, actualMinor, requestedMajor, requestedMinor);
+		g_ErrorReport.Write("OpenGL vendor   : %s\r\n", vendor ? reinterpret_cast<const char*>(vendor) : "?");
+		g_ErrorReport.Write("OpenGL renderer : %s\r\n", renderer ? reinterpret_cast<const char*>(renderer) : "?");
+		g_ErrorReport.Write("OpenGL version  : %s\r\n", version ? reinterpret_cast<const char*>(version) : "?");
+		g_ErrorReport.Write("GLSL version    : %s\r\n", glsl ? reinterpret_cast<const char*>(glsl) : "?");
+
+		FILE* glLog = fopen("opengl.log", "w");
+		if (glLog)
+		{
+			fprintf(glLog, "OpenGL runtime %d.%d Core (requested %d.%d)\n",
+				actualMajor, actualMinor, requestedMajor, requestedMinor);
+			fprintf(glLog, "vendor   : %s\n", vendor ? reinterpret_cast<const char*>(vendor) : "?");
+			fprintf(glLog, "renderer : %s\n", renderer ? reinterpret_cast<const char*>(renderer) : "?");
+			fprintf(glLog, "version  : %s\n", version ? reinterpret_cast<const char*>(version) : "?");
+			fprintf(glLog, "glsl     : %s\n", glsl ? reinterpret_cast<const char*>(glsl) : "?");
+			fclose(glLog);
+		}
+	}
+
+	if (!CoreGLCompat::Initialize())
+	{
+		MessageBox(NULL, "Falha ao inicializar o backend OpenGL Core.", "Erro", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	typedef BOOL(WINAPI* MuWglSwapIntervalEXT)(int);
+	MuWglSwapIntervalEXT muSwapInterval = reinterpret_cast<MuWglSwapIntervalEXT>(wglGetProcAddress("wglSwapIntervalEXT"));
+	if (muSwapInterval != NULL)
+	{
+		muSwapInterval(GetConfiguredSwapInterval());
+	}
+	ShowWindow(g_hWnd, SW_SHOW);
+	SetForegroundWindow(g_hWnd);
+	SetFocus(g_hWnd);
+	return true;
+}
+
+HWND StartWindow(HINSTANCE hCurrentInst, int nCmdShow)
+{
+	char* windowName = gProtect->m_MainInfo.WindowName;
+	WNDCLASS wndClass;
+	HWND hWnd;
+
+	wndClass.style = CS_OWNDC | CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW;
+	wndClass.lpfnWndProc = WndProc;
+	wndClass.cbClsExtra = 0;
+	wndClass.cbWndExtra = 0;
+	wndClass.hInstance = hCurrentInst;
+	HICON hBigIcon = (HICON)LoadImage(hCurrentInst, MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+	HICON hSmallIcon = (HICON)LoadImage(hCurrentInst, MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	wndClass.hIcon = hBigIcon;	wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	wndClass.lpszMenuName = NULL;
+	wndClass.lpszClassName = windowName;
+
+	RegisterClass(&wndClass);
+
+	RECT rc = { 0, 0, WindowWidth, WindowHeight };
+
+	if (g_bBorderless == 1)
+	{
+		AdjustWindowRect(&rc, WS_POPUP | WS_CLIPCHILDREN, FALSE);
+
+		hWnd = CreateWindowEx(
+			WS_EX_APPWINDOW,
+			windowName,
+			windowName,
+			WS_POPUP | WS_CLIPCHILDREN | WS_VISIBLE,
+			(GetSystemMetrics(SM_CXSCREEN) - (rc.right - rc.left)) / 2,
+			(GetSystemMetrics(SM_CYSCREEN) - (rc.bottom - rc.top)) / 2,
+			rc.right - rc.left,
+			rc.bottom - rc.top,
+			NULL,
+			NULL,
+			hCurrentInst,
+			NULL);
+	}
+	else if (g_bUseWindowMode == TRUE)
+	{
+		AdjustWindowRect(&rc, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN, FALSE);
+
+		hWnd = CreateWindowEx(
+			WS_EX_APPWINDOW,
+			windowName,
+			windowName,
+			WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN,
+			(GetSystemMetrics(SM_CXSCREEN) - (rc.right - rc.left)) / 2,
+			(GetSystemMetrics(SM_CYSCREEN) - (rc.bottom - rc.top)) / 2,
+			rc.right - rc.left,
+			rc.bottom - rc.top,
+			NULL,
+			NULL,
+			hCurrentInst,
+			NULL);
+	}
+	else
+	{
+		hWnd = CreateWindowEx(
+			WS_EX_TOPMOST | WS_EX_APPWINDOW,
+			windowName,
+			windowName,
+			WS_POPUP,
+			0,
+			0,
+			WindowWidth,
+			WindowHeight,
+			NULL,
+			NULL,
+			hCurrentInst,
+			NULL);
+	}
+
+	return hWnd;
+}
+
+char m_ID[11];
+char m_Version[11];
+char m_ExeVersion[11];
+int  m_SoundOnOff;
+int  m_MusicOnOff;
+int  m_Resolution;
+int	m_nColorDepth;
+int	g_iRenderTextType = 0;
+int	m_CameraOnOff;
+
+char g_aszMLSelection[MAX_LANGUAGE_NAME_LENGTH] = { '\0' };
+std::string g_strSelectedML = "";
+
+BOOL OpenInitFile()
+{
+	gController.Load();
+
+	char szIniFilePath[256 + 20] = "";
+	char szCurrentDir[256];
+	GetCurrentDirectory(256, szCurrentDir);
+	strcpy(szIniFilePath, szCurrentDir);
+	if (szCurrentDir[strlen(szCurrentDir) - 1] == 92)
+		strcat(szIniFilePath, "config.ini");
+	else
+		strcat(szIniFilePath, "\\Data\\Custom\\config.ini");
+
+	GetPrivateProfileString("LOGIN", "Version", "", m_Version, 11, szIniFilePath);
+
+	szServerIpAddress = new char[32];
+	memset(szServerIpAddress, 0, 32);
+
+	WSADATA wsa;
+	WSAStartup(MAKEWORD(2, 2), &wsa);
+
+	addrinfo hints = { 0 };
+	addrinfo* result = nullptr;
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	if (getaddrinfo(gProtect->m_MainInfo.IpAddress, NULL, &hints, &result) == 0)
+	{
+		sockaddr_in* addr = (sockaddr_in*)result->ai_addr;
+		const char* ip = inet_ntoa(addr->sin_addr);
+		strcpy(szServerIpAddress, ip);
+		freeaddrinfo(result);
+	}
+	else
+	{
+		strcpy(szServerIpAddress, gProtect->m_MainInfo.IpAddress);
+	}
+
+	g_ServerPort = gProtect->m_MainInfo.IpAddressPort;
+
+	Version[0] = gProtect->m_MainInfo.ClientVersion[0] + 1;
+	Version[1] = gProtect->m_MainInfo.ClientVersion[2] + 2;
+	Version[2] = gProtect->m_MainInfo.ClientVersion[3] + 3;
+	Version[3] = gProtect->m_MainInfo.ClientVersion[5] + 4;
+	Version[4] = gProtect->m_MainInfo.ClientVersion[6] + 5;
+
+	memcpy(Serial, gProtect->m_MainInfo.ClientSerial, sizeof(Serial));
+
+	char* lpszCommandLine = GetCommandLine();
+	char lpszFile[MAX_PATH];
+	if (GetFileNameOfFilePath(lpszFile, lpszCommandLine))
+	{
+		WORD wVersion[4];
+		if (GetFileVersion(lpszFile, wVersion))
+		{
+			sprintf(m_ExeVersion, "%d.%02d", wVersion[0], wVersion[1]);
+			if (wVersion[2] > 0)
+			{
+				char lpszMinorVersion[3] = "a";
+				if (wVersion[2] > 26)
+				{
+					lpszMinorVersion[0] = 'A';
+					lpszMinorVersion[0] += (wVersion[2] - 27);
+					lpszMinorVersion[1] = '+';
+				}
+				else
+				{
+					lpszMinorVersion[0] += (wVersion[2] - 1);
+				}
+				strcat(m_ExeVersion, lpszMinorVersion);
+			}
+		}
+		else
+		{
+			strcpy(m_ExeVersion, m_Version);
+		}
+	}
+	else
+	{
+		strcpy(m_ExeVersion, m_Version);
+	}
+
+	m_ID[0] = '\0';
+	m_SoundOnOff = 1;
+	m_MusicOnOff = 1;
+	m_Resolution = 0;
+	m_nColorDepth = 0;
+
+	HKEY hKey;
+	DWORD dwDisp;
+	DWORD dwSize;
+	if (ERROR_SUCCESS == RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\MuOnline\\Config", 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, &dwDisp))
+	{
+		dwSize = 11;
+		RegQueryValueEx(hKey, "ID", 0, NULL, (LPBYTE)m_ID, &dwSize);
+
+		dwSize = sizeof(int);
+		if (RegQueryValueEx(hKey, "SoundOnOff", 0, NULL, (LPBYTE)&m_SoundOnOff, &dwSize) != ERROR_SUCCESS)
+			m_SoundOnOff = 1;
+
+		dwSize = sizeof(int);
+		if (RegQueryValueEx(hKey, "MusicOnOff", 0, NULL, (LPBYTE)&m_MusicOnOff, &dwSize) != ERROR_SUCCESS)
+			m_MusicOnOff = 1;
+
+		dwSize = sizeof(int);
+		if (RegQueryValueEx(hKey, "Resolution", 0, NULL, (LPBYTE)&m_Resolution, &dwSize) != ERROR_SUCCESS)
+			m_Resolution = 1;
+		if (m_Resolution < 0 || m_Resolution > 100)
+			m_Resolution = 1;
+
+		if (RegQueryValueEx(hKey, "ColorDepth", 0, NULL, (LPBYTE)&m_nColorDepth, &dwSize) != ERROR_SUCCESS)
+			m_nColorDepth = 0;
+
+		dwSize = sizeof(int);
+		if (RegQueryValueEx(hKey, "TextOut", 0, NULL, (LPBYTE)&g_iRenderTextType, &dwSize) != ERROR_SUCCESS)
+			g_iRenderTextType = 0;
+
+		g_iChatInputType = 1;
+
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+		dwSize = sizeof(int);
+		if (RegQueryValueEx(hKey, "WindowMode", 0, NULL, (LPBYTE)&g_bUseWindowMode, &dwSize) != ERROR_SUCCESS)
+			g_bUseWindowMode = TRUE;
+#endif
+
+		dwSize = MAX_LANGUAGE_NAME_LENGTH;
+		if (RegQueryValueEx(hKey, "LangSelection", 0, NULL, (LPBYTE)g_aszMLSelection, &dwSize) != ERROR_SUCCESS)
+			strcpy(g_aszMLSelection, "Eng");
+
+		g_strSelectedML = g_aszMLSelection;
+	}
+	RegCloseKey(hKey);
+
+	g_bBorderless = GetPrivateProfileInt("AntiLagOptions", "Borderless", 0, szIniFilePath);
+
+	switch (m_Resolution)
+	{
+	case 1: WindowWidth = 800; WindowHeight = 600; break;
+	case 2: WindowWidth = 1024; WindowHeight = 768; break;
+	case 3: WindowWidth = 1280; WindowHeight = 960; break;
+	case 4: WindowWidth = 1366; WindowHeight = 768; break;
+	case 5: WindowWidth = 1440; WindowHeight = 900; break;
+	case 6: WindowWidth = 1600; WindowHeight = 900; break;
+	case 7: WindowWidth = 1680; WindowHeight = 1050; break;
+	case 8: WindowWidth = 1910; WindowHeight = 970; break;
+	case 9: WindowWidth = 1920; WindowHeight = 1080; break;
+	case 10: WindowWidth = 2560; WindowHeight = 1440; break;
+	default: WindowWidth = 800; WindowHeight = 600; break;
+	}
+
+	if (gProtect->m_MainInfo.m_WideScreenType != 0)
+	{
+		if (m_Resolution > 3)
+		{
+			g_fScreenRate_x = 1.6f;
+			g_fScreenRate_y = 1.6f;
+		}
+		else
+		{
+			g_fScreenRate_x = (float)WindowHeight / 480;
+			g_fScreenRate_y = (float)WindowHeight / 480;
+		}
+	}
+	else
+	{
+		if (m_Resolution > 3)
+		{
+			g_fScreenRate_x = (float)WindowHeight / 480;
+			g_fScreenRate_y = (float)WindowHeight / 480;
+		}
+		else
+		{
+			g_fScreenRate_x = (float)WindowHeight / 480;
+			g_fScreenRate_y = (float)WindowHeight / 480;
+		}
+	}
+
+	GWidescreen.Init();
+	return TRUE;
+}
+BOOL Util_CheckOption(char* lpszCommandLine, unsigned char cOption, char* lpszString)
+{
+	unsigned char cComp[2];
+	cComp[0] = cOption; cComp[1] = cOption;
+	if (islower((int)cOption))
+	{
+		cComp[1] = toupper((int)cOption);
+	}
+	else if (isupper((int)cOption))
+	{
+		cComp[1] = tolower((int)cOption);
+	}
+
+	int nFind = (int)'/';
+	unsigned char* lpFound = (unsigned char*)lpszCommandLine;
+	while (lpFound)
+	{
+		lpFound = (unsigned char*)strchr((char*)(lpFound + 1), nFind);
+		if (lpFound && (*(lpFound + 1) == cComp[0] || *(lpFound + 1) == cComp[1]))
+		{	// �߰�
+			if (lpszString)
+			{
+				int nCount = 0;
+				for (unsigned char* lpSeek = lpFound + 2; *lpSeek != ' ' && *lpSeek != '\0'; lpSeek++)
+				{
+					nCount++;
+				}
+
+				memcpy(lpszString, lpFound + 2, nCount);
+				lpszString[nCount] = '\0';
+			}
+			return (TRUE);
+		}
+	}
+
+	return (FALSE);
+}
+
+BOOL UpdateFile(char* lpszOld, char* lpszNew)
+{
+	SetFileAttributes(lpszOld, FILE_ATTRIBUTE_NORMAL);
+	SetFileAttributes(lpszNew, FILE_ATTRIBUTE_NORMAL);
+
+	DWORD dwStartTickCount = ::GetTickCount();
+	while (::GetTickCount() - dwStartTickCount < 5000) {
+		if (CopyFile(lpszOld, lpszNew, FALSE))
+		{	// ����
+			DeleteFile(lpszOld);
+			return (TRUE);
+		}
+	}
+	g_ErrorReport.Write("%s to %s CopyFile Error : %d\r\n", lpszNew, lpszOld, GetLastError());
+	return (FALSE);
+}
+
+#include <tlhelp32.h>
+
+BOOL KillExeProcess(char* lpszExe)
+{
+	HANDLE hProcessSnap = NULL;
+	BOOL bRet = FALSE;
+	PROCESSENTRY32 pe32 = { 0 };
+
+	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+	if (hProcessSnap == INVALID_HANDLE_VALUE)
+		return (FALSE);
+
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+
+	if (Process32First(hProcessSnap, &pe32))
+	{
+		do
+		{
+			if (stricmp(pe32.szExeFile, lpszExe) == 0)
+			{
+				HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+
+				if (process)
+				{
+					TerminateProcess(process, 0);
+				}
+			}
+		} while (Process32Next(hProcessSnap, &pe32));
+		bRet = TRUE;
+	}
+	else
+		bRet = FALSE;
+
+	CloseHandle(hProcessSnap);
+
+	return bRet;
+}
+
+char g_lpszCmdURL[50];
+BOOL GetConnectServerInfo(PSTR szCmdLine, char* lpszURL, WORD* pwPort)
+{
+	char lpszTemp[256] = { 0, };
+	if (Util_CheckOption(szCmdLine, 'y', lpszTemp))
+	{
+		BYTE bySuffle[] = { 0x0C, 0x07, 0x03, 0x13 };
+
+		for (int i = 0; i < (int)strlen(lpszTemp); i++)
+			lpszTemp[i] -= bySuffle[i % 4];
+		strcpy(lpszURL, lpszTemp);
+
+		if (Util_CheckOption(szCmdLine, 'z', lpszTemp))
+		{
+			for (int j = 0; j < (int)strlen(lpszTemp); j++)
+				lpszTemp[j] -= bySuffle[j % 4];
+			*pwPort = atoi(lpszTemp);
+		}
+		g_ErrorReport.Write("[Virtual Connection] Connect IP : %s, Port : %d\r\n", lpszURL, *pwPort);
+		return (TRUE);
+	}
+	if (!Util_CheckOption(szCmdLine, 'u', lpszTemp))
+	{
+		return (FALSE);
+	}
+	strcpy(lpszURL, lpszTemp);
+	if (!Util_CheckOption(szCmdLine, 'p', lpszTemp))
+	{
+		return (FALSE);
+	}
+	*pwPort = atoi(lpszTemp);
+
+	return (TRUE);
+}
+
+
+extern int TimeRemain;
+BOOL g_bInactiveTimeChecked = FALSE;
+void MoveObject(OBJECT* o);
+
+
+#include <dbghelp.h>
+#include <EventEntryLevel.h>
+#include <Monsters.h>
+#include <MonsterEffect.h>
+#include <ItemSize.h>
+
+#pragma comment(lib,"dbghelp.lib")
+
+bool ExceptionCallback(_EXCEPTION_POINTERS* pExceptionInfo)
+{
+	char path[MAX_PATH];
+
+	SYSTEMTIME SystemTime;
+
+	GetLocalTime(&SystemTime);
+
+	wsprintf(path, "%d-%d-%d_%dh%dm%ds.dmp", SystemTime.wYear, SystemTime.wMonth, SystemTime.wDay, SystemTime.wHour, SystemTime.wMinute, SystemTime.wSecond);
+
+	HANDLE file = CreateFile(path, GENERIC_WRITE, FILE_SHARE_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+
+	if (file != INVALID_HANDLE_VALUE)
+	{
+		MINIDUMP_EXCEPTION_INFORMATION mdei;
+
+		mdei.ThreadId = GetCurrentThreadId();
+
+		mdei.ExceptionPointers = pExceptionInfo;
+
+		mdei.ClientPointers = 0;
+
+		if (MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), file, (MINIDUMP_TYPE)(MiniDumpScanMemory + MiniDumpWithIndirectlyReferencedMemory), &mdei, 0, 0) != 0)
+		{
+			CloseHandle(file);
+			return EXCEPTION_EXECUTE_HANDLER;
+		}
+	}
+	CloseHandle(file);
+
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+DWORD GetParentProcessId(DWORD processId)
+{
+	DWORD parentPid = 0;
+
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hSnapshot == INVALID_HANDLE_VALUE)
+	{
+		return 0;
+	}
+
+	PROCESSENTRY32 pe;
+	ZeroMemory(&pe, sizeof(pe));
+	pe.dwSize = sizeof(pe);
+
+	if (Process32First(hSnapshot, &pe))
+	{
+		do
+		{
+			if (pe.th32ProcessID == processId)
+			{
+				parentPid = pe.th32ParentProcessID;
+				break;
+			}
+		} while (Process32Next(hSnapshot, &pe));
+	}
+
+	CloseHandle(hSnapshot);
+	return parentPid;
+}
+
+bool GetProcessFileNameByPid(DWORD processId, char* outName, DWORD outSize)
+{
+	if (outName == NULL || outSize == 0)
+	{
+		return false;
+	}
+
+	outName[0] = '\0';
+
+	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+	if (hProcess == NULL)
+	{
+		return false;
+	}
+
+	char fullPath[MAX_PATH] = { 0 };
+
+	if (GetModuleFileNameExA(hProcess, NULL, fullPath, MAX_PATH) == 0)
+	{
+		CloseHandle(hProcess);
+		return false;
+	}
+
+	CloseHandle(hProcess);
+
+	char* lastSlash = strrchr(fullPath, '\\');
+	if (lastSlash != NULL)
+	{
+		strcpy_s(outName, outSize, lastSlash + 1);
+	}
+	else
+	{
+		strcpy_s(outName, outSize, fullPath);
+	}
+
+	return true;
+}
+
+bool WasStartedByLauncher()
+{
+	DWORD currentPid = GetCurrentProcessId();
+	DWORD parentPid = GetParentProcessId(currentPid);
+
+	if (parentPid == 0)
+	{
+		return false;
+	}
+
+	char parentExeName[MAX_PATH] = { 0 };
+
+	if (!GetProcessFileNameByPid(parentPid, parentExeName, sizeof(parentExeName)))
+	{
+		return false;
+	}
+
+	if (_stricmp(parentExeName, gProtect->m_MainInfo.m_LauncherName) == 0)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool IsLauncherAlreadyRunning()
+{
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hSnapshot == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+
+	PROCESSENTRY32 pe;
+	ZeroMemory(&pe, sizeof(pe));
+	pe.dwSize = sizeof(pe);
+
+	if (Process32First(hSnapshot, &pe))
+	{
+		do
+		{
+			if (_stricmp(pe.szExeFile, gProtect->m_MainInfo.m_LauncherName) == 0)
+			{
+				CloseHandle(hSnapshot);
+				return true;
+			}
+		} while (Process32Next(hSnapshot, &pe));
+	}
+
+	CloseHandle(hSnapshot);
+	return false;
+}
+
+void RunLauncherFromSameFolder()
+{
+	char szCurrentPath[MAX_PATH] = { 0 };
+	char szLauncherPath[MAX_PATH] = { 0 };
+
+	GetModuleFileNameA(NULL, szCurrentPath, MAX_PATH);
+
+	strcpy_s(szLauncherPath, szCurrentPath);
+
+	char* lastSlash = strrchr(szLauncherPath, '\\');
+	if (lastSlash != NULL)
+	{
+		*(lastSlash + 1) = '\0';
+		strcat_s(szLauncherPath, gProtect->m_MainInfo.m_LauncherName);
+	}
+
+	ShellExecuteA(NULL, "open", szLauncherPath, NULL, NULL, SW_SHOWNORMAL);
+}
+
+// ============================================================
+//  Startup Dialog � Interface visual inspirada no InGameUpdater
+// ============================================================
+#define IDC_SD_COMBO_RES     2001
+#define IDC_SD_CHK_SOUND     2002
+#define IDC_SD_SLIDER_VOL    2003
+#define IDC_SD_CHK_MUSIC     2004
+#define IDC_SD_SLIDER_MUSIC  2008
+#define IDC_SD_EDIT_LOGIN    2005
+#define IDC_SD_EDIT_PASS     2006
+#define IDC_SD_CHK_AUTOLOGIN 2007
+#define IDC_SD_BTN_SAVE      2009
+#define IDC_SD_BTN_CLOSE     2010
+#define IDC_SD_SLIDER_FPS    2015
+#define IDC_SD_LBL_FPSDYN    2016
+
+struct StartupDlgData
+{
+	int  resolution;
+	int  soundOnOff;
+	int  volumeLevel;   // 0..9
+	int  musicOnOff;
+	int  musicVolumeLevel; // 0..10
+	char login[50];
+	char password[50];
+	int  autoLogin;
+	int  fpsLimit;      // 32..120
+	bool saved;         // false = fechou sem salvar -> n�o abre o jogo
+};
+
+static StartupDlgData g_sdData;
+
+// -- helpers de desenho ----------------------------------------
+static HFONT  g_sdFontTitle = NULL;
+static HFONT  g_sdFontNormal = NULL;
+static HFONT  g_sdFontSmall = NULL;
+static HBRUSH g_sdBrushBg = NULL;
+static HBRUSH g_sdBrushPanel = NULL;
+static HBRUSH g_sdBrushRed = NULL;
+static HPEN   g_sdPenRed = NULL;
+static HPEN   g_sdPenDark = NULL;
+static BOOL   g_sdResourcesCreated = FALSE;
+
+static void SD_CreateResources()
+{
+	if (g_sdResourcesCreated) return;
+	g_sdResourcesCreated = TRUE;
+	g_sdFontTitle = CreateFontA(20, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+		CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Tahoma");
+	g_sdFontNormal = CreateFontA(13, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+		CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
+	g_sdFontSmall = CreateFontA(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+		CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Consolas");
+	g_sdBrushBg = CreateSolidBrush(RGB(10, 10, 14));
+	g_sdBrushPanel = CreateSolidBrush(RGB(5, 5, 22));
+	g_sdBrushRed = CreateSolidBrush(RGB(20, 20, 160));
+	g_sdPenRed = CreatePen(PS_SOLID, 1, RGB(30, 30, 180));
+	g_sdPenDark = CreatePen(PS_SOLID, 1, RGB(10, 10, 60));
+}
+
+static void SD_DestroyResources()
+{
+	if (!g_sdResourcesCreated) return;
+	g_sdResourcesCreated = FALSE;
+	DeleteObject(g_sdFontTitle);
+	DeleteObject(g_sdFontNormal);
+	DeleteObject(g_sdFontSmall);
+	DeleteObject(g_sdBrushBg);
+	DeleteObject(g_sdBrushPanel);
+	DeleteObject(g_sdBrushRed);
+	DeleteObject(g_sdPenRed);
+	DeleteObject(g_sdPenDark);
+}
+
+// Pinta um label branco com fundo transparente
+static void SD_PaintLabel(HDC hdc, const RECT& rc, const char* text, HFONT hf, COLORREF color = RGB(220, 220, 220))
+{
+	HFONT old = (HFONT)SelectObject(hdc, hf);
+	SetBkMode(hdc, TRANSPARENT);
+	SetTextColor(hdc, color);
+	DrawTextA(hdc, text, -1, (RECT*)&rc, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	SelectObject(hdc, old);
+}
+
+// Desenha linha decorativa vermelha
+static void SD_DrawLine(HDC hdc, int x1, int y1, int x2, int y2)
+{
+	HPEN old = (HPEN)SelectObject(hdc, g_sdPenRed);
+	MoveToEx(hdc, x1, y1, NULL);
+	LineTo(hdc, x2, y2);
+	SelectObject(hdc, old);
+}
+
+// Desenha um painel com borda vermelha
+static void SD_DrawPanel(HDC hdc, const RECT& rc)
+{
+	HBRUSH old = (HBRUSH)SelectObject(hdc, g_sdBrushPanel);
+	HPEN   op = (HPEN)SelectObject(hdc, g_sdPenRed);
+	Rectangle(hdc, rc.left, rc.top, rc.right, rc.bottom);
+	SelectObject(hdc, old);
+	SelectObject(hdc, op);
+}
+
+// Atualiza o label din�mico de FPS / Volume
+static void SD_UpdateDynLabel(HWND hDlg)
+{
+	// FPS
+	int fps = (int)SendDlgItemMessage(hDlg, IDC_SD_SLIDER_FPS, TBM_GETPOS, 0, 0);
+	char buf[32]; sprintf_s(buf, "FPS: %d", fps);
+	SetDlgItemTextA(hDlg, IDC_SD_LBL_FPSDYN, buf);
+}
+
+// -- WndProc da janela -----------------------------------------
+// -- WndProc da janela -----------------------------------------
+LRESULT CALLBACK StartupDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_CREATE:
+	{
+		SD_CreateResources();
+
+		// Janela compacta 420x370, sem t�tulo
+		// Labels: x=14, w=110 | Controls: x=130, w=270
+		int cx = 130, cw = 270;
+
+		// Resolu��o y=46
+		HWND hCombo = CreateWindowA("COMBOBOX", NULL,
+			WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP,
+			cx, 44, cw, 180, hDlg, (HMENU)IDC_SD_COMBO_RES, g_hInst, NULL);
+		SendMessage(hCombo, WM_SETFONT, (WPARAM)g_sdFontNormal, TRUE);
+		const char* res[] = { "800 x 600","1024 x 768","1280 x 960","1366 x 768",
+							   "1440 x 900","1600 x 900","1680 x 1050","1910 x 970",
+							   "1920 x 1080","2560 x 1440" };
+		for (int i = 0; i < 10; i++) SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)res[i]);
+		int sel = g_sdData.resolution - 1; if (sel < 0 || sel > 9) sel = 0;
+		SendMessage(hCombo, CB_SETCURSEL, sel, 0);
+
+		// Sons y=78
+		HWND hChkS = CreateWindowA("BUTTON", "Sons e Efeitos",
+			WS_CHILD | WS_VISIBLE | BS_CHECKBOX | BS_FLAT | WS_TABSTOP,
+			cx, 76, cw, 20, hDlg, (HMENU)IDC_SD_CHK_SOUND, g_hInst, NULL);
+		SendMessage(hChkS, WM_SETFONT, (WPARAM)g_sdFontNormal, TRUE);
+		SendMessage(hChkS, BM_SETCHECK, g_sdData.soundOnOff ? BST_CHECKED : BST_UNCHECKED, 0);
+
+		// Volume y=104
+		HWND hSliderVol = CreateWindowExA(0, TRACKBAR_CLASS, NULL,
+			WS_CHILD | WS_VISIBLE | TBS_HORZ | TBS_AUTOTICKS | TBS_NOTICKS | WS_TABSTOP,
+			cx, 102, cw - 42, 20, hDlg, (HMENU)IDC_SD_SLIDER_VOL, g_hInst, NULL);
+		SendMessage(hSliderVol, TBM_SETRANGE, TRUE, MAKELONG(0, 9));
+		SendMessage(hSliderVol, TBM_SETPOS, TRUE, g_sdData.volumeLevel);
+
+		// M�sica y=128
+		HWND hChkM = CreateWindowA("BUTTON", "M�sicas",
+			WS_CHILD | WS_VISIBLE | BS_CHECKBOX | BS_FLAT | WS_TABSTOP,
+			cx, 126, cw, 20, hDlg, (HMENU)IDC_SD_CHK_MUSIC, g_hInst, NULL);
+		SendMessage(hChkM, WM_SETFONT, (WPARAM)g_sdFontNormal, TRUE);
+		SendMessage(hChkM, BM_SETCHECK, g_sdData.musicOnOff ? BST_CHECKED : BST_UNCHECKED, 0);
+
+		HWND hSliderMusic = CreateWindowExA(0, TRACKBAR_CLASS, NULL,
+			WS_CHILD | WS_VISIBLE | TBS_HORZ | TBS_AUTOTICKS | TBS_NOTICKS | WS_TABSTOP,
+			cx, 150, cw - 42, 20, hDlg, (HMENU)IDC_SD_SLIDER_MUSIC, g_hInst, NULL);
+		SendMessage(hSliderMusic, TBM_SETRANGE, TRUE, MAKELONG(0, 10));
+		SendMessage(hSliderMusic, TBM_SETPOS, TRUE, g_sdData.musicVolumeLevel);
+
+		// Login y=176
+		HWND hEditL = CreateWindowExA(WS_EX_CLIENTEDGE, "EDIT", g_sdData.login,
+			WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | WS_TABSTOP,
+			cx, 174, cw, 20, hDlg, (HMENU)IDC_SD_EDIT_LOGIN, g_hInst, NULL);
+		SendMessage(hEditL, WM_SETFONT, (WPARAM)g_sdFontNormal, TRUE);
+		SendMessage(hEditL, EM_SETLIMITTEXT, 10, 0);
+
+		// Senha y=202
+		HWND hEditP = CreateWindowExA(WS_EX_CLIENTEDGE, "EDIT", g_sdData.password,
+			WS_CHILD | WS_VISIBLE | ES_PASSWORD | ES_AUTOHSCROLL | WS_TABSTOP,
+			cx, 198, cw, 20, hDlg, (HMENU)IDC_SD_EDIT_PASS, g_hInst, NULL);
+		SendMessage(hEditP, WM_SETFONT, (WPARAM)g_sdFontNormal, TRUE);
+		SendMessage(hEditP, EM_SETLIMITTEXT, 10, 0);
+
+		// Auto Login y=224
+		HWND hChkA = CreateWindowA("BUTTON", "Auto Login",
+			WS_CHILD | WS_VISIBLE | BS_CHECKBOX | BS_FLAT | WS_TABSTOP,
+			cx, 222, cw, 20, hDlg, (HMENU)IDC_SD_CHK_AUTOLOGIN, g_hInst, NULL);
+		SendMessage(hChkA, WM_SETFONT, (WPARAM)g_sdFontNormal, TRUE);
+		SendMessage(hChkA, BM_SETCHECK, g_sdData.autoLogin ? BST_CHECKED : BST_UNCHECKED, 0);
+
+		// FPS y=252
+		HWND hSliderFps = CreateWindowExA(0, TRACKBAR_CLASS, NULL,
+			WS_CHILD | WS_VISIBLE | TBS_HORZ | TBS_AUTOTICKS | TBS_NOTICKS | WS_TABSTOP,
+			cx, 250, cw - 56, 20, hDlg, (HMENU)IDC_SD_SLIDER_FPS, g_hInst, NULL);
+		SendMessage(hSliderFps, TBM_SETRANGE, TRUE, MAKELONG(32, 120));
+		SendMessage(hSliderFps, TBM_SETPOS, TRUE, g_sdData.fpsLimit);
+
+		char fpsBuf[16]; sprintf_s(fpsBuf, "FPS: %d", g_sdData.fpsLimit);
+		HWND hLblFps = CreateWindowA("STATIC", fpsBuf,
+			WS_CHILD | WS_VISIBLE | SS_LEFT,
+			cx + cw - 52, 250, 50, 20, hDlg, (HMENU)IDC_SD_LBL_FPSDYN, g_hInst, NULL);
+		SendMessage(hLblFps, WM_SETFONT, (WPARAM)g_sdFontSmall, TRUE);
+
+		// Bot�es y=302
+		HWND hBtnSave = CreateWindowA("BUTTON", "JOGAR",
+			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_FLAT | WS_TABSTOP,
+			30, 300, 168, 30, hDlg, (HMENU)IDC_SD_BTN_SAVE, g_hInst, NULL);
+		SendMessage(hBtnSave, WM_SETFONT, (WPARAM)g_sdFontTitle, TRUE);
+
+		HWND hBtnClose = CreateWindowA("BUTTON", "FECHAR",
+			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_FLAT | WS_TABSTOP,
+			222, 300, 168, 30, hDlg, (HMENU)IDC_SD_BTN_CLOSE, g_hInst, NULL);
+		SendMessage(hBtnClose, WM_SETFONT, (WPARAM)g_sdFontTitle, TRUE);
+	}
+	return 0;
+
+	case WM_ERASEBKGND:
+	{
+		HDC hdc = (HDC)wParam;
+		RECT rc; GetClientRect(hDlg, &rc);
+
+		FillRect(hdc, &rc, g_sdBrushBg);
+
+		// Faixa de topo
+		RECT topBar = { 0, 0, 420, 32 };
+		FillRect(hdc, &topBar, g_sdBrushPanel);
+		SD_DrawLine(hdc, 0, 32, 420, 32);
+
+		// Painel central
+		RECT panel = { 8, 38, 412, 290 };
+		SD_DrawPanel(hdc, panel);
+
+		// Linha antes dos bot�es
+		SD_DrawLine(hdc, 8, 294, 412, 294);
+
+		// T�tulo na faixa
+		RECT rcTitle = { 12, 6, 380, 28 };
+		HFONT oldF = (HFONT)SelectObject(hdc, g_sdFontNormal);
+		SetBkMode(hdc, TRANSPARENT);
+		SetTextColor(hdc, RGB(255, 255, 255));
+		DrawTextA(hdc, "CONFIGURA��ES DE IN�CIO", -1, &rcTitle, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		SelectObject(hdc, oldF);
+
+		// Bot�o X manual no canto (informativo)
+		RECT rcX = { 386, 6, 412, 28 };
+		SD_PaintLabel(hdc, rcX, "[X]", g_sdFontSmall, RGB(40, 40, 120));
+
+		// Labels dos campos
+		int lx = 14;
+		RECT rRes = { lx, 40, 126, 62 };  SD_PaintLabel(hdc, rRes, "Resolu��o", g_sdFontNormal, RGB(180, 180, 200));
+		RECT rSnd = { lx, 72, 126, 94 };  SD_PaintLabel(hdc, rSnd, "Sons", g_sdFontNormal, RGB(180, 180, 200));
+		RECT rVol = { lx, 98, 126, 120 }; SD_PaintLabel(hdc, rVol, "Volume (0-9)", g_sdFontNormal, RGB(180, 180, 200));
+		RECT rMus = { lx,122, 126, 144 }; SD_PaintLabel(hdc, rMus, "M�sica", g_sdFontNormal, RGB(180, 180, 200));
+		RECT rMusVol = { lx,146, 126, 168 }; SD_PaintLabel(hdc, rMusVol, "Vol. M�sica (0-10)", g_sdFontNormal, RGB(180, 180, 200));
+
+		SD_DrawLine(hdc, 14, 170, 406, 170);
+
+		RECT rLog = { lx,170, 126, 192 }; SD_PaintLabel(hdc, rLog, "Login", g_sdFontNormal, RGB(180, 180, 200));
+		RECT rPas = { lx,194, 126, 216 }; SD_PaintLabel(hdc, rPas, "Senha", g_sdFontNormal, RGB(180, 180, 200));
+		RECT rAut = { lx,218, 126, 240 }; SD_PaintLabel(hdc, rAut, "Auto Login", g_sdFontNormal, RGB(180, 180, 200));
+
+		SD_DrawLine(hdc, 14, 244, 406, 244);
+
+		RECT rFps = { lx,246, 126, 268 }; SD_PaintLabel(hdc, rFps, "Limite de FPS", g_sdFontNormal, RGB(180, 180, 200));
+
+		// Rodap� discreto
+		RECT rFoot = { 0, 334, 420, 370 };
+		FillRect(hdc, &rFoot, g_sdBrushPanel);
+		RECT rNote = { 14, 338, 406, 358 };
+		SD_PaintLabel(hdc, rNote, "FECHAR cancela e encerra o jogo.", g_sdFontSmall, RGB(40, 40, 90));
+
+		return 1;
+	}
+
+	case WM_CTLCOLORSTATIC:
+	{
+		HDC hdc = (HDC)wParam;
+		SetBkMode(hdc, TRANSPARENT);
+		SetTextColor(hdc, RGB(200, 200, 220));
+		return (LRESULT)g_sdBrushBg;
+	}
+
+	case WM_CTLCOLOREDIT:
+	{
+		HDC hdc = (HDC)wParam;
+		SetBkColor(hdc, RGB(8, 8, 30));
+		SetTextColor(hdc, RGB(220, 220, 255));
+		static HBRUSH hEdBrush = CreateSolidBrush(RGB(8, 8, 30));
+		return (LRESULT)hEdBrush;
+	}
+
+	case WM_CTLCOLORBTN:
+		return (LRESULT)g_sdBrushPanel;
+
+	case WM_CTLCOLORLISTBOX:
+	{
+		HDC hdc = (HDC)wParam;
+		SetBkColor(hdc, RGB(5, 5, 20));
+		SetTextColor(hdc, RGB(200, 200, 255));
+		static HBRUSH hLbBrush = CreateSolidBrush(RGB(5, 5, 20));
+		return (LRESULT)hLbBrush;
+	}
+
+	case WM_HSCROLL:
+		SD_UpdateDynLabel(hDlg);
+		InvalidateRect(hDlg, NULL, TRUE);
+		break;
+
+		// Tab navega entre os controles com WS_TABSTOP
+	case WM_KEYDOWN:
+		if (wParam == VK_TAB)
+		{
+			HWND hFocus = GetFocus();
+			HWND hNext = GetNextDlgTabItem(hDlg, hFocus,
+				(GetKeyState(VK_SHIFT) & 0x8000) ? TRUE : FALSE);
+			if (hNext) SetFocus(hNext);
+			return 0;
+		}
+		if (wParam == VK_RETURN)
+		{
+			// Enter no campo de senha ou bot�o JOGAR dispara o login
+			HWND hFocus = GetFocus();
+			HWND hPass = GetDlgItem(hDlg, IDC_SD_EDIT_PASS);
+			HWND hSave = GetDlgItem(hDlg, IDC_SD_BTN_SAVE);
+			if (hFocus == hPass || hFocus == hSave)
+				SendMessage(hDlg, WM_COMMAND, MAKEWPARAM(IDC_SD_BTN_SAVE, BN_CLICKED), 0);
+			return 0;
+		}
+		break;
+
+	case WM_COMMAND:
+	{
+		int id = LOWORD(wParam);
+
+		if (id == IDC_SD_CHK_SOUND || id == IDC_SD_CHK_MUSIC || id == IDC_SD_CHK_AUTOLOGIN)
+		{
+			HWND hC = GetDlgItem(hDlg, id);
+			int cur = (int)SendMessage(hC, BM_GETCHECK, 0, 0);
+			SendMessage(hC, BM_SETCHECK, (cur == BST_CHECKED) ? BST_UNCHECKED : BST_CHECKED, 0);
+		}
+
+		if (id == IDC_SD_BTN_SAVE)
+		{
+			HWND hCombo = GetDlgItem(hDlg, IDC_SD_COMBO_RES);
+			g_sdData.resolution = (int)SendMessage(hCombo, CB_GETCURSEL, 0, 0) + 1;
+			g_sdData.soundOnOff = (SendMessage(GetDlgItem(hDlg, IDC_SD_CHK_SOUND), BM_GETCHECK, 0, 0) == BST_CHECKED) ? 1 : 0;
+			g_sdData.musicOnOff = (SendMessage(GetDlgItem(hDlg, IDC_SD_CHK_MUSIC), BM_GETCHECK, 0, 0) == BST_CHECKED) ? 1 : 0;
+			g_sdData.autoLogin = (SendMessage(GetDlgItem(hDlg, IDC_SD_CHK_AUTOLOGIN), BM_GETCHECK, 0, 0) == BST_CHECKED) ? 1 : 0;
+			g_sdData.volumeLevel = (int)SendMessage(GetDlgItem(hDlg, IDC_SD_SLIDER_VOL), TBM_GETPOS, 0, 0);
+			g_sdData.musicVolumeLevel = (int)SendMessage(GetDlgItem(hDlg, IDC_SD_SLIDER_MUSIC), TBM_GETPOS, 0, 0);
+			g_sdData.fpsLimit = (int)SendMessage(GetDlgItem(hDlg, IDC_SD_SLIDER_FPS), TBM_GETPOS, 0, 0);
+			GetWindowTextA(GetDlgItem(hDlg, IDC_SD_EDIT_LOGIN), g_sdData.login, sizeof(g_sdData.login));
+			GetWindowTextA(GetDlgItem(hDlg, IDC_SD_EDIT_PASS), g_sdData.password, sizeof(g_sdData.password));
+			g_sdData.saved = true;
+			DestroyWindow(hDlg);
+		}
+
+		if (id == IDC_SD_BTN_CLOSE)
+		{
+			g_sdData.saved = false;
+			DestroyWindow(hDlg);
+		}
+	}
+	return 0;
+
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
+	}
+	return DefWindowProcA(hDlg, msg, wParam, lParam);
+}
+
+void ShowStartupDialog()
+{
+	memset(&g_sdData, 0, sizeof(g_sdData));
+
+	g_sdData.resolution = m_Resolution;
+	g_sdData.soundOnOff = m_SoundOnOff;
+	g_sdData.musicOnOff = m_MusicOnOff;
+	g_sdData.volumeLevel = 5;
+	g_sdData.musicVolumeLevel = 10;
+	g_sdData.fpsLimit = 120;
+
+	{
+		HKEY hKey; DWORD dwSize;
+		if (RegOpenKeyExA(HKEY_CURRENT_USER, "SOFTWARE\\MuOnline\\Config", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+		{
+			DWORD vol = 5; dwSize = sizeof(DWORD);
+			if (RegQueryValueExA(hKey, "VolumeLevel", 0, NULL, (LPBYTE)&vol, &dwSize) == ERROR_SUCCESS)
+				g_sdData.volumeLevel = (int)vol;
+			DWORD musicVol = 10; dwSize = sizeof(DWORD);
+			if (RegQueryValueExA(hKey, "MusicVolumeLevel", 0, NULL, (LPBYTE)&musicVol, &dwSize) == ERROR_SUCCESS)
+				g_sdData.musicVolumeLevel = (int)musicVol;
+			RegCloseKey(hKey);
+		}
+	}
+
+	char szIni[MAX_PATH + 20] = "", szDir[MAX_PATH] = "";
+	GetCurrentDirectoryA(MAX_PATH, szDir);
+	strcpy_s(szIni, szDir);
+	if (szDir[strlen(szDir) - 1] == '\\') strcat_s(szIni, "config.ini");
+	else strcat_s(szIni, "\\Data\\Custom\\config.ini");
+
+	{
+		char bufLogin[50] = "", bufPass[50] = "";
+		GetPrivateProfileStringA("AutoLogin", "User", "", bufLogin, sizeof(bufLogin), szIni);
+		GetPrivateProfileStringA("AutoLogin", "Password", "", bufPass, sizeof(bufPass), szIni);
+		strncpy_s(g_sdData.login, bufLogin, sizeof(g_sdData.login) - 1);
+		strncpy_s(g_sdData.password, bufPass, sizeof(g_sdData.password) - 1);
+		g_sdData.autoLogin = GetPrivateProfileIntA("AutoLogin", "AutoLoginEnable", 0, szIni);
+		g_sdData.fpsLimit = GetPrivateProfileIntA("FPSSystem", "FpsLimit", 120, szIni);
+		if (g_sdData.fpsLimit < 32 || g_sdData.fpsLimit > 120) g_sdData.fpsLimit = 120;
+	}
+
+	const char* className = "MuStartupDlg";
+	WNDCLASSA wc = { 0 };
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.lpfnWndProc = StartupDlgProc;
+	wc.hInstance = g_hInst;
+	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	wc.lpszClassName = className;
+	wc.hCursor = LoadCursorA(NULL, IDC_ARROW);
+	wc.hIcon = LoadIconA(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
+	RegisterClassA(&wc);
+
+	int dlgW = 420, dlgH = 370;
+	int x = (GetSystemMetrics(SM_CXSCREEN) - dlgW) / 2;
+	int y = (GetSystemMetrics(SM_CYSCREEN) - dlgH) / 2;
+
+	// WS_POPUP sem WS_CAPTION = sem barra de t�tulo (borderless)
+	HWND hDlg = CreateWindowExA(
+		WS_EX_TOPMOST,
+		className,
+		"MuStartupDlg",
+		WS_POPUP | WS_VISIBLE,
+		x, y, dlgW, dlgH,
+		NULL, NULL, g_hInst, NULL);
+
+	ShowWindow(hDlg, SW_SHOW);
+	UpdateWindow(hDlg);
+
+	// Foca no campo de login automaticamente
+	SetFocus(GetDlgItem(hDlg, IDC_SD_EDIT_LOGIN));
+
+	MSG msg2;
+	while (GetMessage(&msg2, NULL, 0, 0))
+	{
+		TranslateMessage(&msg2);
+		DispatchMessage(&msg2);
+	}
+
+	SD_DestroyResources();
+	UnregisterClassA(className, g_hInst);
+
+	if (!g_sdData.saved)
+	{
+		ExitProcess(0);
+	}
+
+	m_Resolution = g_sdData.resolution;
+	m_SoundOnOff = g_sdData.soundOnOff;
+	m_MusicOnOff = g_sdData.musicOnOff;
+
+	switch (m_Resolution)
+	{
+	case 1:  WindowWidth = 800;  WindowHeight = 600;  break;
+	case 2:  WindowWidth = 1024; WindowHeight = 768;  break;
+	case 3:  WindowWidth = 1280; WindowHeight = 960;  break;
+	case 4:  WindowWidth = 1366; WindowHeight = 768;  break;
+	case 5:  WindowWidth = 1440; WindowHeight = 900;  break;
+	case 6:  WindowWidth = 1600; WindowHeight = 900;  break;
+	case 7:  WindowWidth = 1680; WindowHeight = 1050; break;
+	case 8:  WindowWidth = 1910; WindowHeight = 970;  break;
+	case 9:  WindowWidth = 1920; WindowHeight = 1080; break;
+	case 10: WindowWidth = 2560; WindowHeight = 1440; break;
+	default: WindowWidth = 800;  WindowHeight = 600;  break;
+	}
+
+	{
+		HKEY hKey2; DWORD dwDisp2;
+		if (RegCreateKeyExA(HKEY_CURRENT_USER, "SOFTWARE\\MuOnline\\Config", 0, NULL,
+			REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey2, &dwDisp2) == ERROR_SUCCESS)
+		{
+			RegSetValueExA(hKey2, "Resolution", 0, REG_DWORD, (LPBYTE)&m_Resolution, sizeof(DWORD));
+			RegSetValueExA(hKey2, "SoundOnOff", 0, REG_DWORD, (LPBYTE)&m_SoundOnOff, sizeof(DWORD));
+			RegSetValueExA(hKey2, "MusicOnOff", 0, REG_DWORD, (LPBYTE)&m_MusicOnOff, sizeof(DWORD));
+			DWORD vol = (DWORD)g_sdData.volumeLevel;
+			RegSetValueExA(hKey2, "VolumeLevel", 0, REG_DWORD, (LPBYTE)&vol, sizeof(DWORD));
+			DWORD musicVol = (DWORD)g_sdData.musicVolumeLevel;
+			RegSetValueExA(hKey2, "MusicVolumeLevel", 0, REG_DWORD, (LPBYTE)&musicVol, sizeof(DWORD));
+			RegCloseKey(hKey2);
+		}
+	}
+
+	{
+		char szIni2[MAX_PATH + 20] = "", szDir2[MAX_PATH] = "";
+		GetCurrentDirectoryA(MAX_PATH, szDir2);
+		strcpy_s(szIni2, szDir2);
+		if (szDir2[strlen(szDir2) - 1] == '\\') strcat_s(szIni2, "config.ini");
+		else strcat_s(szIni2, "\\Data\\Custom\\config.ini");
+
+		WritePrivateProfileStringA("AutoLogin", "User", g_sdData.login, szIni2);
+		WritePrivateProfileStringA("AutoLogin", "Password", g_sdData.password, szIni2);
+
+		char val[16];
+		sprintf_s(val, "%d", g_sdData.autoLogin);
+		WritePrivateProfileStringA("AutoLogin", "AutoLoginEnable", val, szIni2);
+
+		sprintf_s(val, "%d", g_sdData.fpsLimit);
+		WritePrivateProfileStringA("FPSSystem", "FpsLimit", val, szIni2);
+	}
+
+	strncpy_s(g_szStartupLogin, g_sdData.login, sizeof(g_szStartupLogin) - 1);
+	strncpy_s(g_szStartupPassword, g_sdData.password, sizeof(g_szStartupPassword) - 1);
+	g_iStartupAutoLogin = g_sdData.autoLogin;
+}
+
+bool IsRunningAsAdmin()
+{
+	BOOL isAdmin = FALSE;
+	PSID adminGroup;
+	SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+	if (AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup)) {
+		CheckTokenMembership(NULL, adminGroup, &isAdmin);
+		FreeSid(adminGroup);
+	}
+	return isAdmin;
+}
+
+void RestartAsAdmin()
+{
+	char szPath[MAX_PATH];
+	if (GetModuleFileNameA(NULL, szPath, MAX_PATH)) {
+		SHELLEXECUTEINFO execInfo = { 0 };
+		execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+		execInfo.fMask = SEE_MASK_FLAG_DDEWAIT | SEE_MASK_FLAG_NO_UI;
+		execInfo.hwnd = NULL;
+		execInfo.lpVerb = "runas";
+		execInfo.lpFile = szPath;
+		execInfo.nShow = SW_SHOWNORMAL;
+
+		if (!ShellExecuteEx(&execInfo)) {
+			MessageBox(NULL, "Falha ao iniciar o programa como Administrador.", "Erro", MB_OK | MB_ICONERROR);
+		}
+		ExitProcess(0);
+	}
+}
+
+typedef LONG(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+bool GetWindowsVersion(DWORD& majorVersion, DWORD& minorVersion, DWORD& buildNumber) {
+	HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
+	if (hMod) {
+		RtlGetVersionPtr fn = (RtlGetVersionPtr)GetProcAddress(hMod, "RtlGetVersion");
+		if (fn != nullptr) {
+			RTL_OSVERSIONINFOW versionInfo = { 0 };
+			versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+			if (fn(&versionInfo) == 0) {
+				majorVersion = versionInfo.dwMajorVersion;
+				minorVersion = versionInfo.dwMinorVersion;
+				buildNumber = versionInfo.dwBuildNumber;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool IsRunningInVM()
+{
+	int cpuInfo[4] = { 0 };
+
+	bool hypervisorPresent = false;
+	char hypervisorVendor[13] = { 0 };
+
+	__cpuid(cpuInfo, 1);
+
+	if (cpuInfo[2] & (1 << 31))
+	{
+		hypervisorPresent = true;
+	}
+
+	__cpuid(cpuInfo, 0x40000000);
+	memcpy(hypervisorVendor + 0, &cpuInfo[1], 4);
+	memcpy(hypervisorVendor + 4, &cpuInfo[2], 4);
+	memcpy(hypervisorVendor + 8, &cpuInfo[3], 4);
+
+	if (strstr(hypervisorVendor, "VMware") ||
+		strstr(hypervisorVendor, "VBox") ||
+		strstr(hypervisorVendor, "KVM") ||
+		strstr(hypervisorVendor, "Xen"))
+	{
+		return true;
+	}
+
+	if (strstr(hypervisorVendor, "Microsoft Hv") || hypervisorPresent)
+	{
+		HKEY hKey;
+		char manufacturer[256] = { 0 };
+		char productName[256] = { 0 };
+		DWORD size = 0;
+
+		if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\BIOS", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+		{
+			size = sizeof(manufacturer);
+			RegQueryValueExA(hKey, "SystemManufacturer", NULL, NULL, (LPBYTE)manufacturer, &size);
+
+			size = sizeof(productName);
+			RegQueryValueExA(hKey, "SystemProductName", NULL, NULL, (LPBYTE)productName, &size);
+
+			RegCloseKey(hKey);
+
+			if (_stricmp(manufacturer, "Microsoft Corporation") == 0 &&
+				_stricmp(productName, "Virtual Machine") == 0)
+			{
+				return true;
+			}
+
+			if (strstr(manufacturer, "VMware") ||
+				strstr(manufacturer, "VirtualBox") ||
+				strstr(manufacturer, "Xen") ||
+				strstr(manufacturer, "QEMU") ||
+				strstr(manufacturer, "KVM") ||
+				strstr(productName, "Virtual") ||
+				strstr(productName, "VMware") ||
+				strstr(productName, "VirtualBox") ||
+				strstr(productName, "KVM") ||
+				strstr(productName, "QEMU") ||
+				strstr(productName, "HVM domU"))
+			{
+				return true;
+			}
+		}
+	}
+
+	if (GetFileAttributesA("C:\\Windows\\System32\\drivers\\VBoxMouse.sys") != INVALID_FILE_ATTRIBUTES ||
+		GetFileAttributesA("C:\\Windows\\System32\\drivers\\VBoxGuest.sys") != INVALID_FILE_ATTRIBUTES ||
+		GetFileAttributesA("C:\\Windows\\System32\\drivers\\VBoxSF.sys") != INVALID_FILE_ATTRIBUTES ||
+		GetFileAttributesA("C:\\Windows\\System32\\drivers\\vmmouse.sys") != INVALID_FILE_ATTRIBUTES ||
+		GetFileAttributesA("C:\\Windows\\System32\\drivers\\vmhgfs.sys") != INVALID_FILE_ATTRIBUTES)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool IsWindowsServer()
+{
+	OSVERSIONINFOEXA osvi;
+	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEXA));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXA);
+
+	if (!GetVersionExA((OSVERSIONINFOA*)&osvi))
+	{
+		return false;
+	}
+
+	return (osvi.wProductType != VER_NT_WORKSTATION);
+}
+
+bool CheckSystemRequirements()
+{
+	if (gProtect->m_MainInfo.m_CheckRequeriments != 0)
+	{
+		DWORD majorVersion, minorVersion, buildNumber;
+
+		if (!GetWindowsVersion(majorVersion, minorVersion, buildNumber)) {
+			return false;
+		}
+
+		if (majorVersion < gProtect->m_MainInfo.m_CheckWindowsVersion) {
+			char msg[256];
+			wsprintf(msg, "Your operating system is not compatible with the game. Minimum requirement: Windows %d or higher.", gProtect->m_MainInfo.m_CheckWindowsVersion);
+			MessageBox(NULL, msg, "Compatibility Error", MB_OK | MB_ICONERROR);
+			return false;
+		}
+
+		if (IsWindowsServer()) {
+			MessageBox(NULL, "Windows Server editions are not supported by the game.", "Compatibility Error", MB_OK | MB_ICONERROR);
+			return false;
+		}
+
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		GlobalMemoryStatusEx(&memInfo);
+
+		DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
+
+		if (totalPhysMem < (DWORDLONG)(gProtect->m_MainInfo.m_MinMemoryRAM - 1) * 1024ULL * 1024ULL * 1024ULL)
+		{
+			char ramMsg[256];
+			wsprintf(ramMsg, "Your system does not meet the minimum requirements to run the game. Minimum Requirement %d GB RAM.", gProtect->m_MainInfo.m_MinMemoryRAM);
+			MessageBox(NULL, ramMsg, "Minimum Requirements Error", MB_OK | MB_ICONERROR);
+			return false;
+		}
+
+		SYSTEM_INFO sysInfo;
+		GetSystemInfo(&sysInfo);
+
+		if (sysInfo.dwNumberOfProcessors < gProtect->m_MainInfo.m_MinCPUCore) {
+
+			const char* coreType;
+
+			switch (gProtect->m_MainInfo.m_MinCPUCore) {
+			case 1: coreType = "1 core"; break;
+			case 2: coreType = "dual-core"; break;
+			case 3: coreType = "tri-core"; break;
+			case 4: coreType = "quad-core"; break;
+			case 6: coreType = "hexa-core"; break;
+			case 8: coreType = "octa-core"; break;
+			case 12: coreType = "dodeca-core"; break;
+			case 16: coreType = "hexadeca-core"; break;
+			case 24: coreType = "24 cores"; break;
+			case 32: coreType = "32 cores"; break;
+			default:
+				char tempCore[32];
+				wsprintf(tempCore, "%d cores", gProtect->m_MainInfo.m_MinCPUCore);
+				coreType = tempCore;
+				break;
+			}
+
+			char cpuMsg[256];
+			wsprintf(cpuMsg, "Your system does not meet the minimum requirements to run the game. A %s or higher processor is required.", coreType);
+			MessageBox(NULL, cpuMsg, "Minimum Requirements Error", MB_OK | MB_ICONERROR);
+			return false;
+		}
+
+		bool gpuValid = false;
+
+		if (gProtect->m_MainInfo.m_MinVideoMemory == 0)
+		{
+			gpuValid = true;
+		}
+		else
+		{
+			IDXGIFactory* factory = nullptr;
+			IDXGIAdapter* adapter = nullptr;
+
+			HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
+
+			if (SUCCEEDED(hr) && factory != nullptr) {
+
+				for (UINT i = 0; factory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i) {
+
+					DXGI_ADAPTER_DESC desc;
+
+					HRESULT adapterHr = adapter->GetDesc(&desc);
+
+					if (SUCCEEDED(adapterHr)) {
+
+						DWORDLONG requiredVRAM = (DWORDLONG)(gProtect->m_MainInfo.m_MinVideoMemory - 1) * 1024ULL * 1024ULL * 1024ULL;
+
+						DWORDLONG totalVideoMemory = desc.DedicatedVideoMemory;
+
+						if (totalVideoMemory == 0)
+						{
+							totalVideoMemory = desc.SharedSystemMemory;
+						}
+
+						if (totalVideoMemory >= requiredVRAM) {
+							gpuValid = true;
+						}
+					}
+
+					adapter->Release();
+				}
+
+				factory->Release();
+			}
+			else {
+				gpuValid = true;
+			}
+		}
+
+		if (!gpuValid) {
+			char gpuMsg[256];
+			wsprintf(gpuMsg, "Your system does not meet the minimum requirements to run the game. %d GB or more of VRAM is required.", gProtect->m_MainInfo.m_MinVideoMemory);
+			MessageBox(NULL, gpuMsg, "Minimum Requirements Error", MB_OK | MB_ICONERROR);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool IsHardwareIdBlocked(const char* BlockList, const char* HardwareID)
+{
+	if (gProtect->m_MainInfo.m_GetHWID != 0)
+	{
+		if (BlockList == nullptr || HardwareID == nullptr)
+		{
+			return false;
+		}
+
+		char Buffer[50000];
+		strcpy_s(Buffer, BlockList);
+
+		char* context = nullptr;
+		char* token = strtok_s(Buffer, ",", &context);
+
+		while (token != nullptr)
+		{
+			if (_stricmp(token, HardwareID) == 0)
+			{
+				return true;
+			}
+
+			token = strtok_s(nullptr, ",", &context);
+		}
+	}
+	return false;
+}
+
+//Sistema de Obter o HardwareID
+#include <winioctl.h>
+#include <CustomCape.h>
+static bool GetPhysicalDriveSerialNumber(int driveIndex, char* outSerial, int outSize)
+{
+	char drivePath[32];
+	wsprintfA(drivePath, "\\\\.\\PhysicalDrive%d", driveIndex);
+
+	HANDLE hDrive = CreateFileA(drivePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	if (hDrive == INVALID_HANDLE_VALUE) return false;
+
+	DWORD bufferSize = sizeof(STORAGE_DEVICE_DESCRIPTOR) + 512;
+	BYTE* buffer = new BYTE[bufferSize];
+	memset(buffer, 0, bufferSize);
+
+	STORAGE_PROPERTY_QUERY query;
+	memset(&query, 0, sizeof(query));
+	query.PropertyId = StorageDeviceProperty;
+	query.QueryType = PropertyStandardQuery;
+
+	DWORD bytesReturned = 0;
+	bool success = false;
+
+	if (DeviceIoControl(hDrive, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), buffer, bufferSize, &bytesReturned, NULL))
+	{
+		STORAGE_DEVICE_DESCRIPTOR* desc = (STORAGE_DEVICE_DESCRIPTOR*)buffer;
+		if (desc->SerialNumberOffset != 0 && desc->SerialNumberOffset < bufferSize)
+		{
+			char* serial = (char*)(buffer + desc->SerialNumberOffset);
+			int j = 0;
+			for (int i = 0; serial[i] != '\0' && j < outSize - 1; i++)
+			{
+				unsigned char c = (unsigned char)serial[i];
+				if (c > 0x20 && c < 0x7F)
+					outSerial[j++] = serial[i];
+			}
+			outSerial[j] = '\0';
+			success = (j > 0);
+		}
+	}
+
+	delete[] buffer;
+	CloseHandle(hDrive);
+	return success;
+}
+
+static bool GetFixedPhysicalDriveSerial(char* outSerial, int outSize)
+{
+	memset(outSerial, 0, outSize);
+
+	for (int n = 0; n < 5; n++)
+	{
+		if (GetPhysicalDriveSerialNumber(n, outSerial, outSize) && outSerial[0] != '\0')
+			break;
+	}
+
+	int j = (int)strlen(outSerial);
+	while (j < 32 && j < outSize - 1)
+		outSerial[j++] = '0';
+	outSerial[j] = '\0';
+
+	return (outSerial[0] != '\0');
+}
+
+bool GetLocalComputerHardwareId(char* outHardwareId, int bufferSize)
+{
+	if (gProtect->m_MainInfo.m_GetHWID != 0)
+	{
+		if (bufferSize < 36) return false;
+		ZeroMemory(outHardwareId, bufferSize);
+
+		char DriveSerial[256];
+		memset(DriveSerial, 0, sizeof(DriveSerial));
+		GetFixedPhysicalDriveSerial(DriveSerial, sizeof(DriveSerial));
+
+		DWORD ComputerHardwareId1 = *(DWORD*)(&DriveSerial[0x00]) ^ *(DWORD*)(&DriveSerial[0x10]) ^ 0x3AD3B74A;
+		DWORD ComputerHardwareId2 = (*(DWORD*)(&DriveSerial[0x04]) ^ *(DWORD*)(&DriveSerial[0x14])) ^ 0x94FDC685;
+		DWORD ComputerHardwareId3 = (*(DWORD*)(&DriveSerial[0x08]) ^ *(DWORD*)(&DriveSerial[0x18])) ^ 0xF45BBF4C;
+		DWORD ComputerHardwareId4 = (*(DWORD*)(&DriveSerial[0x0C]) ^ *(DWORD*)(&DriveSerial[0x1C])) ^ 0x8941D8E7;
+
+		wsprintfA(outHardwareId, "%08X-%08X-%08X-%08X",
+			ComputerHardwareId1,
+			ComputerHardwareId2,
+			ComputerHardwareId3,
+			ComputerHardwareId4);
+	}
+	return true;
+}
+
+static LRESULT CALLBACK MusicHelperWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_CREATE:
+		SetTimer(hWnd, 1, 2000, NULL);
+		return 0;
+
+	case WM_TIMER:
+		if (g_hMusicHelperParentProcess != NULL && WaitForSingleObject(g_hMusicHelperParentProcess, 0) == WAIT_OBJECT_0)
+			DestroyWindow(hWnd);
+		return 0;
+
+	case WM_COPYDATA:
+	{
+		COPYDATASTRUCT* cds = (COPYDATASTRUCT*)lParam;
+		if (cds == NULL || cds->dwData != MUSIC_HELPER_COPYDATA_ID || cds->cbData != sizeof(MUSIC_HELPER_PACKET))
+			return FALSE;
+
+		MUSIC_HELPER_PACKET* packet = (MUSIC_HELPER_PACKET*)cds->lpData;
+		if (packet == NULL)
+			return FALSE;
+
+		switch (packet->command)
+		{
+		case MUSIC_HELPER_PLAY:
+			if (packet->name[0] != 0 && strcmp(packet->name, g_szMusicHelperCurrentFile) != 0)
+			{
+				wzAudioPlay(packet->name, 1);
+				strcpy_s(g_szMusicHelperCurrentFile, packet->name);
+			}
+			return TRUE;
+
+		case MUSIC_HELPER_STOP:
+			if (packet->name[0] == 0 || strcmp(packet->name, g_szMusicHelperCurrentFile) == 0)
+			{
+				wzAudioStop();
+				g_szMusicHelperCurrentFile[0] = 0;
+			}
+			return TRUE;
+
+		case MUSIC_HELPER_VOLUME:
+			ApplyWzMusicVolumeLevel(packet->value);
+			return TRUE;
+
+		case MUSIC_HELPER_QUIT:
+			DestroyWindow(hWnd);
+			return TRUE;
+		}
+	}
+	return FALSE;
+
+	case WM_MUSIC_HELPER_QUERY:
+		if (wParam == MUSIC_HELPER_POSITION)
+			return wzAudioGetStreamOffsetRange();
+		return 100;
+
+	case WM_DESTROY:
+		KillTimer(hWnd, 1);
+		wzAudioStop();
+		wzAudioDestroy();
+		if (g_hMusicHelperParentProcess != NULL)
+		{
+			CloseHandle(g_hMusicHelperParentProcess);
+			g_hMusicHelperParentProcess = NULL;
+		}
+		PostQuitMessage(0);
+		return 0;
+	}
+
+	return DefWindowProcA(hWnd, msg, wParam, lParam);
+}
+
+static int RunMusicHelper(HINSTANCE hInstance, PSTR szCmdLine)
+{
+	DWORD parentProcessId = 0;
+	const char* parentArg = strstr(szCmdLine, "--music-helper");
+	if (parentArg != NULL)
+	{
+		parentArg += strlen("--music-helper");
+		while (*parentArg == ' ')
+			parentArg++;
+		parentProcessId = strtoul(parentArg, NULL, 10);
+	}
+
+	if (parentProcessId != 0)
+		g_hMusicHelperParentProcess = OpenProcess(SYNCHRONIZE, FALSE, parentProcessId);
+
+	WNDCLASSA wc;
+	ZeroMemory(&wc, sizeof(wc));
+	wc.lpfnWndProc = MusicHelperWndProc;
+	wc.hInstance = hInstance;
+	wc.lpszClassName = MUSIC_HELPER_CLASS_NAME;
+	RegisterClassA(&wc);
+
+	char windowName[64] = { 0 };
+	BuildMusicHelperWindowName(windowName, sizeof(windowName), parentProcessId);
+
+	HWND hWnd = CreateWindowExA(0, MUSIC_HELPER_CLASS_NAME, windowName, WS_POPUP, 0, 0, 1, 1, NULL, NULL, hInstance, NULL);
+	if (hWnd == NULL)
+		return 0;
+
+	wzAudioCreate(hWnd);
+	wzAudioSetMixerMode(_mmInternalVolume);
+	wzAudioOption(WZAOPT_STOPBEFOREPLAY, 1);
+	ApplyWzMusicVolumeLevel(10);
+
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	return (int)msg.wParam;
+}
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nCmdShow)
+{
+	MSG msg;
+
+	if (szCmdLine && strstr(szCmdLine, "--music-helper"))
+	{
+		return RunMusicHelper(hInstance, szCmdLine);
+	}
+
+	if (szCmdLine && strstr(szCmdLine, "--apply-update"))
+	{
+		InGameUpdate_RunAsUpdater(szCmdLine);
+		return 0;
+	}
+
+	gController.Instance = hInstance;
+
+	leaf::AttachExceptionHandler(ExceptionCallback);
+
+	gProtect = new CProtect;
+
+	if (gProtect->ReadMainFile("Data//Local//info.bmd") == 0)
+	{
+		MessageBox(0, "Erro de configura��o. Consulte o suporte! #1", "Erro de inicializa��o!", MB_OK | MB_ICONERROR);
+		delete gProtect;
+		gProtect = nullptr;
+		ExitProcess(0);
+	}
+
+	if (gProtect->m_MainInfo.m_OpenLauncher != 0)
+	{
+		if (!WasStartedByLauncher())
+		{
+			if (!IsLauncherAlreadyRunning())
+			{
+				RunLauncherFromSameFolder();
+
+				delete gProtect;
+				gProtect = nullptr;
+				return 0;
+			}
+		}
+	}
+
+	if (gProtect->m_MainInfo.m_RequireAdmin != 0)
+	{
+		if (!IsRunningAsAdmin())
+		{
+			if (gProtect->m_MainInfo.m_RequireAdminMessage != 0)
+			{
+				int resposta = MessageBoxA(NULL,
+					"Este jogo requer execu��o de Administrador.\n\n"
+					"Deseja reiniciar e executar como administrador?",
+					"Requer Execu��o como Administrador",
+					MB_YESNO | MB_ICONQUESTION);
+
+				if (resposta == IDYES)
+				{
+					RestartAsAdmin();
+				}
+			}
+			else
+			{
+				RestartAsAdmin();
+			}
+
+			delete gProtect;
+			gProtect = nullptr;
+			return 0;
+		}
+	}
+
+	if (IsRunningInVM())
+	{
+		if (gProtect->m_MainInfo.m_BlockVirtualMachine != 0)
+		{
+			MessageBox(NULL, "The game cannot be run inside a virtual machine.", "Security Error", MB_OK | MB_ICONERROR);
+			return false;
+		}
+	}
+
+	DWORD MaxInstances = gProtect->m_MainInfo.m_MaxInstance;
+
+	if (MaxInstances == 0)
+		MaxInstances = 10;
+
+	const char* SEMAPHORE_NAME = "Global\\MuOnlineClientLimit_v2026v1Easy";
+
+	g_hLimitSemaphore = CreateSemaphoreA(NULL, MaxInstances, MaxInstances, SEMAPHORE_NAME);
+
+	if (g_hLimitSemaphore == NULL)
+	{
+		MessageBoxA(NULL, "Erro ao criar limitador de inst�ncias.", "Erro Fatal", MB_OK | MB_ICONERROR);
+		return 0;
+	}
+
+	if (WaitForSingleObject(g_hLimitSemaphore, 0) != WAIT_OBJECT_0)
+	{
+		char msg[256];
+		wsprintfA(msg,
+			"Voc� j� atingiu o limite m�ximo de clientes abertos!\n\n"
+			"M�ximo permitido: %d clientes simult�neos.",
+			MaxInstances);
+
+		MessageBoxA(NULL, msg, "Limite de Inst�ncias", MB_OK | MB_ICONWARNING);
+
+		CloseHandle(g_hLimitSemaphore);
+		g_hLimitSemaphore = NULL;
+		return 0;
+	}
+
+	//if (GetFileAttributesA("Data\\Local\\hw.id") == INVALID_FILE_ATTRIBUTES)
+	//{
+	//	char HardwareID[36] = { 0 };
+	//
+	//	if (GetLocalComputerHardwareId(HardwareID, sizeof(HardwareID)))
+	//	{
+	//		char msg[512];
+	//		wsprintfA(msg,
+	//			"SEU CUSTOMER HARDWARE ID:\n\n"
+	//			"%s\n\n",
+	//			HardwareID);
+	//
+	//		MessageBoxA(NULL, msg, "Hardware ID - Verifica��o de Seguran�a", MB_OK | MB_ICONINFORMATION);
+	//
+	//		HANDLE hFile = CreateFileA("Data\\Local\\hw.id", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	//		if (hFile != INVALID_HANDLE_VALUE)
+	//		{
+	//			DWORD written;
+	//			WriteFile(hFile, HardwareID, strlen(HardwareID), &written, NULL);
+	//			CloseHandle(hFile);
+	//		}
+	//	}
+	//}
+
+	if (gProtect->m_MainInfo.m_GetHWID != 0)
+	{
+		char LocalHardwareID[36] = { 0 };
+		if (GetLocalComputerHardwareId(LocalHardwareID, sizeof(LocalHardwareID)))
+		{
+			if (IsHardwareIdBlocked(gProtect->m_MainInfo.m_CheckBlockHWID, LocalHardwareID))
+			{
+				MessageBoxA(
+					NULL,
+					"Este computador foi BLOQUEADO pela Administra��o.\n\n"
+					"e n�o pode ser usado para acessar o Servidor!\n",
+					"Aviso da Administra��o",
+					MB_OK | MB_ICONERROR
+				);
+
+				ExitProcess(0);
+			}
+		}
+	}
+
+	if (gProtect->m_MainInfo.m_CheckRequeriments != 0)
+	{
+		if (!CheckSystemRequirements())
+		{
+			delete gProtect;
+			gProtect = nullptr;
+			ExitProcess(1);
+		}
+	}
+
+	gCustomJewel->Init();
+
+	gCustomWing.Init();
+
+	gCustomWorld.Init();
+
+	gCustomCape.Init();
+
+	gCustomEffects.Init();
+
+	gMonsters.Init();
+
+	gMonsterName.Init();
+
+	gMonsterGlow.Init();
+
+	gMonsterEffect.Init();
+
+	gEventEntryLevel.Init();
+
+	gItemManager->Init();
+
+	gHelperSystem.Init();
+
+	gDescriptions->Init();
+
+	gCustomServerName.Init();
+
+	gRenderModel.Init();
+
+	gCCustomSetEffect.Init();
+
+	gDisableExcellent.Init();
+
+	gCustomItemPosition.Init();
+
+	gItemNewOption.Init();
+
+	gCustomItemSize.Init();
+
+	if (gProtect->m_MainInfo.m_UseIntegratedAntiHack != 0)
+	{
+		MHPIntegrationStart(hInstance);
+	}
+	else
+	{
+		gProtect->CheckPlugin1File();
+		gProtect->CheckPlugin2File();
+		gProtect->CheckPlugin3File();
+		gProtect->CheckPlugin4File();
+		gProtect->CheckPlugin5File();
+	}
+
+	InitHackCheck();
+
+	InitAutoClick();
+	//InitAutoCombo();
+
+	char lpszExeVersion[256] = "unknown";
+
+	char* lpszCommandLine = GetCommandLine();
+	char lpszFile[MAX_PATH];
+	WORD wVersion[4] = { 0, };
+	if (GetFileNameOfFilePath(lpszFile, lpszCommandLine))
+	{
+		if (GetFileVersion(lpszFile, wVersion))
+		{
+			sprintf(lpszExeVersion, "%d.%02d", wVersion[0], wVersion[1]);
+			if (wVersion[2] > 0)
+			{
+				char lpszMinorVersion[2] = "a";
+				lpszMinorVersion[0] += (wVersion[2] - 1);
+				strcat(lpszExeVersion, lpszMinorVersion);
+			}
+		}
+	}
+
+	Console.Init();
+
+	g_ErrorReport.Write("\r\n");
+	g_ErrorReport.WriteLogBegin();
+	g_ErrorReport.AddSeparator();
+	g_ErrorReport.Write("Mu online %s (%s) executed. (%d.%d.%d.%d)\r\n", lpszExeVersion, "Eng", wVersion[0], wVersion[1], wVersion[2], wVersion[3]);
+
+	g_ConsoleDebug->Write(MCD_NORMAL, "Mu Online (Version: %d.%d.%d.%d)", wVersion[0], wVersion[1], wVersion[2], wVersion[3]);
+
+	g_ErrorReport.WriteCurrentTime();
+	ER_SystemInfo si;
+	ZeroMemory(&si, sizeof(ER_SystemInfo));
+	GetSystemInfo(&si);
+	g_ErrorReport.AddSeparator();
+	g_ErrorReport.WriteSystemInfo(&si);
+	g_ErrorReport.AddSeparator();
+
+	// PKD_ADD_BINARY_PROTECTION
+	VM_START
+		WORD wPortNumber;
+	if (GetConnectServerInfo(szCmdLine, g_lpszCmdURL, &wPortNumber))
+	{
+		szServerIpAddress = g_lpszCmdURL;
+		g_ServerPort = wPortNumber;
+	}
+	VM_END
+
+		if (!OpenMainExe())
+		{
+			return false;
+		}
+
+	// PKD_ADD_BINARY_PROTECTION
+	VM_START
+		g_SimpleModulusCS.LoadEncryptionKey("Data\\Enc1.dat");
+	g_SimpleModulusSC.LoadDecryptionKey("Data\\Dec2.dat");
+	VM_END
+
+		g_ErrorReport.Write("> To read config.ini.\r\n");
+
+	if (OpenInitFile() == FALSE)
+	{
+		g_ErrorReport.Write("config.ini read error\r\n");
+		return false;
+	}
+	g_hInst = hInstance;
+	if (gProtect->m_MainInfo.m_AutoUpdateCpanel != 0)
+	{
+		ShowStartupDialog();
+	}
+
+	if (gProtect->m_MainInfo.m_WideScreenType != 0)
+	{
+		if (m_Resolution > 3)
+		{
+			g_fScreenRate_x = 1.6f;
+			g_fScreenRate_y = 1.6f;
+		}
+		else
+		{
+			g_fScreenRate_x = (float)WindowHeight / 480;
+			g_fScreenRate_y = (float)WindowHeight / 480;
+		}
+	}
+	else
+	{
+		g_fScreenRate_x = (float)WindowHeight / 480;
+		g_fScreenRate_y = (float)WindowHeight / 480;
+	}
+
+	GWidescreen.Init();
+
+	pMultiLanguage = new CMultiLanguage(g_strSelectedML);
+
+	if (g_iChatInputType == 1)
+		ShowCursor(FALSE);
+
+	g_ErrorReport.Write("> Enum display settings.\r\n");
+	DEVMODE DevMode;
+	DEVMODE* pDevmodes;
+	int nModes = 0;
+	while (EnumDisplaySettings(NULL, nModes, &DevMode)) nModes++;
+	pDevmodes = new DEVMODE[nModes + 1];
+	nModes = 0;
+	while (EnumDisplaySettings(NULL, nModes, &pDevmodes[nModes])) nModes++;
+
+	DWORD dwBitsPerPel = 16;
+	for (int n1 = 0; n1 < nModes; n1++)
+	{
+		if (pDevmodes[n1].dmBitsPerPel == 16 && m_nColorDepth == 0) {
+			dwBitsPerPel = 16; break;
+		}
+		if (pDevmodes[n1].dmBitsPerPel == 24 && m_nColorDepth == 1) {
+			dwBitsPerPel = 24; break;
+		}
+		if (pDevmodes[n1].dmBitsPerPel == 32 && m_nColorDepth == 1) {
+			dwBitsPerPel = 32; break;
+		}
+	}
+
+#ifdef ENABLE_FULLSCREEN
+#if defined USER_WINDOW_MODE || (defined WINDOWMODE)
+	if (g_bUseWindowMode == FALSE)
+#endif	// USER_WINDOW_MODE
+	{
+		for (int n2 = 0; n2 < nModes; n2++)
+		{
+			if (pDevmodes[n2].dmPelsWidth == WindowWidth && pDevmodes[n2].dmPelsHeight == WindowHeight && pDevmodes[n2].dmBitsPerPel == dwBitsPerPel)
+			{
+				g_ErrorReport.Write("> Change display setting %dx%d.\r\n", pDevmodes[n2].dmPelsWidth, pDevmodes[n2].dmPelsHeight);
+				ChangeDisplaySettings(&pDevmodes[n2], 0);
+				break;
+			}
+		}
+	}
+#endif //ENABLE_FULLSCREEN
+
+	delete[] pDevmodes;
+
+	g_ErrorReport.Write("> Screen size = %d x %d.\r\n", WindowWidth, WindowHeight);
+
+	g_hInst = hInstance;
+
+	g_hWnd = StartWindow(hInstance, nCmdShow);
+	if (!g_hWnd)
+	{
+		MessageBox(NULL, "Falha ao criar a janela principal.", "Erro", MB_OK | MB_ICONERROR);
+		return FALSE;
+	}
+
+	g_ErrorReport.Write("> Start window success.\r\n");
+
+	if (!CreateOpenglWindow())
+	{
+		return FALSE;
+	}
+
+	g_ErrorReport.Write("> OpenGL init success.\r\n");
+	g_ErrorReport.AddSeparator();
+	//g_ErrorReport.WriteOpenGLInfo();
+	g_ErrorReport.AddSeparator();
+	g_ErrorReport.WriteSoundCardInfo();
+
+#if jdk_shader_local330
+	// Takumi-style OpenGL 3.3 shader bootstrap after GLEW/context creation.
+	gShaderGL->Init();
+#endif
+
+	ShowWindow(g_hWnd, nCmdShow);
+	UpdateWindow(g_hWnd);
+
+	if (gProtect->m_MainInfo.m_AutoUpdateCpanel != 0)
+	{
+		InGameUpdate_Start(g_hWnd);
+		{
+			MSG msgUpd;
+
+			while (InGameUpdate_GetState() == IUS_CHECKING)
+			{
+				while (PeekMessage(&msgUpd, NULL, 0, 0, PM_REMOVE))
+				{
+					TranslateMessage(&msgUpd);
+					DispatchMessage(&msgUpd);
+				}
+				InGameUpdate_RenderScreen(g_hDC);
+				SwapBuffers(g_hDC);
+				Sleep(16);
+			}
+
+			while (true)
+			{
+				INGAME_UPDATE_STATE updState = InGameUpdate_GetState();
+				if (updState == IUS_DONE || updState == IUS_ERROR)
+					break;
+
+				while (PeekMessage(&msgUpd, NULL, 0, 0, PM_REMOVE))
+				{
+					TranslateMessage(&msgUpd);
+					DispatchMessage(&msgUpd);
+				}
+
+				InGameUpdate_RenderScreen(g_hDC);
+				SwapBuffers(g_hDC);
+				Sleep(16);
+			}
+
+			DWORD dwEnd = GetTickCount() + 1500;
+			while (GetTickCount() < dwEnd)
+			{
+				while (PeekMessage(&msgUpd, NULL, 0, 0, PM_REMOVE))
+				{
+					TranslateMessage(&msgUpd);
+					DispatchMessage(&msgUpd);
+				}
+				InGameUpdate_RenderScreen(g_hDC);
+				SwapBuffers(g_hDC);
+				Sleep(16);
+			}
+		}
+	}
+
+	//g_ErrorReport.WriteImeInfo( g_hWnd);
+	g_ErrorReport.AddSeparator();
+
+	switch (WindowWidth)
+	{
+	case 800:  FontHeight = 13; break;
+	case 1024: FontHeight = 13; break;
+	case 1200: FontHeight = 14; break;
+	case 1280: FontHeight = 14; break;
+	case 1366: FontHeight = 15; break;
+	case 1400: FontHeight = 15; break;
+	case 1600: FontHeight = 16; break;
+	case 1910: FontHeight = 16; break;
+	case 1920: FontHeight = 16; break;
+	case 2560: FontHeight = 16; break;
+	default: FontHeight = 15; break;
+	}
+
+	int nFixFontHeight = FontHeight;
+	int nFixFontSize;
+	int iFontSize;
+
+	iFontSize = FontHeight - 1;
+	nFixFontSize = nFixFontHeight - 1;
+
+	if (g_hFont) DeleteObject(g_hFont);
+	if (g_hFontBold) DeleteObject(g_hFontBold);
+	if (g_hFontBig) DeleteObject(g_hFontBig);
+	if (g_hFixFont) DeleteObject(g_hFixFont);
+
+	g_hFont = CreateFont(iFontSize, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, NONANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, GlobalText[0][0] ? GlobalText[0] : NULL);
+	g_hFontBold = CreateFont(iFontSize, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, NONANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, GlobalText[0][0] ? GlobalText[0] : NULL);
+	g_hFontBig = CreateFont(iFontSize * 2, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, NONANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, GlobalText[0][0] ? GlobalText[0] : NULL);
+	g_hFixFont = CreateFont(nFixFontSize, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, NONANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, GlobalText[18][0] ? GlobalText[18] : NULL);
+
+	if (g_pMercenaryInputBox) g_pMercenaryInputBox->SetFont(g_hFont);
+	if (g_pSingleTextInputBox) g_pSingleTextInputBox->SetFont(g_hFont);
+	if (g_pSinglePasswdInputBox) g_pSinglePasswdInputBox->SetFont(g_hFont);
+
+	if (g_pRenderText) g_pRenderText->SetFont(g_hFont);
+
+	setlocale(LC_ALL, "english");
+
+	CInput::Instance().Create(g_hWnd, WindowWidth, WindowHeight);
+
+	g_pNewUISystem->Create();
+
+	if (m_MusicOnOff)
+	{
+		leaf::CRegKey regkey;
+		regkey.SetKey(leaf::CRegKey::_HKEY_CURRENT_USER, "SOFTWARE\\MuOnline\\Config");
+		DWORD value;
+		if (!regkey.ReadDword("MusicVolumeLevel", value))
+		{
+			value = 10;
+			regkey.WriteDword("MusicVolumeLevel", value);
+		}
+		if (value > 10)
+			value = 10;
+
+		g_pOption->SetMusicVolumeLevel(int(value));
+		StartMusicHelper();
+		SetMusicVolumeLevel(g_pOption->GetMusicVolumeLevel());
+	}
+
+	if (m_SoundOnOff)
+	{
+		InitDirectSound(g_hWnd);
+		leaf::CRegKey regkey;
+		regkey.SetKey(leaf::CRegKey::_HKEY_CURRENT_USER, "SOFTWARE\\MuOnline\\Config");
+		DWORD value;
+		if (!regkey.ReadDword("VolumeLevel", value))
+		{
+			value = 1;
+			regkey.WriteDword("VolumeLevel", value);
+		}
+		if (value < 0 || value >= 10)
+			value = 5;
+
+		g_pOption->SetVolumeLevel(int(value));
+		SetEffectVolumeLevel(g_pOption->GetVolumeLevel());
+	}
+
+	SetTimer(g_hWnd, HACK_TIMER, 20 * 1000, NULL);
+
+	srand((unsigned)time(NULL));
+	for (int i = 0; i < 100; i++)
+		RandomTable[i] = rand() % 360;
+
+	//memorydump[0]
+	RendomMemoryDump = new BYTE[rand() % 100 + 1];
+
+
+	GateAttribute = new GATE_ATTRIBUTE[MAX_GATES];
+	SkillAttribute = new SKILL_ATTRIBUTE[MAX_SKILLS];
+
+	//memorydump[1]
+	ItemAttRibuteMemoryDump = new ITEM_ATTRIBUTE[MAX_ITEM + 1024];
+	ItemAttribute = ((ITEM_ATTRIBUTE*)ItemAttRibuteMemoryDump) + rand() % 1024;
+
+	//memorydump[2]
+	CharacterMemoryDump = new CHARACTER[MAX_CHARACTERS_CLIENT + 1 + 128];
+	CharactersClient = ((CHARACTER*)CharacterMemoryDump) + rand() % 128;
+	CharacterMachine = new CHARACTER_MACHINE;
+
+	memset(GateAttribute, 0, sizeof(GATE_ATTRIBUTE) * (MAX_GATES));
+	memset(ItemAttribute, 0, sizeof(ITEM_ATTRIBUTE) * (MAX_ITEM));
+	memset(SkillAttribute, 0, sizeof(SKILL_ATTRIBUTE) * (MAX_SKILLS));
+	memset(CharacterMachine, 0, sizeof(CHARACTER_MACHINE));
+
+	CharacterAttribute = &CharacterMachine->Character;
+	CharacterMachine->Init();
+	Hero = &CharactersClient[0];
+
+	if (g_iChatInputType == 1)
+	{
+		g_pMercenaryInputBox = new CUIMercenaryInputBox;
+		g_pSingleTextInputBox = new CUITextInputBox;
+		g_pSinglePasswdInputBox = new CUITextInputBox;
+	}
+
+	g_pChatRoomSocketList = new CChatRoomSocketList;
+	g_pUIManager = new CUIManager;
+	g_pUIMapName = new CUIMapName;	// rozy
+	g_pTimer = new CTimer();
+
+#ifdef MOVIE_DIRECTSHOW
+	g_pMovieScene = new CMovieScene;
+#endif // MOVIE_DIRECTSHOW
+
+#if jdk_shader_local330
+	OGL330::Init();
+#endif
+
+	g_BuffSystem = BuffStateSystem::Make();
+
+	g_MapProcess = MapProcess::Make();
+
+	g_petProcess = PetProcess::Make();
+
+	CUIMng::Instance().Create();
+
+	if (g_iChatInputType == 1)
+	{
+		g_pMercenaryInputBox->Init(g_hWnd);
+		g_pSingleTextInputBox->Init(g_hWnd, 200, 20);
+		g_pSinglePasswdInputBox->Init(g_hWnd, 200, 20, 9, TRUE);
+		g_pSingleTextInputBox->SetState(UISTATE_HIDE);
+		g_pSinglePasswdInputBox->SetState(UISTATE_HIDE);
+
+		g_pMercenaryInputBox->SetFont(g_hFont);
+		g_pSingleTextInputBox->SetFont(g_hFont);
+		g_pSinglePasswdInputBox->SetFont(g_hFont);
+
+		g_bIMEBlock = FALSE;
+		HIMC  hIMC = ImmGetContext(g_hWnd);
+		ImmSetConversionStatus(hIMC, IME_CMODE_ALPHANUMERIC, IME_SMODE_NONE);
+		ImmReleaseContext(g_hWnd, hIMC);
+		SaveIMEStatus();
+		g_bIMEBlock = TRUE;
+	}
+#if (defined WINDOWMODE)
+	if (g_bUseWindowMode == FALSE)
+	{
+		int nOldVal;
+		SystemParametersInfo(SPI_SCREENSAVERRUNNING, 1, &nOldVal, 0);
+		SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &g_iScreenSaverOldValue, 0);
+		SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, 300 * 60, NULL, 0);
+	}
+#else
+#ifdef NDEBUG
+#ifndef FOR_WORK
+#ifdef ACTIVE_FOCUS_OUT
+	if (g_bUseWindowMode == FALSE)
+	{
+#endif	// ACTIVE_FOCUS_OUT
+		int nOldVal; // ���� �� �ʿ䰡 ����
+		SystemParametersInfo(SPI_SCREENSAVERRUNNING, 1, &nOldVal, 0);  // ����Ű�� ������ ��
+		SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &g_iScreenSaverOldValue, 0);  // ��ũ�����̹� ����
+		SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, 300 * 60, NULL, 0);  // ��ũ�����̹� ����
+#ifdef ACTIVE_FOCUS_OUT
+	}
+#endif	// ACTIVE_FOCUS_OUT
+#endif
+#endif
+#endif	//WINDOWMODE(#else)
+
+#ifdef SAVE_PACKET
+	DeleteFile(PACKET_SAVE_FILE);
+#endif
+
+#if defined PROTECT_SYSTEMKEY && defined NDEBUG
+#ifndef FOR_WORK
+	ProtectSysKey::AttachProtectSysKey(g_hInst, g_hWnd);
+#endif // !FOR_WORK
+#endif // PROTECT_SYSTEMKEY && NDEBUG
+
+	while (1)
+	{
+		if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
+		{
+			if (!GetMessage(&msg, NULL, 0, 0))
+			{
+				break;
+			}
+			else
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+		else
+		{
+			if (g_bInTray)
+			{
+				DWORD currentTime = GetTickCount();
+				if (currentTime - g_dwLastTrayFrameTime >= 5000)
+				{
+					g_dwLastTrayFrameTime = currentTime;
+					g_dwLastTrayLogicTime = currentTime;
+
+#if (defined WINDOWMODE)
+					if (g_bUseWindowMode == TRUE)
+					{
+						Scene(g_hDC);           // Window Mode
+					}
+					else
+					{
+						Scene(g_hDC);           // Fullscreen - agora roda SEMPRE (mesmo sem foco)
+					}
+#else
+					Scene(g_hDC);               // Vers�o antiga
+#endif
+				}
+				else
+				{
+					Sleep(650);
+				}
+			}
+			else
+			{
+#if (defined WINDOWMODE)
+				if (g_bUseWindowMode == TRUE)
+				{
+					Scene(g_hDC);
+				}
+				else if (g_bWndActive)
+				{
+					Scene(g_hDC);
+				}
+#ifndef FOR_WORK
+				else if (g_bUseWindowMode == FALSE)
+				{
+					// seu c�digo antigo de minimized (deixe como estava)
+				}
+#endif
+#else
+				if (g_bWndActive)
+					Scene(g_hDC);
+#endif
+			}
+		}
+
+#ifdef NEW_PROTOCOL_SYSTEM
+		if (SceneFlag < CHARACTER_SCENE)
+			ProtocolCompiler();
+
+		g_pChatRoomSocketList->ProtocolCompile();
+		gProtocolSend.RecvMessage();
+#else
+		ProtocolCompiler();
+		g_pChatRoomSocketList->ProtocolCompile();
+#endif
+
+
+	} // while( 1 )
+
+	DestroyWindow();
+
+	ExitProcess(0);
+	return msg.wParam;
+}
+

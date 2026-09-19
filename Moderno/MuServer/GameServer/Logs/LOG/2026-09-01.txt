@@ -1,0 +1,168 @@
+18:45:12 [ServerInfo] CashShop loaded successfully
+18:45:12 [ServerInfo] ChaosMix loaded successfully
+18:45:12 [ServerInfo] Character loaded successfully
+18:45:12 [ServerInfo] Command loaded successfully
+18:45:12 [ServerInfo] Common loaded successfully
+18:45:12 [ServerInfo] Custom loaded successfully
+18:45:13 [ServerInfo] Event loaded successfully
+18:45:13 [ServerInfo] EventItemBag loaded successfully
+18:45:13 [ServerInfo] Hack loaded successfully
+18:45:13 [ServerInfo] Item loaded successfully
+18:45:14 [ServerInfo] Terrain loaded successfully
+18:45:15 [ServerInfo] Monster loaded successfully
+18:45:15 [ServerInfo] Move loaded successfully
+18:45:16 [ServerInfo] Quest loaded successfully
+18:45:16 [ServerInfo] Shop loaded successfully
+18:45:16 [ServerInfo] Skill loaded successfully
+18:45:16 [ServerInfo] Util loaded successfully
+18:45:17 [CustomRanking] Sistema desativado.
+18:45:18 Connected to database
+18:45:18 [ServerInfo] Lua loaded successfully
+18:59:40 [Obj][9000] AddClient (10.1.66.95)
+18:59:42 [Obj][9000] AddAccount (admin)
+18:59:45 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+18:59:48 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:00:00 [Invasion Manager] Index(3) Boss Position (Map: 0 X: 160 Y: 64)
+19:00:58 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+19:00:58 [ObjectManager][9000] DelAccountInfo (admin)
+19:00:58 [ObjectManager][9000] DelClient (10.1.66.95)
+19:01:03 [Obj][9001] AddClient (10.1.66.95)
+19:01:04 [Obj][9001] AddAccount (admin)
+19:01:04 [ObjectManager][9001] AddCharacterInfo (DLDoADM)
+19:01:07 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:05:40 [ObjectManager][9001] DelCharacterInfo (DLDoADM)
+19:05:40 [ObjectManager][9001] DelAccountInfo (admin)
+19:05:40 [ObjectManager][9001] DelClient (10.1.66.95)
+19:06:36 [Obj][9000] AddClient (10.1.66.95)
+19:06:37 [Obj][9000] AddAccount (admin)
+19:06:38 [ObjectManager][9000] AddCharacterInfo (Elfinha)
+19:06:39 [Reg HWID] Login: admin | Personagem: Elfinha | HWID: 
+19:07:03 [ObjectManager][9000] DelCharacterInfo (Elfinha)
+19:07:03 [ObjectManager][9000] DelAccountInfo (admin)
+19:07:03 [ObjectManager][9000] DelClient (10.1.66.95)
+19:07:04 [Obj][9001] AddClient (10.1.66.95)
+19:07:05 [Obj][9001] AddAccount (admin)
+19:07:06 [ObjectManager][9001] AddCharacterInfo (Elfinha)
+19:07:07 [Reg HWID] Login: admin | Personagem: Elfinha | HWID: 
+19:14:03 [ObjectManager][9001] DelCharacterInfo (Elfinha)
+19:14:03 [ObjectManager][9001] DelAccountInfo (admin)
+19:14:03 [ObjectManager][9001] DelClient (10.1.66.95)
+19:16:14 [Obj][9000] AddClient (10.1.66.95)
+19:16:16 [Obj][9000] AddAccount (admin)
+19:16:17 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+19:16:18 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 115 Y: 58)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 196 Y: 24)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 109 Y: 150)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 172 Y: 151)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 205 Y: 84)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 90 Y: 47)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 231 Y: 132)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 169 Y: 128)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 147 Y: 90)
+19:20:00 [Invasion Manager] Index(4) Boss Position (Map: 33 X: 234 Y: 124)
+19:20:40 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+19:20:40 [ObjectManager][9000] DelAccountInfo (admin)
+19:20:40 [ObjectManager][9000] DelClient (10.1.66.95)
+19:20:51 [ServerInfo] CashShop loaded successfully
+19:20:51 [ServerInfo] ChaosMix loaded successfully
+19:20:51 [ServerInfo] Character loaded successfully
+19:20:51 [ServerInfo] Command loaded successfully
+19:20:51 [ServerInfo] Common loaded successfully
+19:20:51 [ServerInfo] Custom loaded successfully
+19:20:51 [ServerInfo] Event loaded successfully
+19:20:51 [ServerInfo] EventItemBag loaded successfully
+19:20:51 [ServerInfo] Hack loaded successfully
+19:20:51 [ServerInfo] Item loaded successfully
+19:20:51 [ServerInfo] Terrain loaded successfully
+19:20:51 [ServerInfo] Monster loaded successfully
+19:20:51 [ServerInfo] Move loaded successfully
+19:20:51 [ServerInfo] Quest loaded successfully
+19:20:51 [ServerInfo] Shop loaded successfully
+19:20:51 [ServerInfo] Skill loaded successfully
+19:20:51 [ServerInfo] Util loaded successfully
+19:20:51 [CustomRanking] Sistema desativado.
+19:20:51 Connected to database
+19:20:51 [ServerInfo] Lua loaded successfully
+19:21:10 [Obj][9000] AddClient (10.1.66.95)
+19:21:20 [Obj][9000] AddAccount (admin)
+19:21:20 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+19:21:21 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:26:00 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+19:26:00 [ObjectManager][9000] DelAccountInfo (admin)
+19:26:00 [ObjectManager][9000] DelClient (10.1.66.95)
+19:29:36 [Obj][9000] AddClient (10.1.66.95)
+19:29:36 [Obj][9000] AddAccount (admin)
+19:29:37 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+19:29:38 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:30:10 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+19:30:38 [ObjectManager][9000] DelAccountInfo (admin)
+19:30:38 [ObjectManager][9000] DelClient (10.1.66.95)
+19:33:13 [Obj][9000] AddClient (10.1.66.95)
+19:33:15 [Obj][9000] AddAccount (admin)
+19:33:21 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+19:33:22 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:34:34 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+19:34:34 [ObjectManager][9000] DelAccountInfo (admin)
+19:34:34 [ObjectManager][9000] DelClient (10.1.66.95)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 192 Y: 75)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 121 Y: 111)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 151 Y: 24)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 232 Y: 71)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 221 Y: 138)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 86 Y: 166)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 225 Y: 44)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 187 Y: 102)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 111 Y: 103)
+19:40:00 [Invasion Manager] Index(5) Boss Position (Map: 33 X: 107 Y: 107)
+19:43:24 [Obj][9000] AddClient (10.1.66.95)
+19:43:27 [Obj][9000] AddAccount (admin)
+19:43:28 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+19:43:29 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:47:48 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+19:47:48 [ObjectManager][9000] DelAccountInfo (admin)
+19:47:48 [ObjectManager][9000] DelClient (10.1.66.95)
+19:50:45 [Obj][9000] AddClient (10.1.66.95)
+19:50:46 [Obj][9000] AddAccount (admin)
+19:50:47 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+19:50:48 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:51:06 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+19:51:17 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+19:51:18 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+19:53:13 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+19:53:13 [ObjectManager][9000] DelAccountInfo (admin)
+19:53:13 [ObjectManager][9000] DelClient (10.1.66.95)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 61 Y: 124)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 45 Y: 126)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 28 Y: 139)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 205 Y: 105)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 129 Y: 89)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 71 Y: 183)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 182 Y: 111)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 83 Y: 119)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 40 Y: 206)
+20:00:00 [Invasion Manager] Index(6) Boss Position (Map: 8 X: 127 Y: 171)
+20:05:14 [Obj][9000] AddClient (10.1.66.95)
+20:05:15 [Obj][9000] AddAccount (admin)
+20:05:16 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+20:05:16 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+20:14:00 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+20:14:00 [ObjectManager][9000] DelAccountInfo (admin)
+20:14:00 [ObjectManager][9000] DelClient (10.1.66.95)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 195 Y: 73)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 198 Y: 73)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 201 Y: 84)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 199 Y: 78)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 198 Y: 74)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 198 Y: 79)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 201 Y: 75)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 197 Y: 85)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 201 Y: 76)
+20:20:00 [Invasion Manager] Index(7) Boss Position (Map: 3 X: 200 Y: 72)
+20:25:35 [Obj][9000] AddClient (10.1.66.95)
+20:25:36 [Obj][9000] AddAccount (admin)
+20:25:37 [ObjectManager][9000] AddCharacterInfo (DLDoADM)
+20:25:37 [Reg HWID] Login: admin | Personagem: DLDoADM | HWID: 
+20:27:34 [ObjectManager][9000] DelCharacterInfo (DLDoADM)
+20:27:34 [ObjectManager][9000] DelAccountInfo (admin)
+20:27:34 [ObjectManager][9000] DelClient (10.1.66.95)
