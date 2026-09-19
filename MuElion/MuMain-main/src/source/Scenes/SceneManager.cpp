@@ -31,6 +31,7 @@ FrameTimingState g_frameTiming;
 #include "ScreenshotCaptureState.h"
 #include "Audio/DSPlaySound.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Renderer/RenderUtils.h"
 #include "Render/Textures/ZzzOpenglUtil.h"
 #include "Engine/Physics/PhysicsManager.h"
@@ -512,7 +513,7 @@ static void RenderFrameGraph(float graphX, float graphY, float graphW, float gra
             {x + width, bottom + height, 0.f, 0.f, color},
             {x, bottom + height, 0.f, 0.f, color},
         };
-        mu::GetRenderer().RenderQuad2D(vertices, 0u);
+        mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, 0u);
     };
     RenderRect(gx, glBottom, gw, gh, mu::PackABGR(0.f, 0.f, 0.f, 0.5f));
 

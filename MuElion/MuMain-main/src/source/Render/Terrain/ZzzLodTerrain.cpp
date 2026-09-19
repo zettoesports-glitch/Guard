@@ -23,6 +23,7 @@
 #include "Engine/Object/ZzzInterface.h"
 #include "Render/Effects/ZzzEffect.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Renderer/RenderUtils.h"
 #include "I18N/All.h"
 
@@ -1304,7 +1305,7 @@ void RenderFace(int Texture, int mx, int my)
     const mu::Vertex3D v2 = MakeVert(TerrainVertex[2], TerrainTextureCoord[2], PrimaryTerrainLight[TerrainIndex3]);
     const mu::Vertex3D v3 = MakeVert(TerrainVertex[3], TerrainTextureCoord[3], PrimaryTerrainLight[TerrainIndex4]);
     const mu::Vertex3D vertices[4] = {v0, v1, v2, v3};
-    mu::GetRenderer().RenderQuad3D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 }
 
 void RenderFace_After(int Texture, int mx, int my)
@@ -1328,7 +1329,7 @@ void RenderFace_After(int Texture, int mx, int my)
     const mu::Vertex3D v2 = MakeVert(TerrainVertex[2], TerrainTextureCoord[2], PrimaryTerrainLight[TerrainIndex3]);
     const mu::Vertex3D v3 = MakeVert(TerrainVertex[3], TerrainTextureCoord[3], PrimaryTerrainLight[TerrainIndex4]);
     const mu::Vertex3D vertices[4] = {v0, v1, v2, v3};
-    mu::GetRenderer().RenderQuad3D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 }
 
 void RenderFaceAlpha(int Texture, int mx, int my)
@@ -1346,7 +1347,7 @@ void RenderFaceAlpha(int Texture, int mx, int my)
     const mu::Vertex3D v2 = MakeVert(TerrainVertex[2], TerrainTextureCoord[2], PrimaryTerrainLight[TerrainIndex3], TerrainMappingAlpha[TerrainIndex3]);
     const mu::Vertex3D v3 = MakeVert(TerrainVertex[3], TerrainTextureCoord[3], PrimaryTerrainLight[TerrainIndex4], TerrainMappingAlpha[TerrainIndex4]);
     const mu::Vertex3D vertices[4] = {v0, v1, v2, v3};
-    mu::GetRenderer().RenderQuad3D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
     EnableDepthTest();
 }
 
@@ -1363,7 +1364,7 @@ void RenderFaceBlend(int Texture, int mx, int my)
     const mu::Vertex3D v2 = MakeVert(TerrainVertex[2], TerrainTextureCoord[2], TerrainMappingAlpha[TerrainIndex3]);
     const mu::Vertex3D v3 = MakeVert(TerrainVertex[3], TerrainTextureCoord[3], TerrainMappingAlpha[TerrainIndex4]);
     const mu::Vertex3D vertices[4] = {v0, v1, v2, v3};
-    mu::GetRenderer().RenderQuad3D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 }
 
 void FaceTexture(int Texture, float xf, float yf, bool Water, bool Scale)
@@ -1547,7 +1548,7 @@ void RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
                 const mu::Vertex3D v3 =
                     MakeVert(TerrainVertex[3], TerrainTextureCoord[3], PrimaryTerrainLight[TerrainIndex4]);
                 const mu::Vertex3D vertices[4] = {v0, v1, v2, v3};
-                mu::GetRenderer().RenderQuad3D(vertices, 0u);
+                mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 
                 if (gMapManager.IsPKField() || IsDoppelGanger2())
                     DisableAlphaBlend();
@@ -1632,7 +1633,7 @@ bool RenderTerrainTile(float xf, float yf, int xi, int yi, float lodf, int lodi,
                     vertices[i] = {TerrainVertex[i][0], TerrainVertex[i][1], TerrainVertex[i][2],
                                    0.f, 0.f, 1.f, 0.f, 0.f, color};
                 }
-                mu::GetRenderer().RenderQuad3D(vertices, 0u);
+                mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
                 DisableAlphaBlend();
             }
         }
@@ -1654,7 +1655,7 @@ bool RenderTerrainTile(float xf, float yf, int xi, int yi, float lodf, int lodi,
             const mu::Vertex3D lines[6] = {
                 vertices[0], vertices[1], vertices[1], vertices[2], vertices[2], vertices[3],
             };
-            mu::GetRenderer().RenderLines(lines, 0u);
+            mu::pipeline::GetLegacyRenderFacade().SubmitLines(lines, 0u);
             DisableAlphaBlend();
         }
 #endif// _DEBUG
@@ -1699,7 +1700,7 @@ bool RenderTerrainTile(float xf, float yf, int xi, int yi, float lodf, int lodi,
                 vertices[i] = {TerrainVertex[i][0], TerrainVertex[i][1], TerrainVertex[i][2],
                                0.f, 0.f, 1.f, 0.f, 0.f, debugColor};
             }
-            mu::GetRenderer().RenderQuad3D(vertices, 0u);
+            mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 
             DisableAlphaBlend();
         }
@@ -1773,7 +1774,7 @@ void RenderTerrainBitmapTile(int Texture, float xf, float yf, float lodf, int lo
         verts[i] = {TerrainVertex[i][0], TerrainVertex[i][1], TerrainVertex[i][2],
                     0.f, 0.f, 1.f, c[i][0], c[i][1], color};
     }
-    mu::GetRenderer().RenderQuad3D(verts, static_cast<std::uint32_t>(Texture));
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(verts, static_cast<std::uint32_t>(Texture));
 }
 
 void RenderTerrainBitmap(int Texture, int mxi, int myi, float Rotation)
@@ -2420,7 +2421,7 @@ void RenderDebugSphere(const vec3_t center, float radius, float r, float g, floa
 
     const bool restoreDepthTest = !DepthTestEnable;
     EnableDepthTest();
-    mu::GetRenderer().RenderLines(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitLines(vertices, 0u);
     if (restoreDepthTest)
         DisableDepthTest();
 }
@@ -2455,7 +2456,7 @@ void RenderDebugBox(const vec3_t origin, float sizeX, float sizeY, float sizeZ, 
 
     const bool restoreDepthTest = !DepthTestEnable;
     EnableDepthTest();
-    mu::GetRenderer().RenderLines(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitLines(vertices, 0u);
     if (restoreDepthTest)
         DisableDepthTest();
 }
@@ -2926,7 +2927,7 @@ static void RenderTileGridDebug()
     }
 
     if (!vertices.empty())
-        mu::GetRenderer().RenderLines(vertices, 0u);
+        mu::pipeline::GetLegacyRenderFacade().SubmitLines(vertices, 0u);
 }
 #endif
 

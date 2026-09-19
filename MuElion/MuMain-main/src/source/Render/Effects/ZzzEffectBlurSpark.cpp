@@ -15,6 +15,7 @@
 #include "Network/Server/WSclient.h"
 #include "Core/Utilities/Random.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Renderer/RenderUtils.h"
 
 #include <algorithm>
@@ -113,7 +114,7 @@ void RenderBlurSegment(const BlurType& blur, int segment, float firstLight, floa
     const mu::Vertex3D vertices[4] = {
         firstTop, firstBottom, secondBottom, secondTop,
     };
-    mu::GetRenderer().RenderQuad3D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 }
 
 void RenderFlagFace(OBJECT* object, const vec3_t light, int texture, const float texCoord[4][2],
@@ -135,7 +136,7 @@ void RenderFlagFace(OBJECT* object, const vec3_t light, int texture, const float
             mu::PackABGR(light[0] * vertex.light, light[1] * vertex.light, light[2] * vertex.light, 1.f),
         };
     }
-    mu::GetRenderer().RenderQuad3D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 }
 
 } // namespace

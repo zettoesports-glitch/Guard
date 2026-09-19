@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 
 void RenderCircle(int Type, vec3_t ObjectPosition, float ScaleBottom, float ScaleTop, float Height, float Rotation,
                   float LightTop, float TextureV)
@@ -73,7 +74,7 @@ void RenderCircle(int Type, vec3_t ObjectPosition, float ScaleBottom, float Scal
             quadVerts[i] = {Position[i][0], Position[i][1],      Position[i][2], 0.f, 0.f, 1.f,
                             UV[i][0],       UV[i][1] + TextureV, color};
         }
-        mu::GetRenderer().RenderQuad3D(quadVerts, 0);
+        mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(quadVerts, 0);
     }
 }
 
@@ -135,7 +136,7 @@ void RenderCircle2D(int Type, vec3_t ScreenPosition, float ScaleBottom, float Sc
             quadVerts[i] = {Position[i][0], Position[i][1], UV[i][0], UV[i][1] + TextureV,
                             (255u << 24) | (cb << 16) | (cg << 8) | cr};
         }
-        mu::GetRenderer().RenderQuad2D(std::span<const mu::Vertex2D>(quadVerts, 4), 0);
+        mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(std::span<const mu::Vertex2D>(quadVerts, 4), 0);
     }
 }
 

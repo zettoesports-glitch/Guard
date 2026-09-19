@@ -24,6 +24,7 @@
 #include "CSWaterTerrain.h"
 #include "World/MapInfra/MapManager.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Renderer/RenderUtils.h"
 
 extern  double   WorldTime;
@@ -84,7 +85,7 @@ void CSWaterTerrain::Render(void)
             g_chrome[offset][1], g_chrome[offset][0], waterColor,
         };
     }
-    mu::GetRenderer().RenderTriangles(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(vertices, 0u);
 
     EnableAlphaBlend();
     BindTexture(BITMAP_MAPTILE + 1);
@@ -97,7 +98,7 @@ void CSWaterTerrain::Render(void)
             g_chrome[offset][1], g_chrome[offset][0], mu::PackABGR(alpha, alpha * 2.5f, alpha * 3.f, 1.f),
         };
     }
-    mu::GetRenderer().RenderTriangles(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(vertices, 0u);
 }
 
 void CSWaterTerrain::SpawnAmbientWave(double currentTimeMs)
@@ -438,5 +439,5 @@ void CSWaterTerrain::RenderWaterBitmapTile(float xf, float yf, float lodf, int l
             c[i][0], c[i][1], color,
         };
     }
-    mu::GetRenderer().RenderQuad3D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(vertices, 0u);
 }

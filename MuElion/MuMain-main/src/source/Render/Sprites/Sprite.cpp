@@ -9,6 +9,7 @@
 
 #include "Render/Textures/ZzzOpenglUtil.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 
 #include "Core/Platform/CrtDbg.h"
 
@@ -322,5 +323,5 @@ void CSprite::Render()
     }
 
     const std::uint32_t texture = m_nTexID >= 0 ? static_cast<std::uint32_t>(m_nTexID) : 0u;
-    mu::GetRenderer().RenderQuad2D(vertices, texture);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, texture);
 }
