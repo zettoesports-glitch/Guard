@@ -118,6 +118,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - reconstructed `RmlChatPanel::Impl` controller with exact document path,
   21 design keys, recovered message-class switch, retained message rows,
   scroll controls and blocked-chat presentation
+- Debug-matched chat `EventListener` inheritance, exact runtime maxlengths,
+  dynamic row IDs, blocked/chat click dispatch and hover marquee transitions
 - reconstructed `RmlDocumentHost` lifecycle wrapper with runtime-dispatched
   release and safe RmlUi deferred document closing
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`

@@ -79,6 +79,11 @@ public:
     [[nodiscard]] std::optional<std::string> ConsumeBlockRegisterRequest();
     [[nodiscard]] std::optional<std::string> ConsumeBlockDeleteRequest();
 
+    // The Debug root click listener recognizes dynamic "chat-row-N" ids and
+    // forwards the selected line to a panel callback. The reconstruction
+    // exposes the observable intent as a one-shot whisper-target request.
+    [[nodiscard]] std::optional<std::string> ConsumeWhisperTargetRequest();
+
     [[nodiscard]] static const char* MessageClassName(MessageKind kind) noexcept;
 
 private:

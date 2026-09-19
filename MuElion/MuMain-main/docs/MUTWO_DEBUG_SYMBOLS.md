@@ -857,3 +857,65 @@ network/input submission remains a separate integration step. Keeping that
 bridge separate prevents the presentation reconstruction from inventing
 private ownership relationships that have not yet been confirmed in the
 Debug executable.
+
+
+### Chat Impl vtable and event dispatch
+
+A second x64 RTTI/vtable pass confirms that
+`UI::Modern::PC::Chat::RmlChatPanel::Impl` derives directly from
+`Rml::EventListener`. Its vtable points the `ProcessEvent(Event&)` slot
+through the thunk at `0x140051ed3` to the recovered body at
+`0x14056beb0`.
+
+The bind routine stores the primary DOM pointers at these confirmed x64
+offsets:
+
+```text
+Impl +0x600 chat-panel
+Impl +0x608 chat-view
+Impl +0x610 chat-title
+Impl +0x618 chat-background
+Impl +0x620 chat-messages
+Impl +0x628 chat-scrollbar
+Impl +0x630 chat-scroll-down
+Impl +0x638 chat-menu
+Impl +0x640 chat-menu-buttons
+Impl +0x648 chat-input-area
+Impl +0x650 chat-input       (ElementFormControlInput*)
+Impl +0x658 chat-whisper     (ElementFormControlInput*)
+Impl +0x660 blocked-chat
+Impl +0x668 blocked-chat-drag
+Impl +0x670 blocked-chat-list
+Impl +0x678 blocked-chat-scrollbar
+Impl +0x680 blocked-chat-input (ElementFormControlInput*)
+```
+
+The Debug then writes the exact RmlUi input attribute
+`maxlength`: 89 (0x59) for `chat-input`, 10 (0x0a) for
+`chat-whisper`, and 10 for `blocked-chat-input`. The reconstruction now
+applies the same runtime attributes.
+
+The recovered event registration is also exact:
+
+```text
+chat-panel    -> click
+chat-messages -> mouseover
+chat-messages -> mouseout
+```
+
+`ProcessEvent` dispatches mouseover/mouseout to a marquee helper. That
+helper walks ancestors until class `chat-row`, obtains child 0/1
+(shadow/line), computes positive text overflow, and applies the exact
+transition format `left %.3fs linear`. Duration is
+`RmlChatPanel-MarqueeSecondsPerPixel * overflow`; the line moves to
+`-overflow` and the shadow to
+`RmlChatPanel-ShadowOffsetX - overflow`. On mouseout both transitions are
+set to `none` and the local `left` properties are removed.
+
+The root click handler walks element ancestors and recognizes the exact dynamic
+ID prefixes `blocked-user-` and `chat-row-`. Blocked IDs parse the decimal
+suffix and set the selected blocked-list index. Chat-row IDs validate the
+decimal suffix against the retained message vector and forward the selected
+message to a private callback stored by the panel. The reconstruction models
+that observable callback intent as a one-shot whisper-target request rather
+than inventing the original callback type.

@@ -11,6 +11,8 @@
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Element.h>
 #include <RmlUi/Core/ElementDocument.h>
+#include <RmlUi/Core/Event.h>
+#include <RmlUi/Core/EventListener.h>
 #include <RmlUi/Core/FileInterface.h>
 #include <RmlUi/Core/StreamMemory.h>
 #include <RmlUi/Core/Elements/ElementFormControlInput.h>
@@ -18,6 +20,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <charconv>
 #include <cstdio>
 #include <sstream>
 #include <span>
@@ -106,7 +109,7 @@ Rml::ElementFormControlInput* InputElement(
 
 } // namespace
 
-class RmlChatPanel::Impl
+class RmlChatPanel::Impl : public Rml::EventListener
 {
 public:
     struct Design
@@ -136,9 +139,31 @@ public:
 
     Impl() : host_(kDocumentPath) {}
 
-    ~Impl()
+    ~Impl() override
     {
         Release();
+    }
+
+    void ProcessEvent(Rml::Event& event) override
+    {
+        const Rml::String& type = event.GetType();
+        if (type == "mouseover" || type == "mouseout")
+        {
+            HandleMessageHover(
+                event.GetTargetElement(), type == "mouseover");
+            return;
+        }
+
+        if (type != "click")
+            return;
+
+        for (Rml::Element* element = event.GetTargetElement();
+             element && element != panel_;
+             element = element->GetParentNode())
+        {
+            if (HandleDynamicClick(element->GetId()))
+                return;
+        }
     }
 
     [[nodiscard]] bool Load(bool show)
@@ -362,6 +387,11 @@ public:
         return std::exchange(blockDeleteRequest_, std::nullopt);
     }
 
+    [[nodiscard]] std::optional<std::string> ConsumeWhisperTargetRequest()
+    {
+        return std::exchange(whisperTargetRequest_, std::nullopt);
+    }
+
 private:
     void ReadDesign()
     {
@@ -423,6 +453,13 @@ private:
             !blockedPanel_ || !blockedDrag_ || !blockedList_ || !blockedInput_)
             return false;
 
+        // Exact x64 Debug runtime attributes:
+        // chat-input = 0x59 (89), chat-whisper = 0x0a (10),
+        // blocked-chat-input = 0x0a (10), all under "maxlength".
+        mainInput_->SetAttribute("maxlength", 89);
+        whisperInput_->SetAttribute("maxlength", 10);
+        blockedInput_->SetAttribute("maxlength", 10);
+
         if (!messageScroll_.Bind(RequiredElement(document_, "chat-scrollbar")))
             return false;
         if (!blockedScroll_.Bind(RequiredElement(document_, "blocked-chat-scrollbar")))
@@ -438,25 +475,42 @@ private:
             return true;
         };
 
-        return bindButton(configButton_, "chat-config") &&
-               bindButton(normalButton_, "type-normal") &&
-               bindButton(partyButton_, "type-party") &&
-               bindButton(guildButton_, "type-guild") &&
-               bindButton(gensButton_, "type-gens") &&
-               bindButton(whisperFilterButton_, "filter-whisper") &&
-               bindButton(systemFilterButton_, "filter-system") &&
-               bindButton(blockWhisperButton_, "block-whisper") &&
-               bindButton(viewModeButton_, "chat-view-mode") &&
-               bindButton(sizeButton_, "chat-size") &&
-               bindButton(alphaButton_, "chat-alpha") &&
-               bindButton(scrollDownButton_, "chat-scroll-down") &&
-               bindButton(blockRegisterButton_, "blocked-chat-register") &&
-               bindButton(blockDeleteButton_, "blocked-chat-delete") &&
-               bindButton(blockCloseButton_, "blocked-chat-close");
+        const bool buttonsBound =
+            bindButton(configButton_, "chat-config") &&
+            bindButton(normalButton_, "type-normal") &&
+            bindButton(partyButton_, "type-party") &&
+            bindButton(guildButton_, "type-guild") &&
+            bindButton(gensButton_, "type-gens") &&
+            bindButton(whisperFilterButton_, "filter-whisper") &&
+            bindButton(systemFilterButton_, "filter-system") &&
+            bindButton(blockWhisperButton_, "block-whisper") &&
+            bindButton(viewModeButton_, "chat-view-mode") &&
+            bindButton(sizeButton_, "chat-size") &&
+            bindButton(alphaButton_, "chat-alpha") &&
+            bindButton(scrollDownButton_, "chat-scroll-down") &&
+            bindButton(blockRegisterButton_, "blocked-chat-register") &&
+            bindButton(blockDeleteButton_, "blocked-chat-delete") &&
+            bindButton(blockCloseButton_, "blocked-chat-close");
+        if (!buttonsBound)
+            return false;
+
+        // Exact event topology recovered from the Impl vtable/bind body.
+        panel_->AddEventListener("click", this, false);
+        messagesElement_->AddEventListener("mouseover", this, false);
+        messagesElement_->AddEventListener("mouseout", this, false);
+        return true;
     }
 
     void UnbindElements()
     {
+        if (panel_)
+            panel_->RemoveEventListener("click", this, false);
+        if (messagesElement_)
+        {
+            messagesElement_->RemoveEventListener("mouseover", this, false);
+            messagesElement_->RemoveEventListener("mouseout", this, false);
+        }
+
         blockedRowButtons_.clear();
         messageScroll_.Unbind();
         blockedScroll_.Unbind();
@@ -480,6 +534,103 @@ private:
             &alphaButton_, &scrollDownButton_, &blockRegisterButton_,
             &blockDeleteButton_, &blockCloseButton_
         };
+    }
+
+    [[nodiscard]] static bool ParseIndexedId(
+        const Rml::String& id,
+        const std::string_view prefix,
+        std::size_t& index) noexcept
+    {
+        if (!id.starts_with(prefix))
+            return false;
+
+        const std::string_view suffix(
+            id.data() + prefix.size(), id.size() - prefix.size());
+        if (suffix.empty())
+            return false;
+
+        std::size_t parsed = 0;
+        const auto [end, error] = std::from_chars(
+            suffix.data(), suffix.data() + suffix.size(), parsed);
+        if (error != std::errc{} ||
+            end != suffix.data() + suffix.size())
+            return false;
+
+        index = parsed;
+        return true;
+    }
+
+    [[nodiscard]] bool HandleDynamicClick(const Rml::String& id)
+    {
+        std::size_t index = 0;
+        if (ParseIndexedId(id, "blocked-user-", index))
+        {
+            if (index < blockedNames_.size())
+            {
+                selectedBlocked_ = index;
+                blockedDirty_ = true;
+            }
+            return true;
+        }
+
+        if (ParseIndexedId(id, "chat-row-", index))
+        {
+            const auto filtered = FilteredMessages();
+            if (index < filtered.size() &&
+                !filtered[index]->sender.empty())
+            {
+                whisperTargetRequest_ = filtered[index]->sender;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    void HandleMessageHover(Rml::Element* element, bool entering)
+    {
+        // The recovered body walks ancestors until it finds class "chat-row".
+        while (element && element != messagesElement_ &&
+               !element->IsClassSet("chat-row"))
+        {
+            element = element->GetParentNode();
+        }
+
+        if (!element || element == messagesElement_ ||
+            element->GetNumChildren() < 2)
+            return;
+
+        Rml::Element* shadow = element->GetChild(0);
+        Rml::Element* line = element->GetChild(1);
+        if (!shadow || !line)
+            return;
+
+        if (!entering)
+        {
+            shadow->SetProperty("transition", "none");
+            line->SetProperty("transition", "none");
+            shadow->RemoveProperty("left");
+            line->RemoveProperty("left");
+            return;
+        }
+
+        const float overflow =
+            line->GetScrollWidth() - element->GetClientWidth();
+        if (!(overflow > 0.0f))
+            return;
+
+        const float seconds =
+            design_.marqueeSecondsPerPixel * overflow;
+        std::array<char, 64> transition{};
+        std::snprintf(
+            transition.data(), transition.size(),
+            "left %.3fs linear", static_cast<double>(seconds));
+
+        shadow->SetProperty("transition", transition.data());
+        line->SetProperty("transition", transition.data());
+        shadow->SetProperty(
+            "left", PixelValue(design_.shadowOffsetX - overflow));
+        line->SetProperty("left", PixelValue(-overflow));
     }
 
     [[nodiscard]] bool PollButtons()
@@ -745,6 +896,7 @@ private:
                 : message.sender + ": " + message.text;
 
             Rml::ElementPtr row = document_->CreateElement("div");
+            row->SetId(Rml::String("chat-row-") + std::to_string(i));
             row->SetClass("chat-row", true);
             row->SetClass(MessageClassName(message.kind), true);
 
@@ -791,6 +943,8 @@ private:
              absolute < end; ++absolute)
         {
             Rml::ElementPtr row = document_->CreateElement("div");
+            row->SetId(
+                Rml::String("blocked-user-") + std::to_string(absolute));
             row->SetClass("blocked-chat-user", true);
             row->SetClass("selected",
                           selectedBlocked_ && *selectedBlocked_ == absolute);
@@ -871,6 +1025,7 @@ private:
     std::optional<std::size_t> selectedBlocked_;
     std::optional<std::string> blockRegisterRequest_;
     std::optional<std::string> blockDeleteRequest_;
+    std::optional<std::string> whisperTargetRequest_;
     bool messagesDirty_ = true;
     bool blockedDirty_ = true;
 };
@@ -1004,6 +1159,13 @@ std::optional<std::string> RmlChatPanel::ConsumeBlockDeleteRequest()
 {
     return m_impl
         ? m_impl->ConsumeBlockDeleteRequest()
+        : std::nullopt;
+}
+
+std::optional<std::string> RmlChatPanel::ConsumeWhisperTargetRequest()
+{
+    return m_impl
+        ? m_impl->ConsumeWhisperTargetRequest()
         : std::nullopt;
 }
 
