@@ -27,6 +27,8 @@ bool ApplyBlend(RenderBlendFactor source, RenderBlendFactor destination) noexcep
         renderer.SetBlendMode(mu::BlendMode::LightMap);
     else if (source == RenderBlendFactor::One && destination == RenderBlendFactor::One)
         renderer.SetBlendMode(mu::BlendMode::Glow);
+    else if (source == RenderBlendFactor::OneMinusSourceColor && destination == RenderBlendFactor::One)
+        renderer.SetBlendMode(mu::BlendMode::Luminance);
     else
         return false;
     return true;
@@ -176,7 +178,8 @@ std::size_t SessionRenderTape::DrawCount() const noexcept
     for (const auto& block : m_blocks)
         for (const auto& command : block.commands)
             if (command.type == RenderTapeCommandType::Draw ||
-                command.type == RenderTapeCommandType::SkinnedDraw)
+                command.type == RenderTapeCommandType::SkinnedDraw ||
+                command.type == RenderTapeCommandType::TextDraw)
                 ++count;
     return count;
 }
@@ -198,6 +201,15 @@ bool SessionRenderTape::Replay() const noexcept
             {
                 if (!ReplaySkinnedDraw(command.skinnedDraw))
                     return false;
+                continue;
+            }
+
+            if (command.type == RenderTapeCommandType::TextDraw)
+            {
+                const auto& text = command.textDraw;
+                if (text.atlasTexture == nullptr || text.vertices.empty())
+                    return false;
+                mu::GetRenderer().SubmitTextTriangles(text.vertices, text.atlasTexture, text.sampler);
                 continue;
             }
 
@@ -256,6 +268,19 @@ bool SessionRenderTapeRecording::AppendSkinnedDraw(RenderTapeSkinnedDraw draw) n
     RenderTapeCommand command{};
     command.type = RenderTapeCommandType::SkinnedDraw;
     command.skinnedDraw = std::move(draw);
+    m_blocks[*m_currentBlock].commands.push_back(std::move(command));
+    return true;
+}
+
+bool SessionRenderTapeRecording::AppendTextDraw(RenderTapeTextDraw draw) noexcept
+{
+    if (!m_currentBlock || *m_currentBlock >= m_blocks.size() ||
+        draw.atlasTexture == nullptr || draw.vertices.empty())
+        return false;
+
+    RenderTapeCommand command{};
+    command.type = RenderTapeCommandType::TextDraw;
+    command.textDraw = std::move(draw);
     m_blocks[*m_currentBlock].commands.push_back(std::move(command));
     return true;
 }

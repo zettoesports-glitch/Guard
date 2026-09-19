@@ -38,6 +38,8 @@ public:
     [[nodiscard]] bool SubmitTriangles(std::span<const mu::Vertex3D> vertices, std::uint32_t textureId) noexcept;
     [[nodiscard]] bool SubmitQuad3D(std::span<const mu::Vertex3D> vertices, std::uint32_t textureId) noexcept;
     [[nodiscard]] bool SubmitQuad2D(std::span<const mu::Vertex2D> vertices, std::uint32_t textureId) noexcept;
+    [[nodiscard]] bool SubmitTextTriangles(std::span<const mu::Vertex2D> vertices,
+                                           void* atlasTexture, void* sampler = nullptr) noexcept;
     [[nodiscard]] bool SubmitLines(std::span<const mu::Vertex3D> vertices, std::uint32_t textureId) noexcept;
     [[nodiscard]] bool SubmitSkinnedTriangles(std::span<const mu::SkinnedVertex3D> vertices,
                                               std::uint32_t textureId,

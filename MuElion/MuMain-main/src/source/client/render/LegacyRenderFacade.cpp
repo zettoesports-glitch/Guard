@@ -415,6 +415,27 @@ bool LegacyRenderFacade::SubmitQuad2D(std::span<const mu::Vertex2D> vertices, st
     return m_recording.AppendDraw(std::move(draw));
 }
 
+bool LegacyRenderFacade::SubmitTextTriangles(std::span<const mu::Vertex2D> vertices,
+                                                   void* atlasTexture, void* sampler) noexcept
+{
+    if (vertices.empty())
+        return true;
+    if (atlasTexture == nullptr)
+        return false;
+
+    if (!m_recording.IsRecording())
+    {
+        mu::GetRenderer().SubmitTextTriangles(vertices, atlasTexture, sampler);
+        return true;
+    }
+
+    RenderTapeTextDraw draw{};
+    draw.vertices.assign(vertices.begin(), vertices.end());
+    draw.atlasTexture = atlasTexture;
+    draw.sampler = sampler;
+    return m_recording.AppendTextDraw(std::move(draw));
+}
+
 bool LegacyRenderFacade::SubmitLines(std::span<const mu::Vertex3D> vertices, std::uint32_t textureId) noexcept
 {
     if (vertices.empty())
@@ -656,6 +677,8 @@ bool LegacyRenderFacade::SetBlendFunc(RenderBlendFactor source, RenderBlendFacto
         mu::GetRenderer().SetBlendMode(mu::BlendMode::LightMap);
     else if (source == RenderBlendFactor::One && destination == RenderBlendFactor::One)
         mu::GetRenderer().SetBlendMode(mu::BlendMode::Glow);
+    else if (source == RenderBlendFactor::OneMinusSourceColor && destination == RenderBlendFactor::One)
+        mu::GetRenderer().SetBlendMode(mu::BlendMode::Luminance);
     else
         return false;
     return true;

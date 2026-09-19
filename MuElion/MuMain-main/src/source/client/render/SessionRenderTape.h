@@ -120,6 +120,13 @@ struct RenderTapeSkinnedDraw
     RenderTapeSkinningSnapshot skinning;
 };
 
+struct RenderTapeTextDraw
+{
+    std::vector<mu::Vertex2D> vertices;
+    void* atlasTexture = nullptr;
+    void* sampler = nullptr;
+};
+
 struct RenderTapeClear
 {
     bool color = false;
@@ -132,6 +139,7 @@ enum class RenderTapeCommandType : std::uint8_t
 {
     Draw,
     SkinnedDraw,
+    TextDraw,
     Clear,
 };
 
@@ -140,6 +148,7 @@ struct RenderTapeCommand
     RenderTapeCommandType type = RenderTapeCommandType::Draw;
     RenderTapeDraw draw{};
     RenderTapeSkinnedDraw skinnedDraw{};
+    RenderTapeTextDraw textDraw{};
     RenderTapeClear clear{};
 };
 
@@ -173,6 +182,7 @@ public:
     [[nodiscard]] bool EndPass() noexcept;
     [[nodiscard]] bool AppendDraw(RenderTapeDraw draw) noexcept;
     [[nodiscard]] bool AppendSkinnedDraw(RenderTapeSkinnedDraw draw) noexcept;
+    [[nodiscard]] bool AppendTextDraw(RenderTapeTextDraw draw) noexcept;
     [[nodiscard]] bool AppendClear(bool color, bool depth, bool stencil, const RenderTapeState& state) noexcept;
     [[nodiscard]] std::optional<SessionRenderTape> Finalize() noexcept;
     void Reset() noexcept;

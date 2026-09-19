@@ -6,6 +6,7 @@
 #include "Core/Utilities/FrameProfiler.h"
 #include "Core/Utilities/Log/MuLogger.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Text/SDLTtfColorPack.h"
 #include "Render/Text/SdlTtfGpuTextProperties.h"
 #include "Render/Textures/ZzzOpenglUtil.h"
@@ -72,7 +73,7 @@ TextLayout BuildTextLayout(int x, int y, int boxWidth, int boxHeight, int sort, 
     return layout;
 }
 
-void RenderTextBackground(mu::IMuRenderer& renderer, const TextLayout& layout, int windowHeight, DWORD color)
+void RenderTextBackground(const TextLayout& layout, int windowHeight, DWORD color)
 {
     if ((color >> 24) == 0)
         return;
@@ -84,7 +85,7 @@ void RenderTextBackground(mu::IMuRenderer& renderer, const TextLayout& layout, i
         {layout.renderX + layout.boxWidth, y - layout.boxHeight, 0.0f, 0.0f, color},
         {layout.renderX + layout.boxWidth, y, 0.0f, 0.0f, color},
     };
-    renderer.RenderQuad2D(vertices, 0u);
+    (void)mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, 0u);
 }
 
 void ConsumeGlyphUploads(TTF_Text* text)
@@ -99,7 +100,7 @@ void ConsumeGlyphUploads(TTF_Text* text)
     SDL_SetNumberProperty(properties, Render::Text::kUploadedGlyphCountProperty, 0);
 }
 
-void SubmitTextDrawData(mu::IMuRenderer& renderer, const TTF_GPUAtlasDrawSequence* drawData, float drawX, float drawY,
+void SubmitTextDrawData(const TTF_GPUAtlasDrawSequence* drawData, float drawX, float drawY,
                         float glyphScale, DWORD color)
 {
     static thread_local std::vector<mu::Vertex2D> vertices;
@@ -120,7 +121,8 @@ void SubmitTextDrawData(mu::IMuRenderer& renderer, const TTF_GPUAtlasDrawSequenc
                                 drawY + sequence->xy[index].y * glyphScale, sequence->uv[index].x,
                                 sequence->uv[index].y, color});
         }
-        renderer.SubmitTextTriangles(vertices, sequence->atlas_texture, nullptr);
+        (void)mu::pipeline::GetLegacyRenderFacade().SubmitTextTriangles(
+            vertices, sequence->atlas_texture, nullptr);
     }
 }
 } // namespace
@@ -284,9 +286,9 @@ void CUIRenderTextSDLTtf::RenderText(int x, int y, const wchar_t* text, int boxW
         return;
     }
 
-    RenderTextBackground(renderer, layout, windowHeight, m_backColor);
+    RenderTextBackground(layout, windowHeight, m_backColor);
     const TTF_GPUAtlasDrawSequence* drawData = TTF_GetGPUTextDrawData(prepared.text);
     ConsumeGlyphUploads(prepared.text);
-    SubmitTextDrawData(renderer, drawData, layout.renderX + layout.alignmentOffset,
+    SubmitTextDrawData(drawData, layout.renderX + layout.alignmentOffset,
                        static_cast<float>(windowHeight) - layout.screenY, metrics.scale, m_textColor);
 }
