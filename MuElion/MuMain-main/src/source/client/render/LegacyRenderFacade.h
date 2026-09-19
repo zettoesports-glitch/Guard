@@ -19,6 +19,7 @@ public:
     explicit LegacyRenderFacade(LogicalRenderAssetTable& assets) noexcept;
 
     [[nodiscard]] bool BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept;
+    [[nodiscard]] bool EndPass() noexcept;
     [[nodiscard]] std::optional<SessionRenderTape> Finalize() noexcept;
     [[nodiscard]] bool IsRecording() const noexcept { return m_recording.IsRecording(); }
 
@@ -48,6 +49,11 @@ public:
     [[nodiscard]] bool Perspective(float fovY, float aspect, float nearPlane, float farPlane) noexcept;
     [[nodiscard]] bool PushMatrix() noexcept;
     [[nodiscard]] bool PopMatrix() noexcept;
+    [[nodiscard]] bool ApplyMatrix(const std::array<float, 16>& matrix) noexcept;
+    [[nodiscard]] bool PushAttrib() noexcept;
+    [[nodiscard]] bool PopAttrib() noexcept;
+    [[nodiscard]] bool PushClientAttrib() noexcept;
+    [[nodiscard]] bool PopClientAttrib() noexcept;
 
     [[nodiscard]] bool SetOpaqueState() noexcept;
     [[nodiscard]] bool SetAlphaTestState(bool enabled) noexcept;
@@ -68,18 +74,24 @@ public:
     [[nodiscard]] bool SetFogColor(const std::array<float, 4>& color) noexcept;
     [[nodiscard]] bool SetFogRange(float start, float end) noexcept;
     [[nodiscard]] bool SetFogDensity(float density) noexcept;
+    [[nodiscard]] bool SetLightingEnable(bool enabled) noexcept;
     [[nodiscard]] bool SetColorMask(bool r, bool g, bool b, bool a) noexcept;
     [[nodiscard]] bool SetStencilEnable(bool enabled) noexcept;
     [[nodiscard]] bool SetStencilFunc(RenderCompareFunction func, unsigned int ref, unsigned int mask) noexcept;
     [[nodiscard]] bool SetStencilOp(RenderStencilOperation fail, RenderStencilOperation depthFail,
                                     RenderStencilOperation pass) noexcept;
     [[nodiscard]] bool SetTextureEnvironment(RenderTextureEnvironment environment) noexcept;
+    [[nodiscard]] bool SetShadeMode(RenderShadeMode mode) noexcept;
+    [[nodiscard]] bool SetLineWidth(float width) noexcept;
     [[nodiscard]] bool SetPolygonMode(RenderCullFace face, RenderPolygonMode mode) noexcept;
     [[nodiscard]] bool SetViewport(RenderTapeRect rect) noexcept;
     [[nodiscard]] bool SetScissorEnable(bool enabled) noexcept;
     [[nodiscard]] bool SetScissor(RenderTapeRect rect) noexcept;
     [[nodiscard]] bool SetClearColor(const std::array<float, 4>& color) noexcept;
+    [[nodiscard]] bool SetClearDepth(float depth) noexcept;
+    [[nodiscard]] bool SetClearStencilValue(unsigned int value) noexcept;
     [[nodiscard]] bool Clear(bool color, bool depth, bool stencil) noexcept;
+    [[nodiscard]] bool ClearStencil(unsigned int value) noexcept;
 
     [[nodiscard]] bool DefineTexture2D(LogicalRenderAssetRef ref, unsigned int width, unsigned int height,
                                        std::span<const std::byte> pixels, LegacyPixelFormat format,
@@ -115,6 +127,17 @@ private:
     ClientArray m_normalArray;
     ClientArray m_colorArray;
     ClientArray m_texCoordArray;
+
+    struct ClientAttribSnapshot
+    {
+        ClientArray vertex;
+        ClientArray normal;
+        ClientArray color;
+        ClientArray texCoord;
+    };
+
+    std::vector<RenderTapeState> m_attribStack;
+    std::vector<ClientAttribSnapshot> m_clientAttribStack;
 
     int m_fogMode = static_cast<int>(RenderFogMode::Linear);
     float m_fogStart = 0.0f;

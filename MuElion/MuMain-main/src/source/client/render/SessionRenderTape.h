@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace mu::pipeline
@@ -40,6 +41,7 @@ struct RenderTapeState
     bool fogEnabled = false;
     bool stencilEnabled = false;
     bool scissorEnabled = false;
+    bool lightingEnabled = false;
 
     RenderCompareFunction depthFunc = RenderCompareFunction::LessEqual;
     RenderCompareFunction alphaFunc = RenderCompareFunction::Greater;
@@ -47,6 +49,18 @@ struct RenderTapeState
     RenderBlendFactor blendSource = RenderBlendFactor::SourceAlpha;
     RenderBlendFactor blendDestination = RenderBlendFactor::OneMinusSourceAlpha;
     RenderFrontFace frontFace = RenderFrontFace::CounterClockwise;
+    RenderCullFace cullFace = RenderCullFace::Back;
+    RenderShadeMode shadeMode = RenderShadeMode::Smooth;
+    RenderPolygonMode polygonMode = RenderPolygonMode::Fill;
+    RenderTextureEnvironment textureEnvironment = RenderTextureEnvironment::Modulate;
+    float lineWidth = 1.0f;
+
+    RenderCompareFunction stencilFunc = RenderCompareFunction::Always;
+    unsigned int stencilRef = 0;
+    unsigned int stencilMask = ~0u;
+    RenderStencilOperation stencilFail = RenderStencilOperation::Keep;
+    RenderStencilOperation stencilDepthFail = RenderStencilOperation::Keep;
+    RenderStencilOperation stencilPass = RenderStencilOperation::Keep;
 
     bool colorMaskR = true;
     bool colorMaskG = true;
@@ -61,6 +75,9 @@ struct RenderTapeState
     float fogEnd = 1.0f;
     float fogDensity = 1.0f;
     std::array<float, 4> fogColor{0.0f, 0.0f, 0.0f, 1.0f};
+    std::array<float, 4> clearColor{0.0f, 0.0f, 0.0f, 0.0f};
+    float clearDepth = 1.0f;
+    unsigned int clearStencil = 0;
 
     std::array<float, 16> modelView{};
     std::array<float, 16> projection{};
@@ -74,11 +91,32 @@ struct RenderTapeDraw
     std::vector<RenderTapeVertex> vertices;
 };
 
+struct RenderTapeClear
+{
+    bool color = false;
+    bool depth = false;
+    bool stencil = false;
+    RenderTapeState state{};
+};
+
+enum class RenderTapeCommandType : std::uint8_t
+{
+    Draw,
+    Clear,
+};
+
+struct RenderTapeCommand
+{
+    RenderTapeCommandType type = RenderTapeCommandType::Draw;
+    RenderTapeDraw draw{};
+    RenderTapeClear clear{};
+};
+
 struct RenderTapeBlock
 {
     RenderTapePass pass = RenderTapePass::World;
     SessionFogPassConstants fog{};
-    std::vector<RenderTapeDraw> draws;
+    std::vector<RenderTapeCommand> commands;
 };
 
 class SessionRenderTape
@@ -101,7 +139,9 @@ class SessionRenderTapeRecording
 {
 public:
     [[nodiscard]] bool BeginPass(RenderTapePass pass, const SessionFogPassConstants& fog) noexcept;
+    [[nodiscard]] bool EndPass() noexcept;
     [[nodiscard]] bool AppendDraw(RenderTapeDraw draw) noexcept;
+    [[nodiscard]] bool AppendClear(bool color, bool depth, bool stencil, const RenderTapeState& state) noexcept;
     [[nodiscard]] std::optional<SessionRenderTape> Finalize() noexcept;
     void Reset() noexcept;
 

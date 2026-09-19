@@ -123,7 +123,9 @@ std::size_t SessionRenderTape::DrawCount() const noexcept
 {
     std::size_t count = 0;
     for (const auto& block : m_blocks)
-        count += block.draws.size();
+        for (const auto& command : block.commands)
+            if (command.type == RenderTapeCommandType::Draw)
+                ++count;
     return count;
 }
 
@@ -131,8 +133,28 @@ bool SessionRenderTape::Replay() const noexcept
 {
     for (const auto& block : m_blocks)
     {
-        for (const auto& draw : block.draws)
-            if (!ReplayDraw(draw)) return false;
+        for (const auto& command : block.commands)
+        {
+            if (command.type == RenderTapeCommandType::Draw)
+            {
+                if (!ReplayDraw(command.draw))
+                    return false;
+                continue;
+            }
+
+            const auto& clear = command.clear;
+            const auto& state = clear.state;
+            auto& renderer = mu::GetRenderer();
+            renderer.SetClearColor(state.clearColor[0], state.clearColor[1],
+                                   state.clearColor[2], state.clearColor[3]);
+            if (clear.color)
+                renderer.ClearScreen();
+            else if (clear.depth)
+                renderer.ClearDepthBuffer();
+            // The current SDL GPU abstraction has no standalone stencil-clear
+            // entry point yet; preserve the command and state for the backend
+            // extension instead of silently reordering it.
+        }
     }
     return true;
 }
@@ -147,11 +169,39 @@ bool SessionRenderTapeRecording::BeginPass(RenderTapePass pass, const SessionFog
     return true;
 }
 
+bool SessionRenderTapeRecording::EndPass() noexcept
+{
+    if (!m_currentBlock)
+        return false;
+    m_currentBlock.reset();
+    return true;
+}
+
 bool SessionRenderTapeRecording::AppendDraw(RenderTapeDraw draw) noexcept
 {
     if (!m_currentBlock || *m_currentBlock >= m_blocks.size())
         return false;
-    m_blocks[*m_currentBlock].draws.push_back(std::move(draw));
+
+    RenderTapeCommand command{};
+    command.type = RenderTapeCommandType::Draw;
+    command.draw = std::move(draw);
+    m_blocks[*m_currentBlock].commands.push_back(std::move(command));
+    return true;
+}
+
+bool SessionRenderTapeRecording::AppendClear(bool color, bool depth, bool stencil,
+                                             const RenderTapeState& state) noexcept
+{
+    if (!m_currentBlock || *m_currentBlock >= m_blocks.size())
+        return false;
+
+    RenderTapeCommand command{};
+    command.type = RenderTapeCommandType::Clear;
+    command.clear.color = color;
+    command.clear.depth = depth;
+    command.clear.stencil = stencil;
+    command.clear.state = state;
+    m_blocks[*m_currentBlock].commands.push_back(std::move(command));
     return true;
 }
 
