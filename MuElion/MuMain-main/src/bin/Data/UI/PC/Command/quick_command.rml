@@ -1,9 +1,19 @@
 <rml>
 <head>
-    <title>Reconstructed Quick Command</title>
-    <link type="text/rcss" href="../ui_assets.rcss"/>
+<meta name="mu-design-Menu-Size" content="145.0 148.0"/>
+<meta name="mu-design-Menu-Reference" content="640 480"/>
+<meta name="mu-design-Menu-Anchor" content="0 0 0"/>
+<title>Reconstructed Character Commands</title>
+<link type="text/rcss" href="../Common/common.rcss"/>
+<link type="text/rcss" href="../ui_assets.rcss"/>
+<link type="text/rcss" href="quick_command.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-command-quick-command">
-    <div class="mu-document-root"></div>
-</body>
-</rml>
+<body><div id="menu">
+<div id="frame-top" class="frame top"/><div id="frame-middle" class="frame middle"/><div id="frame-bottom" class="frame bottom"/>
+<div id="tfTitle"><span id="menu-title" class="label"/></div>
+<div id="btnTrade" class="mu-button command-button"><span id="btnTrade-label" class="label"/></div>
+<div id="btnPurchase" class="mu-button command-button"><span id="btnPurchase-label" class="label"/></div>
+<div id="btnParty" class="mu-button command-button"><span id="btnParty-label" class="label"/></div>
+<div id="btnFollow" class="mu-button command-button"><span id="btnFollow-label" class="label"/></div>
+<div id="btnDuel" class="mu-button command-button"><span id="btnDuel-label" class="label"/></div>
+</div></body></rml>

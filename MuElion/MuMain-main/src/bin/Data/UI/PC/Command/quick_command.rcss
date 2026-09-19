@@ -1,0 +1,6 @@
+body{margin:0px;width:100%;height:100%;overflow:hidden;font-family:Arial}
+#menu,#menu div,#menu span{position:absolute;box-sizing:border-box}
+#menu{display:none;width:145px;height:148px;background-color:#151515ee;border-width:1px;border-color:#665b3e}
+.frame{left:0px;width:100%;pointer-events:none}.frame.top{top:0px;height:34px}.frame.middle{top:34px;height:105px}.frame.bottom{bottom:0px;height:9px}
+#tfTitle{left:8px;top:8px;width:129px;height:22px}.label{left:0px;top:0px;width:100%;height:100%;line-height:20px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;color:#eee}
+.command-button{left:16px;width:112px;height:19px;pointer-events:auto}#btnTrade{top:38px}#btnPurchase{top:58px}#btnParty{top:78px}#btnFollow{top:98px}#btnDuel{top:118px}.command-button:hover .label{color:#ffe06d}

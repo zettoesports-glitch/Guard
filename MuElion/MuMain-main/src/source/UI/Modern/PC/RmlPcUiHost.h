@@ -13,7 +13,11 @@ class RmlPetFrameLayer;
 class RmlPetInfoPanel;
 }
 namespace Chat { class RmlChatPanel; }
-namespace Command { class RmlCommandWindowPanel; }
+namespace Command
+{
+class RmlCommandWindowPanel;
+class RmlQuickCommandPanel;
+}
 namespace Common
 {
 class RmlMessageBoxPanel;
@@ -45,7 +49,11 @@ namespace Option { class RmlOptionPanel; }
 namespace Party { class RmlPartyFrameLayer; }
 namespace ServerMessage { class RmlServerMessageLayer; }
 namespace ServerSelect { class RmlServerSelectPanel; }
-namespace SystemMenu { class RmlSystemMenuPanel; }
+namespace SystemMenu
+{
+class RmlSystemMenuPanel;
+class RmlWindowMenuPanel;
+}
 namespace World
 {
 class RmlMapNameLayer;
@@ -74,6 +82,7 @@ public:
     [[nodiscard]] Character::RmlPetInfoPanel& PetInfo() noexcept;
     [[nodiscard]] Chat::RmlChatPanel& Chat() noexcept;
     [[nodiscard]] Command::RmlCommandWindowPanel& CommandWindow() noexcept;
+    [[nodiscard]] Command::RmlQuickCommandPanel& QuickCommand() noexcept;
     [[nodiscard]] Common::RmlMessageBoxPanel& MessageBox() noexcept;
     [[nodiscard]] Common::RmlTooltipLayer& Tooltip() noexcept;
     [[nodiscard]] Friend::RmlFriendPanel& Friend() noexcept;
@@ -97,6 +106,7 @@ public:
     [[nodiscard]] ServerMessage::RmlServerMessageLayer& ServerMessage() noexcept;
     [[nodiscard]] ServerSelect::RmlServerSelectPanel& ServerSelect() noexcept;
     [[nodiscard]] SystemMenu::RmlSystemMenuPanel& SystemMenu() noexcept;
+    [[nodiscard]] SystemMenu::RmlWindowMenuPanel& WindowMenu() noexcept;
     [[nodiscard]] World::RmlMapNameLayer& MapName() noexcept;
     [[nodiscard]] World::RmlMonsterInfoLayer& MonsterInfo() noexcept;
     [[nodiscard]] World::RmlStoreLabelLayer& StoreLabel() noexcept;

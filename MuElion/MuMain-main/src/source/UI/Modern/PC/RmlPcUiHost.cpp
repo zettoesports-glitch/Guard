@@ -11,6 +11,8 @@
 #include "UI/Modern/PC/Character/RmlPetInfoPanel.h"
 #include "UI/Modern/PC/Chat/RmlChatPanel.h"
 #include "UI/Modern/PC/Command/RmlCommandWindowPanel.h"
+#include "UI/Modern/PC/Command/RmlQuickCommandPanel.h"
+#include "UI/Modern/PC/Command/RmlQuickCommandLegacyBridge.h"
 #include "UI/Modern/PC/Common/RmlMessageBoxPanel.h"
 #include "UI/Modern/PC/Common/RmlTooltipLayer.h"
 #include "UI/Modern/PC/Friend/RmlFriendPanel.h"
@@ -42,6 +44,8 @@
 #include "UI/Modern/PC/ServerSelect/RmlServerSelectPanel.h"
 #include "UI/Modern/PC/ServerSelect/RmlServerSelectLegacyBridge.h"
 #include "UI/Modern/PC/SystemMenu/RmlSystemMenuPanel.h"
+#include "UI/Modern/PC/SystemMenu/RmlWindowMenuPanel.h"
+#include "UI/Modern/PC/SystemMenu/RmlWindowMenuLegacyBridge.h"
 #include "UI/Modern/PC/World/RmlMapNameLayer.h"
 #include "UI/Modern/PC/World/RmlMonsterInfoLayer.h"
 #include "UI/Modern/PC/World/RmlStoreLabelLayer.h"
@@ -90,9 +94,11 @@ public:
         inventory_.Release();
         muHelper_.Release();
         option_.Release();
+        windowMenu_.Release();
         systemMenu_.Release();
         masterTree_.Release();
         moveCommand_.Release();
+        quickCommand_.Release();
         commandWindow_.Release();
         friend_.Release();
         petInfo_.Release();
@@ -168,11 +174,23 @@ public:
         if (petInfo_.IsLoaded()) changed |= petInfo_.Update();
         if (friend_.IsLoaded()) changed |= friend_.Update();
         if (commandWindow_.IsLoaded()) changed |= commandWindow_.Update();
+        if (quickCommand_.IsLoaded() && g_pQuickCommand)
+        {
+            changed |= quickCommandLegacyBridge_.Synchronize(
+                *g_pQuickCommand, quickCommand_);
+            changed |= quickCommand_.Update();
+        }
 
         if (moveCommand_.IsLoaded()) changed |= moveCommand_.Update();
         if (masterTree_.IsLoaded()) changed |= masterTree_.Update();
         if (option_.IsLoaded()) changed |= option_.Update();
         if (systemMenu_.IsLoaded()) changed |= systemMenu_.Update();
+        if (windowMenu_.IsLoaded() && g_pWindowMenu)
+        {
+            changed |= windowMenuLegacyBridge_.Synchronize(
+                *g_pWindowMenu, windowMenu_);
+            changed |= windowMenu_.Update();
+        }
 
         if (inventory_.IsLoaded())
         {
@@ -220,6 +238,8 @@ public:
     Character::RmlPetInfoPanel petInfo_;
     Chat::RmlChatPanel chat_;
     Command::RmlCommandWindowPanel commandWindow_;
+    Command::RmlQuickCommandPanel quickCommand_;
+    Command::RmlQuickCommandLegacyBridge quickCommandLegacyBridge_;
     Common::RmlMessageBoxPanel messageBox_;
     Common::RmlTooltipLayer tooltip_;
     Friend::RmlFriendPanel friend_;
@@ -251,6 +271,8 @@ public:
     ServerSelect::RmlServerSelectPanel serverSelect_;
     ServerSelect::RmlServerSelectLegacyBridge serverSelectLegacyBridge_;
     SystemMenu::RmlSystemMenuPanel systemMenu_;
+    SystemMenu::RmlWindowMenuPanel windowMenu_;
+    SystemMenu::RmlWindowMenuLegacyBridge windowMenuLegacyBridge_;
     World::RmlMapNameLayer mapName_;
     World::RmlMonsterInfoLayer monsterInfo_;
     World::RmlStoreLabelLayer storeLabel_;
@@ -306,6 +328,7 @@ MU_PC_UI_GETTER(PetFrame, petFrame_, Character::RmlPetFrameLayer)
 MU_PC_UI_GETTER(PetInfo, petInfo_, Character::RmlPetInfoPanel)
 MU_PC_UI_GETTER(Chat, chat_, Chat::RmlChatPanel)
 MU_PC_UI_GETTER(CommandWindow, commandWindow_, Command::RmlCommandWindowPanel)
+MU_PC_UI_GETTER(QuickCommand, quickCommand_, Command::RmlQuickCommandPanel)
 MU_PC_UI_GETTER(MessageBox, messageBox_, Common::RmlMessageBoxPanel)
 MU_PC_UI_GETTER(Tooltip, tooltip_, Common::RmlTooltipLayer)
 MU_PC_UI_GETTER(Friend, friend_, Friend::RmlFriendPanel)
@@ -329,6 +352,7 @@ MU_PC_UI_GETTER(Party, party_, Party::RmlPartyFrameLayer)
 MU_PC_UI_GETTER(ServerMessage, serverMessage_, ServerMessage::RmlServerMessageLayer)
 MU_PC_UI_GETTER(ServerSelect, serverSelect_, ServerSelect::RmlServerSelectPanel)
 MU_PC_UI_GETTER(SystemMenu, systemMenu_, SystemMenu::RmlSystemMenuPanel)
+MU_PC_UI_GETTER(WindowMenu, windowMenu_, SystemMenu::RmlWindowMenuPanel)
 MU_PC_UI_GETTER(MapName, mapName_, World::RmlMapNameLayer)
 MU_PC_UI_GETTER(MonsterInfo, monsterInfo_, World::RmlMonsterInfoLayer)
 MU_PC_UI_GETTER(StoreLabel, storeLabel_, World::RmlStoreLabelLayer)

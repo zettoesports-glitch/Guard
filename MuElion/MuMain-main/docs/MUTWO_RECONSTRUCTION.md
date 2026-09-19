@@ -338,3 +338,12 @@ and differential runtime tests succeed.
 - reconstructed `RmlMonsterInfoLayer` from the public
   `World/monster_info.rml` contract with target anchoring, world raise,
   retained monster-name/HP rows and viewport reference scaling
+
+
+- reconstructed `RmlQuickCommandPanel` using the observable five-action
+  Trade/Purchase/Party/Follow/Duel ordering and a read-only
+  `CNewUIQuickCommandWindow` snapshot bridge; game-side command execution
+  remains legacy-owned
+- reconstructed `RmlWindowMenuPanel` using the observable six-action
+  System/Help/Guild/MoveMap/MiniMap/Gens ordering and published hotkeys, with
+  `CNewUIWindowMenu` remaining authoritative for side effects

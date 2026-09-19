@@ -1,9 +1,12 @@
 <rml>
-<head>
-    <title>Reconstructed Window Menu</title>
-    <link type="text/rcss" href="../ui_assets.rcss"/>
-</head>
-<body class="mu-modern-document" id="mu-systemmenu-window-menu">
-    <div class="mu-document-root"></div>
-</body>
-</rml>
+<head><title>Reconstructed Window Menu</title>
+<meta name="mu-design-Menu-Size" content="145 145"/><meta name="mu-design-Menu-Reference" content="640 480"/><meta name="mu-design-Menu-Anchor" content="1 0 50"/>
+<link type="text/rcss" href="../Common/common.rcss"/><link type="text/rcss" href="../ui_assets.rcss"/><link type="text/rcss" href="window_menu.rcss"/>
+</head><body><div id="menu"><div id="frame"/>
+<div class="hotkey" id="tfSystemHotkey1">Esc</div><div class="mu-button menu-button" id="btnSystem1"><span class="label" id="btnSystem1-label"/></div>
+<div class="hotkey" id="tfSystemHotkey2">F1</div><div class="mu-button menu-button" id="btnSystem2"><span class="label" id="btnSystem2-label"/></div>
+<div class="hotkey" id="tfSystemHotkey3">G</div><div class="mu-button menu-button" id="btnSystem3"><span class="label" id="btnSystem3-label"/></div>
+<div class="hotkey" id="tfSystemHotkey4">M</div><div class="mu-button menu-button" id="btnSystem4"><span class="label" id="btnSystem4-label"/></div>
+<div class="hotkey" id="tfSystemHotkey5">Tab</div><div class="mu-button menu-button" id="btnSystem5"><span class="label" id="btnSystem5-label"/></div>
+<div class="hotkey" id="tfSystemHotkey0">B</div><div class="mu-button menu-button" id="btnSystem0"><span class="label" id="btnSystem0-label"/></div>
+</div></body></rml>

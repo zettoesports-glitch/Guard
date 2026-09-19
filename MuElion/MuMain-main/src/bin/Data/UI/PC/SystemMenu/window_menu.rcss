@@ -1,0 +1,5 @@
+body{width:100%;height:100%;margin:0px;overflow:hidden;font-family:Arial}
+#menu,#menu div,#menu span{position:absolute;box-sizing:border-box}#menu{display:none;width:145px;height:145px;background-color:#151515ee;border-width:1px;border-color:#665b3e}
+#frame{left:0px;top:0px;width:100%;height:100%;pointer-events:none}.hotkey{left:6px;width:28px;height:20px;line-height:20px;text-align:center;color:#b0a987;font-size:10px;pointer-events:none}
+.menu-button{left:34px;width:104px;height:20px;pointer-events:auto}.label{left:0px;top:0px;width:100%;height:20px;line-height:20px;text-align:center;color:#eee;white-space:nowrap;overflow:hidden;pointer-events:none}
+#tfSystemHotkey1,#btnSystem1{top:10px}#tfSystemHotkey2,#btnSystem2{top:30px}#tfSystemHotkey3,#btnSystem3{top:50px}#tfSystemHotkey4,#btnSystem4{top:70px}#tfSystemHotkey5,#btnSystem5{top:90px}#tfSystemHotkey0,#btnSystem0{top:110px}.menu-button:hover .label{color:#ffe06d}
