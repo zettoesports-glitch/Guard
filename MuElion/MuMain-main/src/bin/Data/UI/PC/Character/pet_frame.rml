@@ -1,9 +1,43 @@
 <rml>
 <head>
+    <meta name="mu-design-RmlPetFrameLayer-DragWidth" content="100"/>
+    <meta name="mu-design-RmlPetFrameLayer-DragHeight" content="19"/>
+    <meta name="mu-design-RmlPetFrameLayer-MemberHeight" content="33"/>
+    <meta name="mu-design-RmlPetFrameLayer-ReferenceWidth" content="640"/>
+    <meta name="mu-design-RmlPetFrameLayer-ReferenceHeight" content="480"/>
+    <meta name="mu-design-RmlPetFrameLayer-MinimizeX" content="82"/>
+    <meta name="mu-design-RmlPetFrameLayer-MinimizeY" content="3"/>
+    <meta name="mu-design-RmlPetFrameLayer-MinimizeWidth" content="13"/>
+    <meta name="mu-design-RmlPetFrameLayer-MinimizeHeight" content="13"/>
     <title>Reconstructed Pet Frame</title>
     <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="pet_frame.rcss"/>
 </head>
-<body class="mu-modern-document" id="mu-character-pet-frame">
-    <div class="mu-document-root"></div>
+<body class="mu-modern-document">
+    <div id="pet-frame" class="pet-frame">
+        <div id="pet-dragbar" class="pet-dragbar">Pets</div>
+        <div id="pet-minimize" class="mu-button pet-minimize">-</div>
+
+        <div id="pet-member-0" class="pet-member">
+            <div id="pet-name-0" class="pet-name"/>
+            <div class="pet-hp-track"><div id="pet-hp-0" class="pet-hp"/><div class="pet-hp-yellow"/></div>
+        </div>
+        <div id="pet-member-1" class="pet-member">
+            <div id="pet-name-1" class="pet-name"/>
+            <div class="pet-hp-track"><div id="pet-hp-1" class="pet-hp"/><div class="pet-hp-yellow"/></div>
+        </div>
+        <div id="pet-member-2" class="pet-member">
+            <div id="pet-name-2" class="pet-name"/>
+            <div class="pet-hp-track"><div id="pet-hp-2" class="pet-hp"/><div class="pet-hp-yellow"/></div>
+        </div>
+        <div id="pet-member-3" class="pet-member">
+            <div id="pet-name-3" class="pet-name"/>
+            <div class="pet-hp-track"><div id="pet-hp-3" class="pet-hp"/><div class="pet-hp-yellow"/></div>
+        </div>
+        <div id="pet-member-4" class="pet-member">
+            <div id="pet-name-4" class="pet-name"/>
+            <div class="pet-hp-track"><div id="pet-hp-4" class="pet-hp"/><div class="pet-hp-yellow"/></div>
+        </div>
+    </div>
 </body>
 </rml>

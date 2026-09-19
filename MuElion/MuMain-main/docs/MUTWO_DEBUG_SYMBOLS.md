@@ -1175,3 +1175,37 @@ The reconstruction now loads the secondary skill-list document privately,
 creates its icons with the recovered DOM sequence, scales legacy-reference
 positions to the current viewport, and updates visibility/enabled/cooldown
 state from `RmlMainFrameLayer::State::skillListSkills`.
+
+
+## RmlPetFrameLayer reconstruction
+
+The modern pet-frame asset exposes the exact document path and nine
+presentation constants:
+
+```text
+Data/UI/PC/Character/pet_frame.rml
+RmlPetFrameLayer-DragWidth
+RmlPetFrameLayer-DragHeight
+RmlPetFrameLayer-MemberHeight
+RmlPetFrameLayer-ReferenceWidth
+RmlPetFrameLayer-ReferenceHeight
+RmlPetFrameLayer-MinimizeX
+RmlPetFrameLayer-MinimizeY
+RmlPetFrameLayer-MinimizeWidth
+RmlPetFrameLayer-MinimizeHeight
+```
+
+The observable DOM contract contains `pet-frame`, `pet-dragbar`,
+`pet-minimize`, and five fixed member rows
+`pet-member-0..4` with matching `pet-name-N` and `pet-hp-N` elements.
+Each member row also contains a second yellow HP bar, retained in the
+reconstruction as an optional trailing/damage presentation ratio.
+
+`RmlPetFrameLayer` is implemented as presentation-only state with up to five
+members, main/yellow HP ratios, minimized state, movable positioning and a
+one-shot `ToggleMinimized` action. The control does not claim ownership of
+pet/game state and does not mutate any legacy pet subsystem.
+
+Because the recovered design set contains no fixed initial X/Y pair, the
+reconstruction preserves the movable panel's current position by default.
+External code may request a position explicitly through the state snapshot.

@@ -136,6 +136,8 @@ See `MUTWO_DEBUG_SYMBOLS.md` for evidence and caveats.
 - reconstructed `RmlCharacterFramePanel` with seven design keys, general
   character fields, five stat sections/buttons, Pet/Master/Close intents and
   movable panel presentation
+- reconstructed `RmlPetFrameLayer` with nine design keys, five pet rows,
+  dual HP bars, minimize action and movable presentation
 - RmlUi `CompileShader / RenderShader / ReleaseShader` support for `gfx-tint`
 - cached CPU-equivalent `textureTint` transform for RmlUi-owned textures
 - modern UI called from the live frame lifecycle
@@ -168,7 +170,7 @@ a license file, so UI documents are reconstructed independently.
       recovered
 - [ ] Replace the remaining neutral RML skeletons screen-by-screen with
       behaviorally reconstructed UI from observable behavior and the existing
-      MuMain UI (Chat, Main Frame, Top Menu and Character Frame are now materialized functionally)
+      MuMain UI (Chat, Main Frame, Top Menu, Character Frame and Pet Frame are now materialized functionally)
 
 ## Current confidence boundary
 
