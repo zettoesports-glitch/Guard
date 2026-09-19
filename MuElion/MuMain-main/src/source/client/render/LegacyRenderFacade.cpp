@@ -452,9 +452,9 @@ bool LegacyRenderFacade::PopClientAttrib() noexcept
     return true;
 }
 
-bool LegacyRenderFacade::SetOpaqueState() noexcept { mu::GetRenderer().DisableBlend(); mu::GetRenderer().SetAlphaTest(false); return true; }
+bool LegacyRenderFacade::SetOpaqueState() noexcept { m_state.blendEnabled = false; m_state.alphaTestEnabled = false; mu::GetRenderer().DisableBlend(); mu::GetRenderer().SetAlphaTest(false); return true; }
 bool LegacyRenderFacade::SetAlphaTestState(bool enabled) noexcept { return SetAlphaTestEnable(enabled); }
-bool LegacyRenderFacade::SetAdditiveState() noexcept { mu::GetRenderer().SetBlendMode(mu::BlendMode::Additive); return true; }
+bool LegacyRenderFacade::SetAdditiveState() noexcept { m_state.blendEnabled = true; m_state.blendSource = RenderBlendFactor::SourceAlpha; m_state.blendDestination = RenderBlendFactor::One; mu::GetRenderer().SetBlendMode(mu::BlendMode::Additive); return true; }
 bool LegacyRenderFacade::SetTextureEnable(bool enabled) noexcept { m_state.textureEnabled = enabled; mu::GetRenderer().SetTexture2D(enabled); return true; }
 bool LegacyRenderFacade::SetDepthTestEnable(bool enabled) noexcept { m_state.depthTestEnabled = enabled; mu::GetRenderer().SetDepthTest(enabled); return true; }
 bool LegacyRenderFacade::SetDepthWriteEnable(bool enabled) noexcept { m_state.depthWriteEnabled = enabled; mu::GetRenderer().SetDepthMask(enabled); return true; }

@@ -225,80 +225,83 @@ void mu_glBegin(MUCompatGLenum mode)
 {
     s_mode = mode;
     s_vertices.clear();
+    (void)mu::pipeline::GetLegacyRenderFacade().Begin(
+        static_cast<mu::pipeline::LegacyPrimitive>(mode));
 }
 
 void mu_glEnd()
 {
-    switch (s_mode)
-    {
-    case kGLQuads:
-        SubmitQuads();
-        break;
-    case kGLTriangles:
-        SubmitTriangles(s_vertices);
-        break;
-    case kGLLines: {
-        std::vector<mu::Vertex3D> lines;
-        lines.reserve(s_vertices.size());
-        for (const ImmediateVertex& v : s_vertices)
-            lines.push_back({v.x, v.y, v.z, v.nx, v.ny, v.nz, v.u, v.v, v.color});
-        mu::GetRenderer().RenderLines(lines, s_texture2D ? s_boundTexture : 0u);
-        break;
-    }
-    case kGLTriangleFan:
-        SubmitTriangleFan();
-        break;
-    case kGLQuadStrip: {
-        std::vector<mu::Vertex3D> strip;
-        strip.reserve(s_vertices.size());
-        for (const ImmediateVertex& v : s_vertices)
-            strip.push_back({v.x, v.y, v.z, v.nx, v.ny, v.nz, v.u, v.v, v.color});
-        mu::GetRenderer().RenderQuadStrip(strip, s_texture2D ? s_boundTexture : 0u);
-        break;
-    }
-    default:
-        break;
-    }
+    (void)mu::pipeline::GetLegacyRenderFacade().End();
     s_mode = 0;
     s_vertices.clear();
 }
 
-void mu_glVertex2f(MUCompatGLfloat x, MUCompatGLfloat y) { PushVertex(x, y, 0.0f); }
-void mu_glVertex3f(MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z) { PushVertex(x, y, z); }
-void mu_glVertex3fv(const MUCompatGLfloat* v) { PushVertex(v[0], v[1], v[2]); }
-void mu_glTexCoord2f(MUCompatGLfloat u, MUCompatGLfloat v) { s_u = u; s_v = v; }
+void mu_glVertex2f(MUCompatGLfloat x, MUCompatGLfloat y)
+{
+    PushVertex(x, y, 0.0f);
+    (void)mu::pipeline::GetLegacyRenderFacade().Vertex3(x, y, 0.0f);
+}
+void mu_glVertex3f(MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z)
+{
+    PushVertex(x, y, z);
+    (void)mu::pipeline::GetLegacyRenderFacade().Vertex3(x, y, z);
+}
+void mu_glVertex3fv(const MUCompatGLfloat* v)
+{
+    if (!v) return;
+    PushVertex(v[0], v[1], v[2]);
+    (void)mu::pipeline::GetLegacyRenderFacade().Vertex3(v[0], v[1], v[2]);
+}
+void mu_glTexCoord2f(MUCompatGLfloat u, MUCompatGLfloat v)
+{
+    s_u = u; s_v = v;
+    (void)mu::pipeline::GetLegacyRenderFacade().TexCoord2(u, v);
+}
+void mu_glTexCoord2fv(const MUCompatGLfloat* uv)
+{
+    if (!uv) return;
+    mu_glTexCoord2f(uv[0], uv[1]);
+}
 void mu_glColor3f(MUCompatGLfloat r, MUCompatGLfloat g, MUCompatGLfloat b) { mu_glColor4f(r, g, b, 1.0f); }
-void mu_glColor3fv(const MUCompatGLfloat* c) { mu_glColor4f(c[0], c[1], c[2], 1.0f); }
+void mu_glColor3fv(const MUCompatGLfloat* c) { if (c) mu_glColor4f(c[0], c[1], c[2], 1.0f); }
+void mu_glColor4fv(const MUCompatGLfloat* c) { if (c) mu_glColor4f(c[0], c[1], c[2], c[3]); }
 void mu_glColor3ub(MUCompatGLubyte r, MUCompatGLubyte g, MUCompatGLubyte b) { mu_glColor4ub(r, g, b, 255); }
 void mu_glColor4f(MUCompatGLfloat r, MUCompatGLfloat g, MUCompatGLfloat b, MUCompatGLfloat a)
 {
     s_color = PackColor(ByteFromFloat(r), ByteFromFloat(g), ByteFromFloat(b), ByteFromFloat(a));
+    (void)mu::pipeline::GetLegacyRenderFacade().Color4(r, g, b, a);
 }
 void mu_glColor4ub(MUCompatGLubyte r, MUCompatGLubyte g, MUCompatGLubyte b, MUCompatGLubyte a)
 {
     s_color = PackColor(r, g, b, a);
+    constexpr float inv = 1.0f / 255.0f;
+    (void)mu::pipeline::GetLegacyRenderFacade().Color4(
+        static_cast<float>(r) * inv, static_cast<float>(g) * inv,
+        static_cast<float>(b) * inv, static_cast<float>(a) * inv);
 }
 
 void mu_glEnable(MUCompatGLenum cap)
 {
-    if (cap == kGLDepthTest) { s_depthTest = true; mu::GetRenderer().SetDepthTest(true); }
-    else if (cap == kGLTexture2D) { s_texture2D = true; mu::GetRenderer().SetTexture2D(true); }
-    else if (cap == kGLBlend) { s_blend = true; mu::GetRenderer().SetBlendMode(mu::BlendMode::Alpha); }
-    else if (cap == kGLAlphaTest) { s_alphaTest = true; mu::GetRenderer().SetAlphaTest(true); }
-    else if (cap == kGLCullFace) { s_cullFace = true; mu::GetRenderer().SetCullFace(true); }
-    else if (cap == kGLFog) { s_fog = true; mu::GetRenderer().SetFogEnabled(true); }
-    else if (cap == kGLStencilTest) { s_stencil = true; mu::GetRenderer().SetStencilTest(true); }
+    auto& facade = mu::pipeline::GetLegacyRenderFacade();
+    if (cap == kGLDepthTest) { s_depthTest = true; (void)facade.SetDepthTestEnable(true); }
+    else if (cap == kGLTexture2D) { s_texture2D = true; (void)facade.SetTextureEnable(true); }
+    else if (cap == kGLBlend) { s_blend = true; (void)facade.SetBlendEnable(true); }
+    else if (cap == kGLAlphaTest) { s_alphaTest = true; (void)facade.SetAlphaTestEnable(true); }
+    else if (cap == kGLCullFace) { s_cullFace = true; (void)facade.SetCullEnable(true); }
+    else if (cap == kGLFog) { s_fog = true; (void)facade.SetFogEnable(true); }
+    else if (cap == kGLStencilTest) { s_stencil = true; (void)facade.SetStencilEnable(true); }
 }
 
 void mu_glDisable(MUCompatGLenum cap)
 {
-    if (cap == kGLDepthTest) { s_depthTest = false; mu::GetRenderer().SetDepthTest(false); }
-    else if (cap == kGLTexture2D) { s_texture2D = false; mu::GetRenderer().SetTexture2D(false); }
-    else if (cap == kGLBlend) { s_blend = false; mu::GetRenderer().DisableBlend(); }
-    else if (cap == kGLAlphaTest) { s_alphaTest = false; mu::GetRenderer().SetAlphaTest(false); }
-    else if (cap == kGLCullFace) { s_cullFace = false; mu::GetRenderer().SetCullFace(false); }
-    else if (cap == kGLFog) { s_fog = false; mu::GetRenderer().SetFogEnabled(false); }
-    else if (cap == kGLStencilTest) { s_stencil = false; mu::GetRenderer().SetStencilTest(false); }
+    auto& facade = mu::pipeline::GetLegacyRenderFacade();
+    if (cap == kGLDepthTest) { s_depthTest = false; (void)facade.SetDepthTestEnable(false); }
+    else if (cap == kGLTexture2D) { s_texture2D = false; (void)facade.SetTextureEnable(false); }
+    else if (cap == kGLBlend) { s_blend = false; (void)facade.SetBlendEnable(false); }
+    else if (cap == kGLAlphaTest) { s_alphaTest = false; (void)facade.SetAlphaTestEnable(false); }
+    else if (cap == kGLCullFace) { s_cullFace = false; (void)facade.SetCullEnable(false); }
+    else if (cap == kGLFog) { s_fog = false; (void)facade.SetFogEnable(false); }
+    else if (cap == kGLStencilTest) { s_stencil = false; (void)facade.SetStencilEnable(false); }
 }
 
 MUCompatGLboolean mu_glIsEnabled(MUCompatGLenum cap)
@@ -313,18 +316,20 @@ MUCompatGLboolean mu_glIsEnabled(MUCompatGLenum cap)
     return 0;
 }
 
-void mu_glBlendFunc(MUCompatGLenum sfactor, MUCompatGLenum dfactor) { ApplyBlend(sfactor, dfactor); }
-void mu_glClear(MUCompatGLbitfield mask) { (mask & 0x00000100u) ? mu::GetRenderer().ClearDepthBuffer() : mu::GetRenderer().ClearScreen(); }
-void mu_glClearColor(MUCompatGLfloat r, MUCompatGLfloat g, MUCompatGLfloat b, MUCompatGLfloat a) { mu::GetRenderer().SetClearColor(r, g, b, a); }
-void mu_glDepthFunc(MUCompatGLenum func) { mu::GetRenderer().SetDepthFunc(static_cast<int>(func)); }
-void mu_glDepthMask(MUCompatGLboolean flag) { mu::GetRenderer().SetDepthMask(flag != 0); }
-void mu_glMatrixMode(MUCompatGLenum mode) { mu::GetRenderer().SetMatrixMode(static_cast<int>(mode)); }
-void mu_glPushMatrix() { mu::GetRenderer().PushMatrix(); }
-void mu_glPopMatrix() { mu::GetRenderer().PopMatrix(); }
-void mu_glLoadIdentity() { mu::GetRenderer().LoadIdentity(); }
-void mu_glTranslatef(MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z) { mu::GetRenderer().Translate(x, y, z); }
-void mu_glRotatef(MUCompatGLfloat angle, MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z) { mu::GetRenderer().Rotate(angle, x, y, z); }
-void mu_glScalef(MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z) { mu::GetRenderer().Scale(x, y, z); }
+void mu_glBlendFunc(MUCompatGLenum sfactor, MUCompatGLenum dfactor) { (void)mu::pipeline::GetLegacyRenderFacade().SetBlendFunc(static_cast<mu::pipeline::RenderBlendFactor>(sfactor), static_cast<mu::pipeline::RenderBlendFactor>(dfactor)); }
+void mu_glClear(MUCompatGLbitfield mask) { (void)mu::pipeline::GetLegacyRenderFacade().Clear((mask & 0x00004000u) != 0, (mask & 0x00000100u) != 0, (mask & 0x00000400u) != 0); }
+void mu_glClearColor(MUCompatGLfloat r, MUCompatGLfloat g, MUCompatGLfloat b, MUCompatGLfloat a) { (void)mu::pipeline::GetLegacyRenderFacade().SetClearColor({r,g,b,a}); }
+void mu_glDepthFunc(MUCompatGLenum func) { (void)mu::pipeline::GetLegacyRenderFacade().SetDepthFunc(static_cast<mu::pipeline::RenderCompareFunction>(func)); }
+void mu_glDepthMask(MUCompatGLboolean flag) { (void)mu::pipeline::GetLegacyRenderFacade().SetDepthWriteEnable(flag != 0); }
+void mu_glMatrixMode(MUCompatGLenum mode) { (void)mu::pipeline::GetLegacyRenderFacade().MatrixMode(static_cast<mu::pipeline::LegacyMatrixMode>(mode)); }
+void mu_glPushMatrix() { (void)mu::pipeline::GetLegacyRenderFacade().PushMatrix(); }
+void mu_glPopMatrix() { (void)mu::pipeline::GetLegacyRenderFacade().PopMatrix(); }
+void mu_glLoadIdentity() { (void)mu::pipeline::GetLegacyRenderFacade().LoadIdentity(); }
+void mu_glLoadMatrixf(const MUCompatGLfloat* matrix) { if (matrix) { std::array<float,16> m{}; std::copy_n(matrix,16,m.begin()); (void)mu::pipeline::GetLegacyRenderFacade().LoadMatrix(m); } }
+void mu_glMultMatrixf(const MUCompatGLfloat* matrix) { if (matrix) { std::array<float,16> m{}; std::copy_n(matrix,16,m.begin()); (void)mu::pipeline::GetLegacyRenderFacade().MultMatrix(m); } }
+void mu_glTranslatef(MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z) { (void)mu::pipeline::GetLegacyRenderFacade().Translate(x, y, z); }
+void mu_glRotatef(MUCompatGLfloat angle, MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z) { (void)mu::pipeline::GetLegacyRenderFacade().Rotate(angle, x, y, z); }
+void mu_glScalef(MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z) { (void)mu::pipeline::GetLegacyRenderFacade().Scale(x, y, z); }
 void mu_glGetFloatv(MUCompatGLenum pname, MUCompatGLfloat* data)
 {
     if (pname == kGLModelViewMatrix || pname == kGLProjectionMatrix) mu::GetRenderer().GetMatrix(static_cast<int>(pname), data);
@@ -337,9 +342,10 @@ void mu_glGetIntegerv(MUCompatGLenum, MUCompatGLint* data)
         data[1] = 0;
     }
 }
-void mu_glViewport(MUCompatGLint x, MUCompatGLint y, MUCompatGLsizei width, MUCompatGLsizei height) { mu::GetRenderer().SetViewport(x, y, width, height); }
-void mu_glLineWidth(MUCompatGLfloat) {}
-void mu_glBindTexture(MUCompatGLenum, MUCompatGLuint texture) { s_boundTexture = texture; mu::GetRenderer().BindTexture(static_cast<int>(texture)); }
+void mu_glViewport(MUCompatGLint x, MUCompatGLint y, MUCompatGLsizei width, MUCompatGLsizei height) { (void)mu::pipeline::GetLegacyRenderFacade().SetViewport({x,y,width,height}); }
+void mu_glScissor(MUCompatGLint x, MUCompatGLint y, MUCompatGLsizei width, MUCompatGLsizei height) { (void)mu::pipeline::GetLegacyRenderFacade().SetScissor({x,y,width,height}); }
+void mu_glLineWidth(MUCompatGLfloat width) { (void)mu::pipeline::GetLegacyRenderFacade().SetLineWidth(width); }
+void mu_glBindTexture(MUCompatGLenum, MUCompatGLuint texture) { s_boundTexture = texture; mu::pipeline::GetLegacyRenderFacade().BindTextureId(texture); }
 void mu_glGenTextures(MUCompatGLsizei n, MUCompatGLuint* textures)
 {
     if (n <= 0 || textures == nullptr)
@@ -383,25 +389,25 @@ void mu_glTexSubImage2D(MUCompatGLenum, MUCompatGLint, MUCompatGLint, MUCompatGL
     mu::GetRenderer().QueueTextureUpdate(s_boundTexture, uploadPixels, static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(height));
 }
 void mu_glTexParameteri(MUCompatGLenum target, MUCompatGLenum pname, MUCompatGLint param) { mu::GetRenderer().SetTexParameter(static_cast<int>(target), static_cast<int>(pname), param); }
-void mu_glTexEnvi(MUCompatGLenum target, MUCompatGLenum pname, MUCompatGLint param) { mu::GetRenderer().SetTexEnv(static_cast<int>(target), static_cast<int>(pname), param); }
-void mu_glTexEnvf(MUCompatGLenum target, MUCompatGLenum pname, MUCompatGLfloat param) { mu::GetRenderer().SetTexEnv(static_cast<int>(target), static_cast<int>(pname), static_cast<int>(param)); }
-void mu_glAlphaFunc(MUCompatGLenum func, MUCompatGLfloat ref) { mu::GetRenderer().SetAlphaFunc(static_cast<int>(func), ref); }
-void mu_glStencilFunc(MUCompatGLenum func, MUCompatGLint ref, MUCompatGLuint mask) { mu::GetRenderer().SetStencilFunc(static_cast<int>(func), ref, mask); }
-void mu_glStencilOp(MUCompatGLenum sfail, MUCompatGLenum dpfail, MUCompatGLenum dppass) { mu::GetRenderer().SetStencilOp(static_cast<int>(sfail), static_cast<int>(dpfail), static_cast<int>(dppass)); }
-void mu_glColorMask(MUCompatGLboolean r, MUCompatGLboolean g, MUCompatGLboolean b, MUCompatGLboolean a) { mu::GetRenderer().SetColorMask(r, g, b, a); }
-void mu_glPolygonMode(MUCompatGLenum face, MUCompatGLenum mode) { mu::GetRenderer().SetPolygonMode(static_cast<int>(face), static_cast<int>(mode)); }
-void mu_glFrontFace(MUCompatGLenum mode) { mu::GetRenderer().SetFrontFace(static_cast<int>(mode)); }
+void mu_glTexEnvi(MUCompatGLenum, MUCompatGLenum, MUCompatGLint param) { (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnvironment(static_cast<mu::pipeline::RenderTextureEnvironment>(param)); }
+void mu_glTexEnvf(MUCompatGLenum, MUCompatGLenum, MUCompatGLfloat param) { (void)mu::pipeline::GetLegacyRenderFacade().SetTextureEnvironment(static_cast<mu::pipeline::RenderTextureEnvironment>(static_cast<unsigned int>(param))); }
+void mu_glAlphaFunc(MUCompatGLenum func, MUCompatGLfloat ref) { (void)mu::pipeline::GetLegacyRenderFacade().SetAlphaFunc(static_cast<mu::pipeline::RenderCompareFunction>(func), ref); }
+void mu_glStencilFunc(MUCompatGLenum func, MUCompatGLint ref, MUCompatGLuint mask) { (void)mu::pipeline::GetLegacyRenderFacade().SetStencilFunc(static_cast<mu::pipeline::RenderCompareFunction>(func), static_cast<unsigned int>(ref), mask); }
+void mu_glStencilOp(MUCompatGLenum sfail, MUCompatGLenum dpfail, MUCompatGLenum dppass) { (void)mu::pipeline::GetLegacyRenderFacade().SetStencilOp(static_cast<mu::pipeline::RenderStencilOperation>(sfail), static_cast<mu::pipeline::RenderStencilOperation>(dpfail), static_cast<mu::pipeline::RenderStencilOperation>(dppass)); }
+void mu_glColorMask(MUCompatGLboolean r, MUCompatGLboolean g, MUCompatGLboolean b, MUCompatGLboolean a) { (void)mu::pipeline::GetLegacyRenderFacade().SetColorMask(r != 0, g != 0, b != 0, a != 0); }
+void mu_glPolygonMode(MUCompatGLenum face, MUCompatGLenum mode) { (void)mu::pipeline::GetLegacyRenderFacade().SetPolygonMode(static_cast<mu::pipeline::RenderCullFace>(face), static_cast<mu::pipeline::RenderPolygonMode>(mode)); }
+void mu_glCullFace(MUCompatGLenum face) { (void)mu::pipeline::GetLegacyRenderFacade().SetCullFace(static_cast<mu::pipeline::RenderCullFace>(face)); }
+void mu_glFrontFace(MUCompatGLenum mode) { (void)mu::pipeline::GetLegacyRenderFacade().SetFrontFace(static_cast<mu::pipeline::RenderFrontFace>(mode)); }
 void mu_glFogf(MUCompatGLenum pname, MUCompatGLfloat param)
 {
-    if (pname == kGLFogDensity) s_fogParams.density = param;
-    else if (pname == kGLFogStart) s_fogParams.start = param;
-    else if (pname == kGLFogEnd) s_fogParams.end = param;
-    mu::GetRenderer().SetFog(s_fogParams);
+    auto& facade = mu::pipeline::GetLegacyRenderFacade();
+    if (pname == kGLFogDensity) { s_fogParams.density = param; (void)facade.SetFogDensity(param); }
+    else if (pname == kGLFogStart) { s_fogParams.start = param; (void)facade.SetFogRange(s_fogParams.start, s_fogParams.end); }
+    else if (pname == kGLFogEnd) { s_fogParams.end = param; (void)facade.SetFogRange(s_fogParams.start, s_fogParams.end); }
 }
 void mu_glFogi(MUCompatGLenum pname, MUCompatGLint param)
 {
-    if (pname == kGLFogMode) s_fogParams.mode = param;
-    mu::GetRenderer().SetFog(s_fogParams);
+    if (pname == kGLFogMode) { s_fogParams.mode = param; (void)mu::pipeline::GetLegacyRenderFacade().SetFogMode(static_cast<mu::pipeline::RenderFogMode>(param)); }
 }
 void mu_glFogfv(MUCompatGLenum pname, const MUCompatGLfloat* params)
 {
@@ -411,9 +417,10 @@ void mu_glFogfv(MUCompatGLenum pname, const MUCompatGLfloat* params)
         s_fogParams.color[1] = params[1];
         s_fogParams.color[2] = params[2];
         s_fogParams.color[3] = params[3];
+        (void)mu::pipeline::GetLegacyRenderFacade().SetFogColor({params[0],params[1],params[2],params[3]});
     }
-    mu::GetRenderer().SetFog(s_fogParams);
 }
+void mu_glShadeModel(MUCompatGLenum mode) { (void)mu::pipeline::GetLegacyRenderFacade().SetShadeMode(static_cast<mu::pipeline::RenderShadeMode>(mode)); }
 void mu_glReadPixels(MUCompatGLint x, MUCompatGLint y, MUCompatGLsizei width, MUCompatGLsizei height, MUCompatGLenum, MUCompatGLenum, void* pixels) { mu::GetRenderer().ReadPixels(x, y, width, height, pixels); }
 const MUCompatGLubyte* mu_glGetString(MUCompatGLenum)
 {
@@ -527,12 +534,19 @@ void mu_glDrawArrays(MUCompatGLenum mode, MUCompatGLint first, MUCompatGLsizei c
 void mu_glReadBuffer(MUCompatGLenum) {}
 void mu_glFlush() {}
 void mu_glPixelStorei(MUCompatGLenum, MUCompatGLint) {}
-void mu_glPushAttrib(MUCompatGLbitfield) {}
-void mu_glPopAttrib() {}
+void mu_glPushAttrib(MUCompatGLbitfield) { (void)mu::pipeline::GetLegacyRenderFacade().PushAttrib(); }
+void mu_glPopAttrib() { (void)mu::pipeline::GetLegacyRenderFacade().PopAttrib(); }
+void mu_glPushClientAttrib(MUCompatGLbitfield) { (void)mu::pipeline::GetLegacyRenderFacade().PushClientAttrib(); }
+void mu_glPopClientAttrib() { (void)mu::pipeline::GetLegacyRenderFacade().PopClientAttrib(); }
 void mu_glNormal3f(MUCompatGLfloat x, MUCompatGLfloat y, MUCompatGLfloat z)
 {
     s_nx = x;
     s_ny = y;
     s_nz = z;
+    (void)mu::pipeline::GetLegacyRenderFacade().Normal3(x, y, z);
+}
+void mu_glNormal3fv(const MUCompatGLfloat* normal)
+{
+    if (normal) mu_glNormal3f(normal[0], normal[1], normal[2]);
 }
 void mu_glCopyTexImage2D(MUCompatGLenum, MUCompatGLint, MUCompatGLenum, MUCompatGLint, MUCompatGLint, MUCompatGLsizei, MUCompatGLsizei, MUCompatGLint) {}
