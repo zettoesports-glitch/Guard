@@ -11,6 +11,7 @@
 #include "Render/Terrain/ZzzLodTerrain.h"
 #include "Render/Textures/ZzzTexture.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "SideHair.h"
 #include "Engine/Object/ZzzCharacter.h"
 
@@ -126,5 +127,5 @@ void CSideHair::RenderLine(vec3_t v1, vec3_t v2, vec3_t c1, vec3_t c2)
         {p1[0] + vOrtho[0], p1[1] + vOrtho[1], p1[2] + vOrtho[2], 0.f, 0.f, 1.f,
          1.f, fTextureMove + fTextureV, 0xFFFFFFFFu},
     };
-    mu::GetRenderer().RenderQuad3D(quad, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad3D(quad, 0u);
 }

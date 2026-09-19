@@ -13,6 +13,7 @@
 #include "Core/Utilities/BaseCls.h"
 #include "Engine/Object/ZzzCharacter.h"
 #include "Render/Renderer/MuRenderer.h"
+#include "client/render/LegacyRenderFacade.h"
 #include "Render/Renderer/RenderUtils.h"
 
 CQueue<CShadowVolume*> m_qSV;
@@ -95,7 +96,7 @@ void RenderShadowToScreen(void)
         {p[2][0], p[2][1], 0.f, 0.f, color},
         {p[3][0], p[3][1], 0.f, 0.f, color},
     };
-    mu::GetRenderer().RenderQuad2D(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitQuad2D(vertices, 0u);
     mu::GetRenderer().SetDepthFunc(GL_LESS);
     mu::GetRenderer().SetStencilTest(false);
     EnableDepthMask();
@@ -310,7 +311,7 @@ void CShadowVolume::RenderShadowVolume(void)
             m_pVertices[i][0], m_pVertices[i][1], m_pVertices[i][2], 0.f, 0.f, 1.f, 0.f, 0.f, 0xFFFFFFFFu,
         };
     }
-    mu::GetRenderer().RenderTriangles(vertices, 0u);
+    mu::pipeline::GetLegacyRenderFacade().SubmitTriangles(vertices, 0u);
 }
 
 void CShadowVolume::Shade(void)
