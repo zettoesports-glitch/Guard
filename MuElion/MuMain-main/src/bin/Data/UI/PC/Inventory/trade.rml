@@ -1,0 +1,34 @@
+<rml>
+<head>
+    <meta name="mu-design-Panel-Size" content="327 639"/>
+    <meta name="mu-design-Panel-Grids" content="60 163 26 26 60 410 26 26"/>
+    <meta name="mu-design-Panel-Reference" content="640 480"/>
+    <meta name="mu-design-Panel-Initial" content="21 40"/>
+    <title>Reconstructed Trade</title>
+    <link type="text/rcss" href="../Common/common.rcss"/>
+    <link type="text/rcss" href="../ui_assets.rcss"/>
+    <link type="text/rcss" href="trade.rcss"/>
+</head>
+<body class="mu-modern-document">
+    <div id="panel" class="trade-panel">
+        <div class="trade-background"/>
+        <div id="tfTitle" class="trade-title">Trade</div>
+        <div id="btnDrag" class="trade-drag"/>
+        <div id="btnClose" class="mu-button trade-close">X</div>
+
+        <div id="tfTradeOtherValue" class="trade-name other-name"/>
+        <div id="tfGuildValue" class="trade-info guild"/>
+        <div id="tfLevelValue" class="trade-info level"/>
+        <div id="tfOtherZen" class="trade-zen other-zen"/>
+        <div id="trade-other-grid" class="trade-grid other-grid"/>
+
+        <div id="tfMyNameValue" class="trade-name my-name"/>
+        <div id="tfMyZen" class="trade-zen my-zen"/>
+        <div id="trade-my-grid" class="trade-grid my-grid"/>
+
+        <div id="tfCautionText" class="trade-caution"/>
+        <div id="btnInputZen" class="mu-button trade-action input-zen">Zen</div>
+        <div id="btnTrade" class="mu-button trade-action confirm">Confirm</div>
+    </div>
+</body>
+</rml>

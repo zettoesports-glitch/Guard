@@ -1,0 +1,22 @@
+body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial;}
+#panel,#panel div,.trade-confirm-layer,.trade-confirm-layer div{position:absolute;box-sizing:border-box;}
+.trade-panel{width:327px;height:639px;pointer-events:auto;}
+.trade-background{left:0;top:0;width:327px;height:639px;background-color:#11151def;border-width:1px;border-color:#675f45;pointer-events:none;}
+.trade-title{left:45px;top:28px;width:235px;height:24px;line-height:24px;text-align:center;color:#f1d78d;}
+.trade-drag{left:28px;top:18px;width:245px;height:45px;drag:drag;cursor:move;pointer-events:auto;}
+.trade-close{right:34px;top:34px;width:19px;height:19px;line-height:19px;text-align:center;pointer-events:auto;}
+.trade-name{left:60px;width:208px;height:22px;line-height:22px;text-align:center;color:#ddd2b8;}
+.other-name{top:85px}.my-name{top:333px;}
+.trade-info{top:112px;height:18px;line-height:18px;color:#aaa58f;}
+.guild{left:60px;width:120px}.level{left:185px;width:83px;text-align:right;}
+.trade-zen{left:60px;width:208px;height:22px;line-height:22px;text-align:right;color:#edca66;}
+.other-zen{top:135px}.my-zen{top:382px;}
+.trade-grid{width:208px;height:104px;pointer-events:auto;}
+.trade-slot{border-width:1px;border-color:#4f4a3c;background-color:#16191dcc;pointer-events:auto;}
+.trade-slot.occupied{background-color:#283441dd}.trade-slot.selected{border-color:#e1bd54}.trade-slot.warning{border-color:#ff7038;}
+.trade-caution{left:55px;top:526px;width:217px;height:40px;color:#e5b15b;text-align:center;white-space:normal;}
+.trade-action{top:580px;width:78px;height:30px;line-height:30px;text-align:center;pointer-events:auto;}
+.input-zen{left:86px}.confirm{left:166px}.confirm.selected{border-color:#7fd27f;color:#baffba}.confirm.alert{border-color:#ff8050;}
+.trade-confirm-layer{pointer-events:none;}
+.trade-confirm{width:90px;height:22px;line-height:22px;text-align:center;color:#80ff80;background-color:#152015cc;}
+.other-confirm{left:178px;top:285px}.my-confirm{left:178px;top:532px;}

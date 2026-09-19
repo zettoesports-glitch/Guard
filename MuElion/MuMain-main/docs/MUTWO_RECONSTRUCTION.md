@@ -278,3 +278,8 @@ and differential runtime tests succeed.
   documents with externally supplied randomized digit mapping, four-digit PIN,
   masked input, backspace and submit/cancel intents; all validation/network
   ownership remains in legacy vault message-box code
+
+- reconstructed `RmlTradePanel` across trade/trade_confirm documents with
+  two 32-slot grids, player/Zen metadata, warning/confirmation presentation
+  and semantic close/Zen/confirm/slot actions while legacy trade retains all
+  item legality, timers and network requests

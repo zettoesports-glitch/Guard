@@ -1965,3 +1965,23 @@ state is recovered.
 
 Save/start/stop/network ownership remains in `MUHelper::CMuHelper` and the
 legacy UI. This bridge performs no packet transmission and no legacy mutation.
+
+
+## Trade presentation contract
+
+The Debug executable preserves the basenames `trade.rml` and
+`trade_confirm.rml`. Their observable authored contract uses
+`Panel-Size`, `Panel-Grids`, `Panel-Reference`, and
+`Panel-Initial`, with two 8x4 grid origins in `Panel-Grids`.
+
+The legacy `CNewUITrade` confirms two 32-slot inventory controls: the other
+player at the upper grid and the local player at the lower grid. It also owns
+other-player identity/guild/level, both Zen values, local/remote confirmation,
+the anti-spam confirmation wait, trade-alert state, warning-marked changed
+items, and all trade/network requests.
+
+`RmlTradePanel` hosts both trade documents, reconstructs the two 32-slot
+surfaces and confirm overlays, and returns one-shot close, Zen-input,
+confirm-toggle, local-slot and remote-inspect intents. It does not send
+`SendTradeCancel`, `SendSetTradeMoney`,
+`SendTradeButtonStateChange`, or equipment-item requests.
