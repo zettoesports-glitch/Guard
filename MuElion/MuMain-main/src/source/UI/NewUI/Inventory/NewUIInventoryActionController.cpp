@@ -266,7 +266,15 @@ bool CNewUIInventoryActionController::HandleSellToNPC(CNewUIInventoryCtrl* targe
         return true;
     }
 
-    SocketClient->ToGameServer()->SendSellItemToNpcRequest(sourceIndex);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendSellItem(
+            SocketClient, static_cast<std::uint8_t>(sourceIndex));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendSellItemToNpcRequest(sourceIndex);
+    }
     g_pNPCShop->SetSellingItem(true);
     return true;
 }
@@ -485,11 +493,27 @@ bool CNewUIInventoryActionController::RepairItemAtMousePoint(CNewUIInventoryCtrl
 
     if (g_pNewUISystem->IsVisible(INTERFACE_NPCSHOP) && g_pNPCShop->IsRepairShop())
     {
-        SocketClient->ToGameServer()->SendRepairItemRequest(iIndex, 0);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendRepairItem(
+                SocketClient, static_cast<std::uint8_t>(iIndex), 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRepairItemRequest(iIndex, 0);
+        }
     }
     else
     {
-        SocketClient->ToGameServer()->SendRepairItemRequest(iIndex, 1);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendRepairItem(
+                SocketClient, static_cast<std::uint8_t>(iIndex), 1);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRepairItemRequest(iIndex, 1);
+        }
     }
 
     return true;
