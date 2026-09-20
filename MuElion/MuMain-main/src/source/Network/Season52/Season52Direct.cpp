@@ -201,6 +201,73 @@ bool DirectSession::SendCharacterList(Connection* connection,
     return SendPacket(connection, BuildCharacterListRequest(language));
 }
 
+bool DirectSession::SendCreateCharacter(Connection* connection,
+                                        const wchar_t* name,
+                                        std::uint8_t classId,
+                                        std::uint8_t skin)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || name == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), name, static_cast<int>(nameUtf8.size()));
+
+    return SendPacket(
+        connection,
+        BuildCreateCharacterRequest(nameUtf8.data(), classId, skin));
+}
+
+bool DirectSession::SendDeleteCharacter(Connection* connection,
+                                        const wchar_t* name,
+                                        const wchar_t* personalCode)
+{
+    if (!DirectProtocolEnabled() || !gameServer_
+        || name == nullptr || personalCode == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    std::array<char, PersonalCodeSize + 1> codeUtf8{};
+
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), name, static_cast<int>(nameUtf8.size()));
+    CMultiLanguage::ConvertToUtf8(
+        codeUtf8.data(), personalCode, static_cast<int>(codeUtf8.size()));
+
+    return SendPacket(
+        connection,
+        BuildDeleteCharacterRequest(nameUtf8.data(), codeUtf8.data()));
+}
+
+bool DirectSession::SendSelectCharacter(Connection* connection,
+                                        const wchar_t* name)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || name == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), name, static_cast<int>(nameUtf8.size()));
+
+    return SendPacket(connection, BuildSelectCharacterRequest(nameUtf8.data()));
+}
+
+bool DirectSession::SendFinishLoading(Connection* connection)
+{
+    if (!DirectProtocolEnabled() || !gameServer_)
+    {
+        return false;
+    }
+
+    return SendPacket(connection, BuildFinishLoadingRequest());
+}
+
 bool DirectSession::SendLogin(Connection* connection,
                               const wchar_t* account,
                               const wchar_t* password,
