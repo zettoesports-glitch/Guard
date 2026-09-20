@@ -20,6 +20,11 @@ namespace {
 constexpr const char* kDirectProtocolEnv = "MU_PROTOCOL_SEASON52_DIRECT";
 constexpr const char* kEnc1PathEnv = "MU_S52_ENC1_PATH";
 constexpr const char* kDec2PathEnv = "MU_S52_DEC2_PATH";
+constexpr const char* kVersionEnv = "MU_S52_VERSION";
+constexpr const char* kSerialEnv = "MU_S52_SERIAL";
+
+constexpr const char* kLouisDefaultVersion = "1.04.05";
+constexpr const char* kLouisDefaultSerial = "TbYehR2hFUPBKgZj";
 
 bool IsEnabledValue(const char* value) noexcept
 {
@@ -27,6 +32,67 @@ bool IsEnabledValue(const char* value) noexcept
         && (std::strcmp(value, "1") == 0
             || std::strcmp(value, "true") == 0
             || std::strcmp(value, "TRUE") == 0);
+}
+
+bool ResolveProtocolIdentity(
+    std::array<std::uint8_t, ProtocolVersionSize>& encodedVersion,
+    std::array<std::uint8_t, ProtocolSerialSize>& serial)
+{
+    const char* configuredVersion = std::getenv(kVersionEnv);
+    if (configuredVersion == nullptr || configuredVersion[0] == '\0')
+    {
+        configuredVersion = kLouisDefaultVersion;
+    }
+
+    std::array<std::uint8_t, ProtocolVersionSize> wireVersion{};
+    std::size_t versionIndex = 0;
+    for (const char* p = configuredVersion;
+         *p != '\0' && versionIndex < wireVersion.size();
+         ++p)
+    {
+        if (*p == '.')
+        {
+            continue;
+        }
+
+        if (*p < '0' || *p > '9')
+        {
+            return false;
+        }
+
+        wireVersion[versionIndex++] = static_cast<std::uint8_t>(*p);
+    }
+
+    if (versionIndex != wireVersion.size())
+    {
+        return false;
+    }
+
+    // Season52PacketBuilder follows the original Louis Main convention:
+    // Version[] is stored offset by its one-based position and the builder
+    // subtracts that position before putting the five bytes on the wire.
+    for (std::size_t i = 0; i < encodedVersion.size(); ++i)
+    {
+        encodedVersion[i] =
+            static_cast<std::uint8_t>(wireVersion[i] + (i + 1u));
+    }
+
+    const char* configuredSerial = std::getenv(kSerialEnv);
+    if (configuredSerial == nullptr || configuredSerial[0] == '\0')
+    {
+        configuredSerial = kLouisDefaultSerial;
+    }
+
+    if (std::strlen(configuredSerial) != serial.size())
+    {
+        return false;
+    }
+
+    std::copy_n(
+        reinterpret_cast<const std::uint8_t*>(configuredSerial),
+        serial.size(),
+        serial.begin());
+    return true;
 }
 
 bool ReadKeyFile(const char* envName,
@@ -337,10 +403,17 @@ bool DirectSession::SendMapServerMoveAuth(
     CMultiLanguage::ConvertToUtf8(
         characterUtf8.data(), character, static_cast<int>(characterUtf8.size()));
 
+    (void)version;
+    (void)serial;
+
     std::array<std::uint8_t, ProtocolVersionSize> protocolVersion{};
     std::array<std::uint8_t, ProtocolSerialSize> protocolSerial{};
-    std::copy_n(version, protocolVersion.size(), protocolVersion.begin());
-    std::copy_n(serial, protocolSerial.size(), protocolSerial.begin());
+    if (!ResolveProtocolIdentity(protocolVersion, protocolSerial))
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid MU_S52_VERSION or MU_S52_SERIAL configuration");
+        return false;
+    }
 
     std::vector<std::uint8_t> wire;
     if (!BuildMapServerMoveAuthRequest(
@@ -502,11 +575,20 @@ bool DirectSession::SendLogin(Connection* connection,
     CMultiLanguage::ConvertToUtf8(
         passwordUtf8.data(), password, static_cast<int>(passwordUtf8.size()));
 
+    // Direct S5.2 has its own protocol identity. Do not reuse the OpenMU
+    // globals (currently 2.04.04 / k1Pk...), because Louis EX502 defaults to
+    // 1.04.05 / TbYehR2hFUPBKgZj. Environment variables can override both.
+    (void)version;
+    (void)serial;
+
     std::array<std::uint8_t, ProtocolVersionSize> protocolVersion{};
     std::array<std::uint8_t, ProtocolSerialSize> protocolSerial{};
-
-    std::copy_n(version, protocolVersion.size(), protocolVersion.begin());
-    std::copy_n(serial, protocolSerial.size(), protocolSerial.begin());
+    if (!ResolveProtocolIdentity(protocolVersion, protocolSerial))
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid MU_S52_VERSION or MU_S52_SERIAL configuration");
+        return false;
+    }
 
     std::vector<std::uint8_t> wire;
     if (!BuildLoginRequest(
