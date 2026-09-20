@@ -2967,6 +2967,214 @@ void RegisterBuff(eBuffState buff, OBJECT* o, const int bufftime = 0);
 
 void UnRegisterBuff(eBuffState buff, OBJECT* o);
 
+void ReceiveCreatePlayerViewportSeason52(std::span<const BYTE> ReceiveBuffer)
+{
+    constexpr std::size_t kHeaderSize = 5;  // C2 sizeH sizeL 12 count
+    constexpr std::size_t kBaseEntrySize = 36;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x12 player viewport packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return;
+    }
+
+    const BYTE count = ReceiveBuffer[4];
+    std::size_t offset = kHeaderSize;
+
+    for (BYTE i = 0; i < count; ++i)
+    {
+        if (offset + kBaseEntrySize > ReceiveBuffer.size())
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x12 player viewport at entry {} offset={}",
+                i, offset);
+            return;
+        }
+
+        const BYTE* entry = ReceiveBuffer.data() + offset;
+        WORD key = static_cast<WORD>(
+            (static_cast<WORD>(entry[0]) << 8) | entry[1]);
+        const bool createFlag = (key & 0x8000) != 0;
+        key &= 0x7FFF;
+
+        const BYTE positionX = entry[2];
+        const BYTE positionY = entry[3];
+        const BYTE classAndState = entry[4];
+        BYTE* equipment = const_cast<BYTE*>(entry + 5);
+        const char* rawName = reinterpret_cast<const char*>(entry + 22);
+        const BYTE targetX = entry[32];
+        const BYTE targetY = entry[33];
+        const BYTE path = entry[34];
+        const BYTE buffCount = entry[35];
+
+        const std::size_t entrySize =
+            kBaseEntrySize + static_cast<std::size_t>(buffCount);
+        if (offset + entrySize > ReceiveBuffer.size())
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x12 buffs at entry {} count={}",
+                i, buffCount);
+            return;
+        }
+
+        wchar_t characterName[MAX_USERNAME_SIZE + 1]{};
+        std::array<char, MAX_USERNAME_SIZE + 1> name{};
+        std::copy_n(rawName, MAX_USERNAME_SIZE, name.data());
+        CMultiLanguage::ConvertFromUtf8(
+            characterName, name.data(), MAX_USERNAME_SIZE);
+
+        if (FindText(characterName, L"webzen") == false)
+        {
+            const int previousIndex = FindCharacterIndex(key);
+            short guildMarkIndex = -1;
+            BYTE guildStatus = 0;
+            BYTE guildType = 0;
+            BYTE guildRelationship = 0;
+            BYTE guildMasterKillCount = 0;
+            BYTE etcPart = 0;
+            BYTE ctlCode = 0;
+
+            if (previousIndex != MAX_CHARACTERS_CLIENT)
+            {
+                const CHARACTER& previous = CharactersClient[previousIndex];
+                guildMarkIndex = previous.GuildMarkIndex;
+                guildStatus = previous.GuildStatus;
+                guildType = previous.GuildType;
+                guildRelationship = previous.GuildRelationShip;
+                guildMasterKillCount = previous.GuildMasterKillCount;
+                etcPart = previous.EtcPart;
+                ctlCode = previous.CtlCode;
+            }
+
+            CHARACTER* character =
+                CreateCharacter(key, MODEL_PLAYER, positionX, positionY, 0);
+            if (character == nullptr)
+            {
+                offset += entrySize;
+                continue;
+            }
+
+            DeleteCloth(character, &character->Object);
+
+            OBJECT* object = &character->Object;
+            character->Class = DecodeSeason52Class(classAndState);
+            character->SkinIndex =
+                gCharacterManager.GetSkinModelIndex(character->Class);
+            character->Skin = 0;
+            character->PK = path & 0x0F;
+            object->Kind = KIND_PLAYER;
+
+            switch (classAndState & 0x07)
+            {
+            case 1:
+                CreateTeleportEnd(object);
+                break;
+            case 2:
+                SetAction(
+                    object,
+                    gCharacterManager.IsFemale(character->Class)
+                        ? PLAYER_SIT_FEMALE1
+                        : PLAYER_SIT1);
+                break;
+            case 3:
+                SetAction(
+                    object,
+                    gCharacterManager.IsFemale(character->Class)
+                        ? PLAYER_POSE_FEMALE1
+                        : PLAYER_POSE1);
+                break;
+            case 4:
+                SetAction(
+                    object,
+                    gCharacterManager.IsFemale(character->Class)
+                        ? PLAYER_HEALING_FEMALE1
+                        : PLAYER_HEALING1);
+                break;
+            default:
+                break;
+            }
+
+            character->PositionX = positionX;
+            character->PositionY = positionY;
+            character->TargetX = targetX;
+            character->TargetY = targetY;
+            object->Angle[2] = (static_cast<float>(path >> 4) - 1.0f) * 45.0f;
+
+            if (createFlag)
+            {
+                object->Position[0] =
+                    (static_cast<float>(positionX) + 0.5f) * TERRAIN_SCALE;
+                object->Position[1] =
+                    (static_cast<float>(positionY) + 0.5f) * TERRAIN_SCALE;
+                CreateEffect(
+                    BITMAP_MAGIC + 2,
+                    object->Position,
+                    object->Angle,
+                    object->Light,
+                    0,
+                    object);
+                object->Alpha = 0.0f;
+            }
+            else if (PathFinding2(
+                         character->PositionX,
+                         character->PositionY,
+                         targetX,
+                         targetY,
+                         &character->Path))
+            {
+                character->Movement = true;
+            }
+
+            if (gMapManager.InHellas())
+            {
+                CreateJoint(
+                    BITMAP_FLARE + 1,
+                    object->Position,
+                    object->Position,
+                    object->Angle,
+                    8,
+                    object,
+                    20.0f);
+            }
+
+            ChangeCharacterExt(FindCharacterIndex(key), equipment);
+
+            character->GuildMarkIndex = guildMarkIndex;
+            character->GuildStatus = guildStatus;
+            character->GuildType = guildType;
+            character->GuildRelationShip = guildRelationship;
+            character->GuildMasterKillCount = guildMasterKillCount;
+            character->EtcPart = etcPart;
+            character->CtlCode = ctlCode;
+
+            std::copy(
+                characterName,
+                characterName + MAX_USERNAME_SIZE,
+                character->ID);
+            character->ID[MAX_USERNAME_SIZE] = L'\0';
+
+            for (BYTE buffIndex = 0; buffIndex < buffCount; ++buffIndex)
+            {
+                const auto buff = static_cast<eBuffState>(
+                    entry[kBaseEntrySize + buffIndex]);
+                RegisterBuff(buff, object);
+                battleCastle::SettingBattleFormation(character, buff);
+            }
+        }
+
+        offset += entrySize;
+    }
+
+    mu::log::Get("network")->info(
+        "S52: 0x12 materialized {} classic player viewport entries", count);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0x12 [ReceiveCreatePlayerViewportSeason52(%d)]",
+        count);
+}
+
 void ReceiveCreatePlayerViewportExtended(std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PCREATE_CHARACTER_EXTENDED>(ReceiveBuffer);
@@ -14165,7 +14373,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         break;
     case 0x12: // create characters
         AddDebugText(ReceiveBuffer, Size);
-        ReceiveCreatePlayerViewportExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveCreatePlayerViewportSeason52(received_span);
+        }
+        else
+        {
+            ReceiveCreatePlayerViewportExtended(received_span);
+        }
         break;
     case 0x13: // create monsters
         // AddDebugText(ReceiveBuffer,Size);
