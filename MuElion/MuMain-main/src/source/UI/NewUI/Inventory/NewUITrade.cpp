@@ -890,6 +890,20 @@ void CNewUITrade::ProcessToReceiveTradeItems(int nIndex, std::span<const BYTE> p
         m_pMyInvenCtrl->AddItem(nIndex, pbyItemPacket);
 }
 
+void CNewUITrade::ProcessToReceiveTradeItemsOld(
+    int nIndex, std::span<const BYTE> pbyItemPacket)
+{
+    SEASON3B::CNewUIInventoryCtrl::DeletePickedItem();
+
+    if (m_pMyInvenCtrl != nullptr
+        && nIndex >= 0
+        && nIndex < (m_pMyInvenCtrl->GetNumberOfColumn()
+            * m_pMyInvenCtrl->GetNumberOfRow()))
+    {
+        m_pMyInvenCtrl->AddItemOld(nIndex, pbyItemPacket);
+    }
+}
+
 int SEASON3B::CNewUITrade::GetPointedItemIndexMyInven()
 {
     return m_pMyInvenCtrl->GetPointedSquareIndex();
