@@ -100,6 +100,117 @@ std::vector<std::uint8_t> BuildFinishLoadingRequest() {
     return packet;
 }
 
+std::vector<std::uint8_t> BuildCloseNpcRequest() {
+    std::vector<std::uint8_t> packet{0xC1, 0x03, 0x31};
+    EncodePacketXor(packet.data(), packet.size());
+    return packet;
+}
+
+std::vector<std::uint8_t> BuildPublicChatRequest(std::string_view character,
+                                                 std::string_view text) {
+    constexpr std::size_t ChatSize = 90;
+    const auto characterField = FixedField<CharacterNameSize>(character);
+    const auto textBytes = std::min(text.size() + 1u, ChatSize);
+    const auto textChars = std::min(text.size(), textBytes);
+
+    std::vector<std::uint8_t> packet;
+    packet.reserve(3u + CharacterNameSize + textBytes);
+    packet.push_back(0xC1);
+    packet.push_back(0);
+    packet.push_back(0x00);
+    packet.insert(packet.end(), characterField.begin(), characterField.end());
+    if (textChars > 0) {
+        packet.insert(
+            packet.end(),
+            reinterpret_cast<const std::uint8_t*>(text.data()),
+            reinterpret_cast<const std::uint8_t*>(text.data()) + textChars);
+    }
+
+    if (textBytes > textChars) {
+        packet.push_back(0);
+    }
+
+    packet[1] = static_cast<std::uint8_t>(packet.size());
+    EncodePacketXor(packet.data(), packet.size());
+    return packet;
+}
+
+bool BuildAreaSkillRequest(std::uint16_t skillId,
+                           std::uint8_t targetX,
+                           std::uint8_t targetY,
+                           std::uint8_t angle,
+                           std::uint8_t destination,
+                           std::uint8_t targetPosition,
+                           std::uint16_t targetId,
+                           std::uint8_t skillSerial,
+                           Season52Crypto& crypto,
+                           std::vector<std::uint8_t>& wirePacket) {
+    const std::vector<std::uint8_t> canonical{
+        0xC1, 0x0D, 0x1E,
+        static_cast<std::uint8_t>((skillId >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>(skillId & 0xFFu),
+        targetX,
+        targetY,
+        angle,
+        destination,
+        targetPosition,
+        static_cast<std::uint8_t>((targetId >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>(targetId & 0xFFu),
+        skillSerial
+    };
+    return crypto.Encode(canonical.data(), canonical.size(), wirePacket);
+}
+
+bool BuildTalkNpcRequest(std::uint16_t npcId,
+                         Season52Crypto& crypto,
+                         std::vector<std::uint8_t>& wirePacket) {
+    const std::vector<std::uint8_t> canonical{
+        0xC1, 0x05, 0x30,
+        static_cast<std::uint8_t>((npcId >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>(npcId & 0xFFu)
+    };
+    return crypto.Encode(canonical.data(), canonical.size(), wirePacket);
+}
+
+bool BuildConsumeItemRequest(std::uint8_t itemSlot,
+                             std::uint8_t targetSlot,
+                             std::uint8_t fruitUsage,
+                             Season52Crypto& crypto,
+                             std::vector<std::uint8_t>& wirePacket) {
+    const std::vector<std::uint8_t> canonical{
+        0xC1, 0x06, 0x26, itemSlot, targetSlot, fruitUsage
+    };
+    return crypto.Encode(canonical.data(), canonical.size(), wirePacket);
+}
+
+bool BuildBuyItemRequest(std::uint8_t itemSlot,
+                         Season52Crypto& crypto,
+                         std::vector<std::uint8_t>& wirePacket) {
+    const std::vector<std::uint8_t> canonical{
+        0xC1, 0x04, 0x32, itemSlot
+    };
+    return crypto.Encode(canonical.data(), canonical.size(), wirePacket);
+}
+
+bool BuildSellItemRequest(std::uint8_t itemSlot,
+                          Season52Crypto& crypto,
+                          std::vector<std::uint8_t>& wirePacket) {
+    const std::vector<std::uint8_t> canonical{
+        0xC1, 0x04, 0x33, itemSlot
+    };
+    return crypto.Encode(canonical.data(), canonical.size(), wirePacket);
+}
+
+bool BuildRepairItemRequest(std::uint8_t itemSlot,
+                            std::uint8_t addGold,
+                            Season52Crypto& crypto,
+                            std::vector<std::uint8_t>& wirePacket) {
+    const std::vector<std::uint8_t> canonical{
+        0xC1, 0x05, 0x34, itemSlot, addGold
+    };
+    return crypto.Encode(canonical.data(), canonical.size(), wirePacket);
+}
+
 bool BuildMapServerMoveAuthRequest(
                        std::string_view account,
                        std::string_view character,
