@@ -1048,7 +1048,15 @@ bool SEASON3B::CGuildRequestMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CGuildRequestMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildJoinResponse(true, GuildPlayerKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildJoinResponse(
+            SocketClient, 1, GuildPlayerKey);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildJoinResponse(true, GuildPlayerKey);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1058,7 +1066,15 @@ CALLBACK_RESULT SEASON3B::CGuildRequestMsgBoxLayout::OkBtnDown(class CNewUIMessa
 
 CALLBACK_RESULT SEASON3B::CGuildRequestMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildJoinResponse(false, GuildPlayerKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildJoinResponse(
+            SocketClient, 0, GuildPlayerKey);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildJoinResponse(false, GuildPlayerKey);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1344,7 +1360,14 @@ bool SEASON3B::CGuildWarMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CGuildWarMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildWarResponse(true);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildWarResponse(SocketClient, 1);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildWarResponse(true);
+    }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1353,7 +1376,14 @@ CALLBACK_RESULT SEASON3B::CGuildWarMsgBoxLayout::OkBtnDown(class CNewUIMessageBo
 
 CALLBACK_RESULT SEASON3B::CGuildWarMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildWarResponse(false);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildWarResponse(SocketClient, 0);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildWarResponse(false);
+    }
     InitGuildWar();
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2176,11 +2206,23 @@ CALLBACK_RESULT SEASON3B::CGuildRelationShipMsgBoxLayout::OkBtnDown(class CNewUI
 {
     const SEASON3B::ServerMessageInfo info = g_pGuildInfoWindow->GetServerMessage();
 
-    SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
-        info.s_byRelationShipType,
-        info.s_byRelationShipRequestType,
-        0x01,
-        MAKEWORD(info.s_byTargetUserIndexH, info.s_byTargetUserIndexL));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRelationshipResponse(
+            SocketClient,
+            static_cast<std::uint8_t>(info.s_byRelationShipType),
+            static_cast<std::uint8_t>(info.s_byRelationShipRequestType),
+            0x01,
+            MAKEWORD(info.s_byTargetUserIndexL, info.s_byTargetUserIndexH));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
+            info.s_byRelationShipType,
+            info.s_byRelationShipRequestType,
+            0x01,
+            MAKEWORD(info.s_byTargetUserIndexH, info.s_byTargetUserIndexL));
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2192,11 +2234,23 @@ CALLBACK_RESULT SEASON3B::CGuildRelationShipMsgBoxLayout::CancelBtnDown(class CN
 {
     const SEASON3B::ServerMessageInfo info = g_pGuildInfoWindow->GetServerMessage();
 
-    SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
-        info.s_byRelationShipType,
-        info.s_byRelationShipRequestType,
-        0x00,
-        MAKEWORD(info.s_byTargetUserIndexH, info.s_byTargetUserIndexL));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRelationshipResponse(
+            SocketClient,
+            static_cast<std::uint8_t>(info.s_byRelationShipType),
+            static_cast<std::uint8_t>(info.s_byRelationShipRequestType),
+            0x00,
+            MAKEWORD(info.s_byTargetUserIndexL, info.s_byTargetUserIndexH));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
+            info.s_byRelationShipType,
+            info.s_byRelationShipRequestType,
+            0x00,
+            MAKEWORD(info.s_byTargetUserIndexH, info.s_byTargetUserIndexL));
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2982,7 +3036,19 @@ bool SEASON3B::CGuildPerson_Cancel_Position_MsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CGuildPerson_Cancel_Position_MsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildRoleAssignRequest(G_PERSON, MU_C16(GuildList[DeleteIndex].Name), 0x03);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRoleAssign(
+            SocketClient,
+            0x03,
+            static_cast<std::uint8_t>(G_PERSON),
+            GuildList[DeleteIndex].Name);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRoleAssignRequest(
+            G_PERSON, MU_C16(GuildList[DeleteIndex].Name), 0x03);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -3347,7 +3413,16 @@ CALLBACK_RESULT SEASON3B::CUnionGuild_Break_MsgBoxLayout::CancelBtnDown(class CN
 
 CALLBACK_RESULT SEASON3B::CUnionGuild_Break_MsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendRemoveAllianceGuildRequest(MU_C16(DeleteID));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendAllianceGuildBan(
+            SocketClient, DeleteID);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendRemoveAllianceGuildRequest(
+            MU_C16(DeleteID));
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
