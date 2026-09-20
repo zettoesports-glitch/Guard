@@ -20,7 +20,7 @@
 #include "World/MapInfra/MapManager.h"
 #include "UI/Legacy/UIMng.h"
 #include "Core/Input/Input.h"
-#include "Network/Server/WSclient.h"
+#include "Network/Server/WSclient.h"\n#include "Network/Season52/Season52Direct.h"
 #include "Core/Utilities/Log/muConsoleDebug.h"
 #include "I18N/All.h"
 #include "Engine/Object/ZzzCharacter.h"
@@ -360,7 +360,16 @@ void NewMoveLogInScene()
 
         SceneFlag = CHARACTER_SCENE;
         CurrentProtocolState = REQUEST_CHARACTERS_LIST;
-        SocketClient->ToGameServer()->SendRequestCharacterList(g_pMultiLanguage->GetLanguage());
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCharacterList(
+                SocketClient, g_pMultiLanguage->GetLanguage());
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRequestCharacterList(
+                g_pMultiLanguage->GetLanguage());
+        }
     }
 
     g_ConsoleDebug->UpdateMainScene();
