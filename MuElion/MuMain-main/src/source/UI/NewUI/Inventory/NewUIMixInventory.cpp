@@ -18,6 +18,7 @@
 
 #include "Audio/DSPlaySound.h"
 #include "Network/Server/SocketSystem.h"
+#include "Network/Season52/Season52Direct.h"
 
 using namespace SEASON3B;
 
@@ -134,7 +135,14 @@ void CNewUIMixInventory::DeleteAllItems()
 void CNewUIMixInventory::OpeningProcess()
 {
     g_MixRecipeMgr.SetPlusChaosRate(0);
-    SocketClient->ToGameServer()->SendCrywolfChaosRateBenefitRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCrywolfChaosRateBenefitRequest(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCrywolfChaosRateBenefitRequest();
+    }
 
     SetMixState(SEASON3B::CNewUIMixInventory::MIX_READY);
 
