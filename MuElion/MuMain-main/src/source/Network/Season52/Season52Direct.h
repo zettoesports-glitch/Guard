@@ -65,6 +65,9 @@ public:
                        std::uint16_t gateNumber,
                        std::uint8_t targetX,
                        std::uint8_t targetY);
+    bool SendWarpCommand(Connection* connection,
+                         std::uint32_t commandKey,
+                         std::uint16_t mapIndex);
     bool SendAnimation(Connection* connection,
                        std::uint8_t rotation,
                        std::uint8_t animationNumber);
