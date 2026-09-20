@@ -553,6 +553,45 @@ bool DirectSession::SendDropItem(Connection* connection,
         {0xC1, 0x06, 0x23, targetX, targetY, itemSlot});
 }
 
+bool DirectSession::SendItemMove(
+    Connection* connection,
+    std::uint8_t sourceStorage,
+    std::uint8_t sourceIndex,
+    std::uint8_t itemTypeLow,
+    std::uint8_t itemLevel,
+    std::uint8_t durability,
+    std::uint8_t option1,
+    std::uint8_t excellentOption,
+    std::uint8_t splitType,
+    std::uint8_t spareBits,
+    const std::array<std::uint8_t, 5>& socketOptions,
+    std::uint8_t targetStorage,
+    std::uint8_t targetIndex)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> wire;
+    return BuildItemMoveRequest(
+               sourceStorage,
+               sourceIndex,
+               itemTypeLow,
+               itemLevel,
+               durability,
+               option1,
+               excellentOption,
+               splitType,
+               spareBits,
+               socketOptions,
+               targetStorage,
+               targetIndex,
+               crypto_,
+               wire)
+        && SendPacket(connection, wire);
+}
+
 bool DirectSession::SendAreaSkill(Connection* connection,
                                   std::uint16_t skillId,
                                   std::uint8_t targetX,
