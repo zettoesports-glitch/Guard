@@ -29,6 +29,39 @@ std::vector<std::uint8_t> BuildDeleteCharacterRequest(std::string_view name,
 std::vector<std::uint8_t> BuildSelectCharacterRequest(std::string_view name);
 std::vector<std::uint8_t> BuildFinishLoadingRequest();
 
+std::vector<std::uint8_t> BuildCloseNpcRequest();
+std::vector<std::uint8_t> BuildPublicChatRequest(std::string_view character,
+                                                 std::string_view text);
+
+bool BuildAreaSkillRequest(std::uint16_t skillId,
+                           std::uint8_t targetX,
+                           std::uint8_t targetY,
+                           std::uint8_t angle,
+                           std::uint8_t destination,
+                           std::uint8_t targetPosition,
+                           std::uint16_t targetId,
+                           std::uint8_t skillSerial,
+                           Season52Crypto& crypto,
+                           std::vector<std::uint8_t>& wirePacket);
+bool BuildTalkNpcRequest(std::uint16_t npcId,
+                         Season52Crypto& crypto,
+                         std::vector<std::uint8_t>& wirePacket);
+bool BuildConsumeItemRequest(std::uint8_t itemSlot,
+                             std::uint8_t targetSlot,
+                             std::uint8_t fruitUsage,
+                             Season52Crypto& crypto,
+                             std::vector<std::uint8_t>& wirePacket);
+bool BuildBuyItemRequest(std::uint8_t itemSlot,
+                         Season52Crypto& crypto,
+                         std::vector<std::uint8_t>& wirePacket);
+bool BuildSellItemRequest(std::uint8_t itemSlot,
+                          Season52Crypto& crypto,
+                          std::vector<std::uint8_t>& wirePacket);
+bool BuildRepairItemRequest(std::uint8_t itemSlot,
+                            std::uint8_t addGold,
+                            Season52Crypto& crypto,
+                            std::vector<std::uint8_t>& wirePacket);
+
 bool BuildMapServerMoveAuthRequest(
                        std::string_view account,
                        std::string_view character,
