@@ -24,6 +24,7 @@
 #include "GameLogic/Skills/SkillManager.h"
 #include "Engine/Object/ZzzInterface.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Core/Text/TextLineWrap.h"
 
 using namespace SEASON3B;
@@ -1195,7 +1196,15 @@ bool SEASON3B::CPartyMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CPartyMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendPartyInviteResponse(true, PartyKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPartyResponse(
+                SocketClient, 1, static_cast<std::uint16_t>(PartyKey));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPartyInviteResponse(true, PartyKey);
+        }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1204,7 +1213,15 @@ CALLBACK_RESULT SEASON3B::CPartyMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBa
 
 CALLBACK_RESULT SEASON3B::CPartyMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendPartyInviteResponse(false, PartyKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPartyResponse(
+                SocketClient, 0, static_cast<std::uint16_t>(PartyKey));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPartyInviteResponse(false, PartyKey);
+        }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1232,7 +1249,14 @@ bool SEASON3B::CTradeMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CTradeMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendTradeRequestResponse(true);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendTradeResponse(SocketClient, 1);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendTradeRequestResponse(true);
+        }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1241,7 +1265,14 @@ CALLBACK_RESULT SEASON3B::CTradeMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBa
 
 CALLBACK_RESULT SEASON3B::CTradeMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendTradeRequestResponse(false);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendTradeResponse(SocketClient, 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendTradeRequestResponse(false);
+        }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
