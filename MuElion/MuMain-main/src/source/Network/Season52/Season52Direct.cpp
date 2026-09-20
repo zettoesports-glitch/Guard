@@ -874,6 +874,22 @@ bool DirectSession::SendPing(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x03, 0x71});
 }
 
+bool DirectSession::SendQuestHistory(Connection* connection)
+{
+    // Louis Main SendRequestQuestHistory(): C1:A0, spe.Send(TRUE).
+    return SendEncryptedPacket(connection, BuildQuestHistoryRequest());
+}
+
+bool DirectSession::SendQuestState(Connection* connection,
+                                   std::uint8_t questIndex,
+                                   std::uint8_t questState)
+{
+    // Louis Main SendRequestQuestState(): C1:A2 + index/state,
+    // spe.Send(TRUE).
+    return SendEncryptedPacket(
+        connection, BuildQuestStateRequest(questIndex, questState));
+}
+
 bool DirectSession::SendVaultMoveMoney(Connection* connection,
                                        std::uint8_t direction,
                                        std::uint32_t amount)
