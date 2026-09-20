@@ -298,7 +298,7 @@ void CreateLogInScene()
     CUIMng::Instance().CreateLoginScene();
 
     CurrentProtocolState = REQUEST_JOIN_SERVER;
-    CreateSocket(szServerIpAddress, g_ServerPort);
+    CreateSocket(szServerIpAddress, g_ServerPort, ServerEndpointRole::ConnectServer);
 
     GuildInputEnable = false;
     TabInputEnable = false;
