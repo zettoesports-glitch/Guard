@@ -595,6 +595,13 @@ bool DirectSession::SendInventoryRequest(Connection* connection)
     return SendEncryptedPacket(connection, {0xC1, 0x04, 0xF3, 0x10});
 }
 
+bool DirectSession::SendCrywolfInfoRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestCrywolfInfo(): C1:BD:00, Send().
+    // CStreamPacketEngine XORs payload bytes even when SimpleModulus is off.
+    return SendXorPacket(connection, {0xC1, 0x04, 0xBD, 0x00});
+}
+
 bool DirectSession::SendItemMove(
     Connection* connection,
     std::uint8_t sourceStorage,
