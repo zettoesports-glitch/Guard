@@ -198,6 +198,14 @@ public:
     bool SendGensRewardRequest(Connection* connection, std::uint8_t influence);
     bool SendGensInfoOpenRequest(Connection* connection);
     bool SendMiniGameEventCountRequest(Connection* connection, std::uint8_t eventType);
+    bool SendPetCommandRequest(Connection* connection,
+                               std::uint8_t petType,
+                               std::uint8_t command,
+                               std::uint16_t targetKey);
+    bool SendPetInfoRequest(Connection* connection,
+                            std::uint8_t petType,
+                            std::uint8_t inventoryType,
+                            std::uint8_t itemPosition);
     bool SendVaultMoveMoney(Connection* connection,
                             std::uint8_t direction,
                             std::uint32_t amount);
