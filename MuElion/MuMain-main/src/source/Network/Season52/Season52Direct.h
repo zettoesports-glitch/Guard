@@ -87,6 +87,8 @@ public:
     bool SendCrywolfInfoRequest(Connection* connection);
     bool SendChecksumResponse(Connection* connection, std::uint32_t checksum);
     bool SendCastleSiegeStatusRequest(Connection* connection);
+    bool SendCastleSiegeRegistrationStateRequest(Connection* connection);
+    bool SendCastleSiegeRegisteredGuildsListRequest(Connection* connection);
 
     bool SendItemMove(
         Connection* connection,
