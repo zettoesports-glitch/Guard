@@ -5,6 +5,7 @@
 #include "Data/Translation/MultiLanguage.h"
 #include "Dotnet/Connection.h"
 #include "Network/Season52/Packet/Season52PacketBuilder.hpp"
+#include "Network/Season52/Crypto/Season52Xor.hpp"
 
 #include <array>
 #include <algorithm>
@@ -169,6 +170,47 @@ bool DirectSession::SendPacket(Connection* connection,
     return true;
 }
 
+bool DirectSession::SendXorPacket(
+    Connection* connection,
+    std::vector<std::uint8_t> packet)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || packet.empty())
+    {
+        return false;
+    }
+
+    if (!EncodePacketXor(packet.data(), packet.size()))
+    {
+        return false;
+    }
+
+    return SendPacket(connection, packet);
+}
+
+bool DirectSession::SendEncryptedPacket(
+    Connection* connection,
+    const std::vector<std::uint8_t>& canonicalPacket)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> wire;
+    if (!crypto_.Encode(
+            canonicalPacket.data(),
+            canonicalPacket.size(),
+            wire))
+    {
+        mu::log::Get("network")->error(
+            "S52: failed to encrypt outgoing packet head=0x{:02X}",
+            canonicalPacket.size() > 2 ? canonicalPacket[2] : 0);
+        return false;
+    }
+
+    return SendPacket(connection, wire);
+}
+
 bool DirectSession::SendServerList(Connection* connection)
 {
     if (!DirectProtocolEnabled())
@@ -266,6 +308,120 @@ bool DirectSession::SendFinishLoading(Connection* connection)
     }
 
     return SendPacket(connection, BuildFinishLoadingRequest());
+}
+
+bool DirectSession::SendWalk(Connection* connection,
+                             std::uint8_t sourceX,
+                             std::uint8_t sourceY,
+                             std::uint8_t stepCount,
+                             std::uint8_t targetRotation,
+                             const std::uint8_t* directions,
+                             std::size_t directionsSize)
+{
+    if (stepCount > 0x0F || (directionsSize > 0 && directions == nullptr))
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> packet{
+        0xC1,
+        0,
+        0xD4,
+        sourceX,
+        sourceY,
+        static_cast<std::uint8_t>(
+            ((targetRotation & 0x0F) << 4) | (stepCount & 0x0F))
+    };
+
+    if (directionsSize > 0)
+    {
+        packet.insert(packet.end(), directions, directions + directionsSize);
+    }
+
+    if (packet.size() >= 256)
+    {
+        return false;
+    }
+
+    packet[1] = static_cast<std::uint8_t>(packet.size());
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendInstantMove(Connection* connection,
+                                    std::uint8_t targetX,
+                                    std::uint8_t targetY)
+{
+    return SendXorPacket(
+        connection,
+        {0xC1, 0x05, 0x15, targetX, targetY});
+}
+
+bool DirectSession::SendAnimation(Connection* connection,
+                                  std::uint8_t rotation,
+                                  std::uint8_t animationNumber)
+{
+    return SendXorPacket(
+        connection,
+        {0xC1, 0x05, 0x18, rotation, animationNumber});
+}
+
+bool DirectSession::SendHit(Connection* connection,
+                            std::uint16_t targetId,
+                            std::uint8_t attackAnimation,
+                            std::uint8_t lookingDirection)
+{
+    return SendXorPacket(
+        connection,
+        {
+            0xC1,
+            0x07,
+            0x11,
+            static_cast<std::uint8_t>((targetId >> 8) & 0xFF),
+            static_cast<std::uint8_t>(targetId & 0xFF),
+            attackAnimation,
+            lookingDirection
+        });
+}
+
+bool DirectSession::SendTargetedSkill(Connection* connection,
+                                      std::uint16_t skillId,
+                                      std::uint16_t targetId)
+{
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1,
+            0x07,
+            0x19,
+            static_cast<std::uint8_t>((skillId >> 8) & 0xFF),
+            static_cast<std::uint8_t>(skillId & 0xFF),
+            static_cast<std::uint8_t>((targetId >> 8) & 0xFF),
+            static_cast<std::uint8_t>(targetId & 0xFF)
+        });
+}
+
+bool DirectSession::SendPickupItem(Connection* connection,
+                                   std::uint16_t itemId)
+{
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1,
+            0x05,
+            0x22,
+            static_cast<std::uint8_t>((itemId >> 8) & 0xFF),
+            static_cast<std::uint8_t>(itemId & 0xFF)
+        });
+}
+
+bool DirectSession::SendDropItem(Connection* connection,
+                                 std::uint8_t targetX,
+                                 std::uint8_t targetY,
+                                 std::uint8_t itemSlot)
+{
+    return SendEncryptedPacket(
+        connection,
+        {0xC1, 0x06, 0x23, targetX, targetY, itemSlot});
 }
 
 bool DirectSession::SendLogin(Connection* connection,
