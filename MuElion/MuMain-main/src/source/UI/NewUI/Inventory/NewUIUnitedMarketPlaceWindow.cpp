@@ -15,6 +15,7 @@
 
 #include "Audio/DSPlaySound.h"
 #include "World/MapInfra/MapManager.h"
+#include "Network/Season52/Season52Direct.h"
 
 using namespace SEASON3B;
 
@@ -225,7 +226,14 @@ void CNewUIUnitedMarketPlaceWindow::OpeningProcess()
 
 void CNewUIUnitedMarketPlaceWindow::ClosingProcess()
 {
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
 }
 
 float CNewUIUnitedMarketPlaceWindow::GetLayerDepth()
@@ -285,7 +293,15 @@ bool CNewUIUnitedMarketPlaceWindow::BtnProcess()
     {
         LoadingWorld = 9999999;
 
-        SocketClient->ToGameServer()->SendEnterMarketPlaceRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendEnterUnitedMarketPlaceRequest(
+                SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendEnterMarketPlaceRequest();
+        }
         m_bIsEnterButtonLocked = true;
 
         return true;
