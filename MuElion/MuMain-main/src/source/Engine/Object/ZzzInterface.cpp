@@ -2372,7 +2372,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                     abs((c->PositionY) - (Hero->PositionY)) <= 1)
                 {
                     GuildPlayerKey = c->Key;
-                    SocketClient->ToGameServer()->SendGuildJoinRequest(c->Key);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendGuildJoinRequest(
+                            SocketClient, static_cast<std::uint16_t>(c->Key));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendGuildJoinRequest(c->Key);
+                    }
                     wchar_t Text[100];
                     mu_swprintf(Text, I18N::Game::YouHaveRequestedSToJoinYourGuild, c->ID);
                     g_pSystemLogBox->AddText(Text, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2392,7 +2400,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                     if (abs(Dir1 - Dir2) == 4)
                     {
                         GuildPlayerKey = c->Key;
+                        if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendGuildJoinRequest(
+                            SocketClient, static_cast<std::uint16_t>(c->Key));
+                    }
+                    else
+                    {
                         SocketClient->ToGameServer()->SendGuildJoinRequest(c->Key);
+                    }
                         wchar_t Text[100];
                         mu_swprintf(Text, I18N::Game::YouHaveRequestedSToJoinYourGuild, c->ID);
                         g_pSystemLogBox->AddText(Text, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2428,19 +2444,55 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                     if (!wcscmp(Text, I18N::Game::Alliance1354) || !wcsicmp(Text, L"/union"))
                     {
                         //SendRequestGuildRelationShip(0x01, 0x01, HIBYTE(CharactersClient[SelectedCharacter].Key), LOBYTE(CharactersClient[SelectedCharacter].Key));
-                        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Alliance, GuildRequestType::Join, CharactersClient[SelectedCharacter].Key);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Alliance),
+                                static_cast<std::uint8_t>(GuildRequestType::Join),
+                                static_cast<std::uint16_t>(CharactersClient[SelectedCharacter].Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Alliance, GuildRequestType::Join, CharactersClient[SelectedCharacter].Key);
+                        }
                     }
                     else if (!wcscmp(Text, I18N::Game::Hostilities) || !wcsicmp(Text, L"/rival"))
                     {
                         //SendRequestGuildRelationShip(0x02, 0x01, HIBYTE(CharactersClient[SelectedCharacter].Key), LOBYTE(CharactersClient[SelectedCharacter].Key));
-                        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Join, CharactersClient[SelectedCharacter].Key);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+                                static_cast<std::uint8_t>(GuildRequestType::Join),
+                                static_cast<std::uint16_t>(CharactersClient[SelectedCharacter].Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Hostility, GuildRequestType::Join, CharactersClient[SelectedCharacter].Key);
+                        }
                     }
                     else
                     {
                         SetAction(&Hero->Object, PLAYER_RESPECT1);
                         SendRequestAction(Hero->Object, AT_RESPECT1);
                         //SendRequestGuildRelationShip(0x02, 0x02, HIBYTE(CharactersClient[SelectedCharacter].Key), LOBYTE(CharactersClient[SelectedCharacter].Key));
-                        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Leave, CharactersClient[SelectedCharacter].Key);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+                                static_cast<std::uint8_t>(GuildRequestType::Leave),
+                                static_cast<std::uint16_t>(CharactersClient[SelectedCharacter].Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Hostility, GuildRequestType::Leave, CharactersClient[SelectedCharacter].Key);
+                        }
                     }
                 }
             }
@@ -2459,19 +2511,55 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                         if (!wcscmp(Text, I18N::Game::Alliance1354) || !wcsicmp(Text, L"/union"))
                         {
                             //SendRequestGuildRelationShip(0x01, 0x01, HIBYTE(c->Key), LOBYTE(c->Key));
-                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Alliance, GuildRequestType::Join, c->Key);
+                            if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Alliance),
+                                static_cast<std::uint8_t>(GuildRequestType::Join),
+                                static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Alliance, GuildRequestType::Join, c->Key);
+                        }
                         }
                         else if (!wcscmp(Text, I18N::Game::Hostilities) || !wcsicmp(Text, L"/rival"))
                         {
                             //SendRequestGuildRelationShip(0x02, 0x01, HIBYTE(c->Key), LOBYTE(c->Key));
-                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Join, c->Key);
+                            if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+                                static_cast<std::uint8_t>(GuildRequestType::Join),
+                                static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Hostility, GuildRequestType::Join, c->Key);
+                        }
                         }
                         else
                         {
                             SetAction(&Hero->Object, PLAYER_RESPECT1);
                             SendRequestAction(Hero->Object, AT_RESPECT1);
                             //SendRequestGuildRelationShip(0x02, 0x02, HIBYTE(c->Key), LOBYTE(c->Key));
-                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Leave, c->Key);
+                            if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+                                static_cast<std::uint8_t>(GuildRequestType::Leave),
+                                static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Hostility, GuildRequestType::Leave, c->Key);
+                        }
                         }
                         break;
                     }
