@@ -9417,6 +9417,35 @@ void ReceiveGuildAssign(const BYTE* ReceiveBuffer)
     g_pSystemLogBox->AddText(szTemp, SEASON3B::TYPE_SYSTEM_MESSAGE);
 }
 
+void ReceiveGuildRelationShipSeason52(std::span<const BYTE> receiveBuffer)
+{
+    // Louis 5.2 PMSG_GUILD_RELATIONSHIP:
+    // C1 size E5 relationshipType requestType targetH targetL
+    constexpr std::size_t kPacketSize = 7;
+    if (receiveBuffer.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated E5 guild relationship packet: got={} expected>={}",
+            receiveBuffer.size(), kPacketSize);
+        return;
+    }
+
+    const auto relationshipType =
+        static_cast<GuildRelationshipType>(receiveBuffer[3]);
+    const auto requestType =
+        static_cast<GuildRequestType>(receiveBuffer[4]);
+
+    g_pGuildInfoWindow->ReceiveGuildRelationShip(
+        relationshipType,
+        requestType,
+        receiveBuffer[5],
+        receiveBuffer[6]);
+
+    mu::log::Get("network")->info(
+        "S52: E5 guild relationship type={} request={} target={:02X}{:02X}",
+        receiveBuffer[3], receiveBuffer[4], receiveBuffer[5], receiveBuffer[6]);
+}
+
 void ReceiveGuildRelationShip(const BYTE* ReceiveBuffer)
 {
     auto pData = (LPPMSG_GUILD_RELATIONSHIP)ReceiveBuffer;
@@ -15641,7 +15670,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveGuildAssign(ReceiveBuffer);
         break;
     case 0xE5:
-        ReceiveGuildRelationShip(ReceiveBuffer);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveGuildRelationShipSeason52(received_span);
+        }
+        else
+        {
+            ReceiveGuildRelationShip(ReceiveBuffer);
+        }
         break;
     case 0xE6:
         ReceiveGuildRelationShipResult(ReceiveBuffer);
