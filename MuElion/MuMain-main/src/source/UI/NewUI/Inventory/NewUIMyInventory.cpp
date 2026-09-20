@@ -136,13 +136,37 @@ bool CNewUIMyInventory::EquipItem(int iIndex, std::span<const BYTE> pbyItemPacke
 
     if (pTempItem->Type == ITEM_DARK_HORSE_ITEM)
     {
-        SocketClient->ToGameServer()->SendPetInfoRequest(PetType::DarkHorse, StorageType::Inventory, iIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPetInfoRequest(
+                SocketClient,
+                static_cast<std::uint8_t>(PetType::DarkHorse),
+                static_cast<std::uint8_t>(StorageType::Inventory),
+                static_cast<std::uint8_t>(iIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPetInfoRequest(
+                PetType::DarkHorse, StorageType::Inventory, iIndex);
+        }
     }
 
     if (pTempItem->Type == ITEM_DARK_RAVEN_ITEM)
     {
         CreatePetDarkSpirit(Hero);
-        SocketClient->ToGameServer()->SendPetInfoRequest(PetType::DarkRaven, StorageType::Inventory, iIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPetInfoRequest(
+                SocketClient,
+                static_cast<std::uint8_t>(PetType::DarkRaven),
+                static_cast<std::uint8_t>(StorageType::Inventory),
+                static_cast<std::uint8_t>(iIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPetInfoRequest(
+                PetType::DarkRaven, StorageType::Inventory, iIndex);
+        }
     }
 
     pTempItem->lineal_pos = iIndex;
