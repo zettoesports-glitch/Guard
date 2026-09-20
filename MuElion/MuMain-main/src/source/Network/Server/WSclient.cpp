@@ -706,11 +706,16 @@ void ReceiveChangePassword(const BYTE* ReceiveBuffer)
     }
 }
 
+BOOL ReceiveJoinMapServer(std::span<const BYTE> ReceiveBuffer);
+
 namespace
 {
 constexpr std::size_t kSeason52CharacterListHeaderSize = 7;
-constexpr std::size_t kSeason52CharacterListEntrySize = 33;
-constexpr std::size_t kSeason52JoinMapPacketSize = 66;
+// EX502 is built with MSVC default struct packing. PMSG_CHARACTER_LIST has
+// one alignment byte before WORD Level, therefore sizeof(...) is 34.
+constexpr std::size_t kSeason52CharacterListEntrySize = 34;
+// PMSG_CHARACTER_INFO_SEND has two padding bytes before DWORD Money.
+constexpr std::size_t kSeason52JoinMapPacketSize = 68;
 
 WORD ReadSeason52Word(const BYTE* data)
 {
@@ -832,11 +837,11 @@ void ReceiveCharacterListSeason52(const BYTE* ReceiveBuffer, int Size)
             return;
         }
 
-        const WORD level = ReadSeason52Word(entry + 11);
-        const BYTE ctlCode = entry[13];
-        const BYTE classRaw = entry[14];
-        BYTE* equipment = const_cast<BYTE*>(entry + 15);
-        const BYTE guildStatus = entry[32];
+        const WORD level = ReadSeason52Word(entry + 12);
+        const BYTE ctlCode = entry[14];
+        const BYTE classRaw = entry[15];
+        BYTE* equipment = const_cast<BYTE*>(entry + 16);
+        const BYTE guildStatus = entry[33];
 
         const CLASS_TYPE characterClass = DecodeSeason52Class(classRaw);
 
@@ -918,14 +923,15 @@ BOOL ReceiveJoinMapServerSeason52(const BYTE* ReceiveBuffer, int Size)
     translated.SkillMana = ReadSeason52Word(ReceiveBuffer + 46);
     translated.SkillManaMax = ReadSeason52Word(ReceiveBuffer + 48);
 
-    translated.Gold = ReadSeason52Dword(ReceiveBuffer + 50);
-    translated.PK = ReceiveBuffer[54];
-    translated.CtlCode = ReceiveBuffer[55];
-    translated.AddPoint = static_cast<short>(ReadSeason52Word(ReceiveBuffer + 56));
-    translated.MaxAddPoint = static_cast<short>(ReadSeason52Word(ReceiveBuffer + 58));
-    translated.Charisma = ReadSeason52Word(ReceiveBuffer + 60);
-    translated.wMinusPoint = ReadSeason52Word(ReceiveBuffer + 62);
-    translated.wMaxMinusPoint = ReadSeason52Word(ReceiveBuffer + 64);
+    // Offsets 50-51 are MSVC alignment padding before DWORD Money.
+    translated.Gold = ReadSeason52Dword(ReceiveBuffer + 52);
+    translated.PK = ReceiveBuffer[56];
+    translated.CtlCode = ReceiveBuffer[57];
+    translated.AddPoint = static_cast<short>(ReadSeason52Word(ReceiveBuffer + 58));
+    translated.MaxAddPoint = static_cast<short>(ReadSeason52Word(ReceiveBuffer + 60));
+    translated.Charisma = ReadSeason52Word(ReceiveBuffer + 62);
+    translated.wMinusPoint = ReadSeason52Word(ReceiveBuffer + 64);
+    translated.wMaxMinusPoint = ReadSeason52Word(ReceiveBuffer + 66);
 
     // These fields do not exist in EX502's F3:03. Zero is intentional until
     // their classic follow-up packets are ported.
