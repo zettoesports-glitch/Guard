@@ -925,6 +925,38 @@ void Season52CharacterSelectionPosition(BYTE index, float& x, float& y, float& a
     default: x = 0.0f; y = 0.0f; angle = 0.0f; break;
     }
 }
+bool IsSeason52ClassicPersonalShopSlot(int slot)
+{
+    constexpr int kClassicShopStart = MAX_EQUIPMENT_INDEX + MAX_INVENTORY;
+    constexpr int kClassicShopEnd = kClassicShopStart + MAX_PERSONALSHOP_INVEN;
+    return slot >= kClassicShopStart && slot < kClassicShopEnd;
+}
+
+int Season52ClassicToModernPersonalShopSlot(int classicSlot)
+{
+    constexpr int kClassicShopStart = MAX_EQUIPMENT_INDEX + MAX_INVENTORY;
+    return MAX_MY_INVENTORY_EX_INDEX + (classicSlot - kClassicShopStart);
+}
+
+bool InsertSeason52ClassicPersonalShopItem(
+    int classicSlot, std::span<const BYTE> itemData)
+{
+    if (!IsSeason52ClassicPersonalShopSlot(classicSlot)
+        || g_pMyShopInventory == nullptr)
+    {
+        return false;
+    }
+
+    auto* inventory = g_pMyShopInventory->GetInventoryCtrl();
+    if (inventory == nullptr)
+    {
+        return false;
+    }
+
+    return inventory->AddItemOld(
+        Season52ClassicToModernPersonalShopSlot(classicSlot), itemData);
+}
+
 } // namespace
 
 void ReceiveCharacterListSeason52(const BYTE* ReceiveBuffer, int Size)
@@ -2240,6 +2272,14 @@ BOOL ReceiveInventorySeason52(std::span<const BYTE> ReceiveBuffer)
         else if (IsMainInventorySlot(itemIndex))
         {
             loaded = g_pMyInventory->InsertItemOld(itemIndex, itemData);
+        }
+        else if (IsSeason52ClassicPersonalShopSlot(itemIndex))
+        {
+            // EX502 starts the 8x4 personal-shop area immediately after the
+            // 12 equipment + 64 inventory slots (slot 76). MuElion reserves
+            // 128 extension slots there, so remap the classic shop range to
+            // the modern shop control which starts at MAX_MY_INVENTORY_EX_INDEX.
+            loaded = InsertSeason52ClassicPersonalShopItem(itemIndex, itemData);
         }
         else
         {
@@ -7706,6 +7746,10 @@ BOOL ReceiveEquipmentItemSeason52(std::span<const BYTE> packet)
         {
             g_pStorageInventory->ProcessStorageItemAutoMoveSuccess();
             loaded = g_pMyInventory->InsertItemOld(itemIndex, itemData);
+        }
+        else if (IsSeason52ClassicPersonalShopSlot(itemIndex))
+        {
+            loaded = InsertSeason52ClassicPersonalShopItem(itemIndex, itemData);
         }
 
         if (!loaded)
