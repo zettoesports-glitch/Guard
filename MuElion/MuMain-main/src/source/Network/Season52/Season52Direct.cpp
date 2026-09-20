@@ -1512,6 +1512,52 @@ bool DirectSession::SendVaultClosed(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x03, 0x82});
 }
 
+bool DirectSession::SendStoragePassword(
+    Connection* connection,
+    std::uint8_t type,
+    std::uint16_t password,
+    const wchar_t* authorityCode)
+{
+    // Louis Main 5.2 SendStoragePassword():
+    // C1:83 + type + WORD password + 20-byte authority code, Send(TRUE).
+    std::array<char, PersonalCodeSize + 1> codeUtf8{};
+    if (authorityCode != nullptr)
+    {
+        CMultiLanguage::ConvertToUtf8(
+            codeUtf8.data(),
+            authorityCode,
+            static_cast<int>(codeUtf8.size()));
+    }
+
+    std::vector<std::uint8_t> packet{
+        0xC1, 0x1A, 0x83,
+        type,
+        static_cast<std::uint8_t>(password & 0xFFu),
+        static_cast<std::uint8_t>((password >> 8u) & 0xFFu)
+    };
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(codeUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(codeUtf8.data())
+            + PersonalCodeSize);
+
+    return SendEncryptedPacket(connection, packet);
+}
+
+bool DirectSession::SendLogout(
+    Connection* connection, std::uint8_t flag)
+{
+    // Louis Main 5.2 SendRequestLogOut(): C1:F1:02 + flag, Send(TRUE).
+    return SendEncryptedPacket(
+        connection, {0xC1, 0x05, 0xF1, 0x02, flag});
+}
+
+bool DirectSession::SendResetCharacterPointRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestResetCharacterPoint(): C1:F2:00, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xF2, 0x00});
+}
+
 bool DirectSession::SendGuildJoinRequest(Connection* connection,
                                          std::uint16_t targetId)
 {
