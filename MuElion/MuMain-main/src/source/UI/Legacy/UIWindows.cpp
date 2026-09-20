@@ -23,6 +23,7 @@
 #include "Camera/CameraProjection.h"
 #include "Core/Utilities/Log/ErrorReport.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 
 extern int	 g_iChatInputType;
@@ -94,7 +95,15 @@ void CUIWindowMgr::Reset()
     {
         // for OpenMU the following line is not required.
         // 2 probably means logging out.
-        SocketClient->ToGameServer()->SendSetFriendOnlineState(2);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendSetFriendOnlineState(
+                SocketClient, 2);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendSetFriendOnlineState(2);
+        }
     }
 }
 
@@ -134,7 +143,15 @@ DWORD CUIWindowMgr::AddWindow(int iWindowType, int iPos_x, int iPos_y, const wch
             g_pFriendMenu->SetNewMailAlert(FALSE);
             if (IsServerEnable() == FALSE)
             {
-                SocketClient->ToGameServer()->SendFriendListRequest();
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendFriendListRequest(
+                        SocketClient);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendFriendListRequest();
+                }
             }
         }
         else return 0;
@@ -3593,14 +3610,32 @@ BOOL CUIFriendListTabWindow::HandleMessage()
             {
                 break;
             }
-            SocketClient->ToGameServer()->SendFriendAddRequest(MU_C16(text.c_str()));
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendFriendAddRequest(
+                    SocketClient, text.c_str());
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendFriendAddRequest(
+                    MU_C16(text.c_str()));
+            }
         }
         break;
     case UI_MESSAGE_YNRETURN:
         if (m_WorkMessage.m_iParam2 == 1)
         {
             if (GetCurrentSelectedFriend() == NULL) break;
-            SocketClient->ToGameServer()->SendFriendDelete(MU_C16(GetCurrentSelectedFriend()));
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendFriendDeleteRequest(
+                    SocketClient, GetCurrentSelectedFriend());
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendFriendDelete(
+                    MU_C16(GetCurrentSelectedFriend()));
+            }
         }
         break;
     default:
@@ -4864,7 +4899,15 @@ BOOL CUIFriendWindow::HandleMessage()
         {
             if (g_pWindowMgr->GetChatReject() == FALSE)
             {
-                SocketClient->ToGameServer()->SendSetFriendOnlineState(0);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendSetFriendOnlineState(
+                        SocketClient, 0);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendSetFriendOnlineState(0);
+                }
                 g_pWindowMgr->SetChatReject(TRUE);
                 g_pFriendMenu->CloseAllChatWindow();
             }
@@ -4967,7 +5010,15 @@ void CUIFriendWindow::DoMouseActionSub()
                 PlayBuffer(SOUND_CLICK01);
                 if (g_pWindowMgr->GetChatReject() == TRUE)
                 {
-                    SocketClient->ToGameServer()->SendSetFriendOnlineState(1);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendSetFriendOnlineState(
+                            SocketClient, 1);
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendSetFriendOnlineState(1);
+                    }
                     g_pWindowMgr->SetChatReject(FALSE);
                 }
                 else
@@ -5198,7 +5249,16 @@ BOOL CUIQuestionWindow::HandleMessage()
         case 1:
             if (m_dwReturnWindowUIID == -1)
             {
-                SocketClient->ToGameServer()->SendFriendAddResponse(0x01, MU_C16(m_szSaveID));
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendFriendAddResponse(
+                        SocketClient, 0x01, m_szSaveID);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendFriendAddResponse(
+                        0x01, MU_C16(m_szSaveID));
+                }
             }
             else if (m_dwReturnWindowUIID != 0)
             {
@@ -5210,7 +5270,16 @@ BOOL CUIQuestionWindow::HandleMessage()
             if (m_iDialogType != 0) break;
             if (m_dwReturnWindowUIID == -1)
             {
-                SocketClient->ToGameServer()->SendFriendAddResponse(0x00, MU_C16(m_szSaveID));
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendFriendAddResponse(
+                        SocketClient, 0x00, m_szSaveID);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendFriendAddResponse(
+                        0x00, MU_C16(m_szSaveID));
+                }
             }
             else if (m_dwReturnWindowUIID != 0)
             {
