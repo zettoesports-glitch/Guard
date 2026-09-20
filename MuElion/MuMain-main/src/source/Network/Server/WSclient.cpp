@@ -11467,6 +11467,284 @@ void ReceiveDestroyPersonalShop(const BYTE* ReceiveBuffer)
     }
 }
 
+void ReceivePersonalShopItemListSeason52(std::span<const BYTE> packet)
+{
+    // EX502 GETPSHOPITEMLIST_HEADERINFO:
+    // C2 sizeH sizeL 3F sub result indexH indexL id[10] title[36] count
+    constexpr std::size_t kHeaderSize = 55;
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 1 + kItemSize + 4; // slot + item + INT price
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 3F:05 personal-shop list too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE result = packet[5];
+    const BYTE indexH = packet[6];
+    const BYTE indexL = packet[7];
+    const BYTE count = packet[54];
+
+    if (result == 0x01)
+    {
+        const std::size_t required =
+            kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+        if (packet.size() < required)
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 3F:05 shop list: got={} expected>={} count={}",
+                packet.size(), required, count);
+            return;
+        }
+
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE))
+        {
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_STORAGE);
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_STORAGE_EXT);
+        }
+
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_INVENTORY))
+        {
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);
+        }
+
+        g_PersonalShopSeller.Initialize();
+
+        std::array<char, MAX_SHOPTITLE + 1> shopTitleUtf8{};
+        memcpy(shopTitleUtf8.data(), packet.data() + 18, MAX_SHOPTITLE);
+
+        wchar_t shopName[MAX_SHOPTITLE + 1]{};
+        CMultiLanguage::ConvertFromUtf8(
+            shopName, shopTitleUtf8.data(), MAX_SHOPTITLE);
+        g_pPurchaseShopInventory->ChangeTitleText(shopName);
+        g_pPurchaseShopInventory->GetInventoryCtrl()->RemoveAllItems();
+
+        g_pNewUISystem->Show(SEASON3B::INTERFACE_PURCHASESHOP_INVENTORY);
+        g_pNewUISystem->Show(SEASON3B::INTERFACE_INVENTORY);
+        g_pMyInventory->ChangeMyShopButtonStateOpen();
+
+        RemoveAllPerosnalItemPrice(PSHOPWNDTYPE_PURCHASE);
+
+        std::size_t offset = kHeaderSize;
+        for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+        {
+            const int classicSlot = packet[offset];
+            const auto itemData = packet.subspan(offset + 1, kItemSize);
+            const auto price = static_cast<std::int32_t>(
+                ReadSeason52Dword(packet.data() + offset + 1 + kItemSize));
+
+            if (!IsSeason52ClassicPersonalShopSlot(classicSlot))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: 3F:05 invalid classic shop slot {}", classicSlot);
+                continue;
+            }
+
+            const int modernSlot =
+                Season52ClassicToModernPersonalShopSlot(classicSlot);
+
+            if (price > 0)
+            {
+                if (!g_pPurchaseShopInventory->InsertItemOld(modernSlot, itemData))
+                {
+                    mu::log::Get("network")->warn(
+                        "S52: failed to materialize shop item slot {} -> {}",
+                        classicSlot, modernSlot);
+                    continue;
+                }
+
+                AddPersonalItemPrice(
+                    modernSlot, price, PSHOPWNDTYPE_PURCHASE);
+            }
+            else
+            {
+                mu::log::Get("network")->error(
+                    "S52: 3F:05 shop item has invalid price {} in slot {}",
+                    price, classicSlot);
+
+                g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);
+                g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYSHOP_INVENTORY);
+                g_pNewUISystem->Hide(SEASON3B::INTERFACE_PURCHASESHOP_INVENTORY);
+                return;
+            }
+        }
+
+        const int key =
+            (static_cast<int>(indexH) << 8) | static_cast<int>(indexL);
+        g_pPurchaseShopInventory->ChangeShopCharacterIndex(
+            FindCharacterIndex(key));
+    }
+    else if (result == 0x03)
+    {
+        g_pSystemLogBox->AddText(
+            I18N::Game::StoreIsNotOpenAtTheMoment,
+            SEASON3B::TYPE_ERROR_MESSAGE);
+    }
+    else
+    {
+        mu::log::Get("network")->warn(
+            "S52: 3F:05 personal-shop list failed result={}", result);
+    }
+
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x05 [ReceivePersonalShopItemListSeason52]");
+}
+
+void ReceiveRefreshItemListSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 55;
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 1 + kItemSize + 4;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 3F:13 personal-shop refresh too small ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    const BYTE result = packet[5];
+    const BYTE count = packet[54];
+
+    if (result != 0x01)
+    {
+        mu::log::Get("network")->warn(
+            "S52: 3F:13 personal-shop refresh failed result={}", result);
+        return;
+    }
+
+    const std::size_t required =
+        kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+    if (packet.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 3F:13 shop refresh: got={} expected>={} count={}",
+            packet.size(), required, count);
+        return;
+    }
+
+    // Louis EX502 refreshes the currently viewed purchase shop here.
+    if (g_IsPurchaseShop != PSHOPWNDTYPE_PURCHASE)
+    {
+        return;
+    }
+
+    g_pPurchaseShopInventory->GetInventoryCtrl()->RemoveAllItems();
+
+    std::size_t offset = kHeaderSize;
+    for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        const int classicSlot = packet[offset];
+        const auto itemData = packet.subspan(offset + 1, kItemSize);
+        const auto price = static_cast<std::int32_t>(
+            ReadSeason52Dword(packet.data() + offset + 1 + kItemSize));
+
+        if (!IsSeason52ClassicPersonalShopSlot(classicSlot))
+        {
+            mu::log::Get("network")->warn(
+                "S52: 3F:13 invalid classic shop slot {}", classicSlot);
+            continue;
+        }
+
+        const int modernSlot =
+            Season52ClassicToModernPersonalShopSlot(classicSlot);
+
+        if (g_pPurchaseShopInventory->InsertItemOld(modernSlot, itemData))
+        {
+            AddPersonalItemPrice(
+                modernSlot, price, PSHOPWNDTYPE_PURCHASE);
+        }
+    }
+}
+
+void ReceivePurchaseItemSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PURCHASEITEM_RESULTINFO:
+    // C1 size 3F sub result sellerH sellerL item[12] destinationSlot
+    constexpr std::size_t kPacketSize = 20;
+    constexpr std::size_t kItemOffset = 7;
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kDestinationOffset = 19;
+
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 3F:06 purchase result ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE result = packet[4];
+
+    if (result == 0x01)
+    {
+        if (g_pNewUISystem->IsVisible(
+                SEASON3B::INTERFACE_PURCHASESHOP_INVENTORY))
+        {
+            const int selectedSlot =
+                g_pPurchaseShopInventory->GetSourceIndex();
+            RemovePersonalItemPrice(
+                selectedSlot, PSHOPWNDTYPE_PURCHASE);
+            g_pPurchaseShopInventory->DeleteItem(selectedSlot);
+        }
+        else
+        {
+            RemoveAllPerosnalItemPrice(PSHOPWNDTYPE_PURCHASE);
+        }
+
+        const int itemIndex = packet[kDestinationOffset];
+        const auto itemData = packet.subspan(kItemOffset, kItemSize);
+
+        if (IsMainInventorySlot(itemIndex))
+        {
+            if (!g_pMyInventory->InsertItemOld(itemIndex, itemData))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: failed to insert purchased item into slot {}",
+                    itemIndex);
+            }
+        }
+        else
+        {
+            mu::log::Get("network")->warn(
+                "S52: 3F:06 returned unsupported inventory slot {}",
+                itemIndex);
+        }
+    }
+    else if (result == 0x06)
+    {
+        g_pSystemLogBox->AddText(
+            I18N::Game::FailedToPurchasePleaseTryAgain,
+            SEASON3B::TYPE_ERROR_MESSAGE);
+        g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYSHOP_INVENTORY);
+        g_pNewUISystem->Hide(SEASON3B::INTERFACE_PURCHASESHOP_INVENTORY);
+    }
+    else
+    {
+        switch (result)
+        {
+        case 0x07:
+            g_pSystemLogBox->AddText(
+                I18N::Game::YouAreShortOfZen,
+                SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case 0x08:
+            g_pSystemLogBox->AddText(
+                I18N::Game::InventoryIsFull,
+                SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        default:
+            mu::log::Get("network")->warn(
+                "S52: 3F:06 purchase failed result={}", result);
+            break;
+        }
+
+        SEASON3B::CNewUIInventoryCtrl::BackupPickedItem();
+    }
+}
+
 void ReceivePersonalShopItemList(std::span<const BYTE> ReceiveBuffer)
 {
     auto Header = safe_cast<GETPSHOPITEMLIST_HEADERINFO>(ReceiveBuffer);
@@ -16751,10 +17029,24 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             ReceiveDestroyPersonalShop(ReceiveBuffer);
             break;
         case 0x05:
-            ReceivePersonalShopItemList(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceivePersonalShopItemListSeason52(received_span);
+            }
+            else
+            {
+                ReceivePersonalShopItemList(received_span);
+            }
             break;
         case 0x06:
-            ReceivePurchaseItem(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceivePurchaseItemSeason52(received_span);
+            }
+            else
+            {
+                ReceivePurchaseItem(received_span);
+            }
             break;
         case 0x08:
             NotifySoldItem(ReceiveBuffer);
@@ -16766,7 +17058,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             NotifyClosePersonalShop(ReceiveBuffer);
             break;
         case 0x13:
-            ReceiveRefreshItemList(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveRefreshItemListSeason52(received_span);
+            }
+            else
+            {
+                ReceiveRefreshItemList(received_span);
+            }
             break;
         }
     }
