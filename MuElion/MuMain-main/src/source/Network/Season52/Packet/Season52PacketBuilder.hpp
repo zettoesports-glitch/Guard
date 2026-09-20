@@ -29,6 +29,19 @@ std::vector<std::uint8_t> BuildDeleteCharacterRequest(std::string_view name,
 std::vector<std::uint8_t> BuildSelectCharacterRequest(std::string_view name);
 std::vector<std::uint8_t> BuildFinishLoadingRequest();
 
+bool BuildMapServerMoveAuthRequest(
+                       std::string_view account,
+                       std::string_view character,
+                       std::uint32_t authCode1,
+                       std::uint32_t authCode2,
+                       std::uint32_t authCode3,
+                       std::uint32_t authCode4,
+                       std::uint32_t tickCount,
+                       const std::array<std::uint8_t, ProtocolVersionSize>& version,
+                       const std::array<std::uint8_t, ProtocolSerialSize>& serial,
+                       Season52Crypto& crypto,
+                       std::vector<std::uint8_t>& wirePacket);
+
 bool BuildLoginRequest(std::string_view account,
                        std::string_view password,
                        std::uint32_t tickCount,
