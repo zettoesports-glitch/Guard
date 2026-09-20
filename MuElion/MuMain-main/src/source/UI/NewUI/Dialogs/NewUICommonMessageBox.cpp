@@ -1623,7 +1623,18 @@ bool SEASON3B::CInfinityArrowCancelMsgBoxLayout::SetLayout()
 CALLBACK_RESULT SEASON3B::CInfinityArrowCancelMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     extern int g_iCancelSkillTarget;
-    SocketClient->ToGameServer()->SendMagicEffectCancelRequest(g_iCancelSkillTarget, HeroKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendMagicEffectCancelRequest(
+            SocketClient,
+            static_cast<std::uint16_t>(g_iCancelSkillTarget),
+            static_cast<std::uint16_t>(HeroKey));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendMagicEffectCancelRequest(
+            g_iCancelSkillTarget, HeroKey);
+    }
     g_iCancelSkillTarget = 0;
 
     PlayBuffer(SOUND_CLICK01);
@@ -1669,7 +1680,18 @@ bool SEASON3B::CBuffSwellOfMPCancelMsgBoxLayOut::SetLayout()
 CALLBACK_RESULT SEASON3B::CBuffSwellOfMPCancelMsgBoxLayOut::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     extern int g_iCancelSkillTarget;
-    SocketClient->ToGameServer()->SendMagicEffectCancelRequest(g_iCancelSkillTarget, HeroKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendMagicEffectCancelRequest(
+            SocketClient,
+            static_cast<std::uint16_t>(g_iCancelSkillTarget),
+            static_cast<std::uint16_t>(HeroKey));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendMagicEffectCancelRequest(
+            g_iCancelSkillTarget, HeroKey);
+    }
     g_iCancelSkillTarget = 0;
 
     PlayBuffer(SOUND_CLICK01);
@@ -1992,7 +2014,20 @@ bool  SEASON3B::CLuckyItemMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CLuckyItemMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendChaosMachineMixRequest(static_cast<ChaosMachineMixType>(g_pLuckyItemWnd->SetActAction()), 0);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendChaosMachineMixRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(g_pLuckyItemWnd->SetActAction()),
+            0);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendChaosMachineMixRequest(
+            static_cast<ChaosMachineMixType>(
+                g_pLuckyItemWnd->SetActAction()),
+            0);
+    }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -2045,9 +2080,19 @@ bool  SEASON3B::CMixCheckMsgBoxLayout::SetLayout()
 CALLBACK_RESULT SEASON3B::CMixCheckMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_REQUESTED);
-    SocketClient->ToGameServer()->SendChaosMachineMixRequest(
-        static_cast<ChaosMachineMixType>(g_MixRecipeMgr.GetCurMixID()),
-        g_MixRecipeMgr.GetMixSubType());
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendChaosMachineMixRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(g_MixRecipeMgr.GetCurMixID()),
+            static_cast<std::uint8_t>(g_MixRecipeMgr.GetMixSubType()));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendChaosMachineMixRequest(
+            static_cast<ChaosMachineMixType>(g_MixRecipeMgr.GetCurMixID()),
+            g_MixRecipeMgr.GetMixSubType());
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2427,7 +2472,15 @@ bool SEASON3B::CSiegeGiveUpMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CSiegeGiveUpMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCastleSiegeUnregisterRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCastleSiegeUnregisterRequest(
+            SocketClient, 0x01);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCastleSiegeUnregisterRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
