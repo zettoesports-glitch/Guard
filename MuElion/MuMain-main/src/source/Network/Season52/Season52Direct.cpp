@@ -255,7 +255,8 @@ bool DirectSession::SendXorPacket(
 
 bool DirectSession::SendEncryptedPacket(
     Connection* connection,
-    const std::vector<std::uint8_t>& canonicalPacket)
+    const std::vector<std::uint8_t>& canonicalPacket,
+    bool forceWide)
 {
     if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
     {
@@ -263,10 +264,12 @@ bool DirectSession::SendEncryptedPacket(
     }
 
     std::vector<std::uint8_t> wire;
-    if (!crypto_.Encode(
-            canonicalPacket.data(),
-            canonicalPacket.size(),
-            wire))
+    const bool encoded = forceWide
+        ? crypto_.EncodeForcedWide(
+              canonicalPacket.data(), canonicalPacket.size(), wire)
+        : crypto_.Encode(
+              canonicalPacket.data(), canonicalPacket.size(), wire);
+    if (!encoded)
     {
         mu::log::Get("network")->error(
             "S52: failed to encrypt outgoing packet head=0x{:02X}",
@@ -855,6 +858,154 @@ bool DirectSession::SendFriendDeleteRequest(
         packet.end(),
         reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
         reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendLetterSendRequest(
+    Connection* connection,
+    std::uint32_t windowUiId,
+    const wchar_t* recipient,
+    const wchar_t* subject,
+    std::uint8_t photoDir,
+    std::uint8_t photoAction,
+    const wchar_t* memo)
+{
+    if (recipient == nullptr || subject == nullptr || memo == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    std::array<char, MAX_LETTER_TITLE_LENGTH + 1> subjectUtf8{};
+    std::array<char, MAX_LETTERTEXT_LENGTH * 4 + 1> memoUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), recipient, static_cast<int>(nameUtf8.size()));
+    CMultiLanguage::ConvertToUtf8(
+        subjectUtf8.data(), subject, static_cast<int>(subjectUtf8.size()));
+    CMultiLanguage::ConvertToUtf8(
+        memoUtf8.data(), memo, static_cast<int>(memoUtf8.size()));
+
+    std::size_t memoSize = 0;
+    while (memoSize < MAX_LETTERTEXT_LENGTH && memoUtf8[memoSize] != '\0')
+    {
+        ++memoSize;
+    }
+
+    const std::size_t packetSize =
+        4u + 4u + CharacterNameSize + MAX_LETTER_TITLE_LENGTH
+        + 1u + 1u + 2u + memoSize;
+    if (packetSize > 0xFFFFu)
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> packet;
+    packet.reserve(packetSize);
+    packet.push_back(0xC2);
+    packet.push_back(static_cast<std::uint8_t>((packetSize >> 8u) & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>(packetSize & 0xFFu));
+    packet.push_back(0xC5);
+    packet.push_back(static_cast<std::uint8_t>(windowUiId & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((windowUiId >> 8u) & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((windowUiId >> 16u) & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((windowUiId >> 24u) & 0xFFu));
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(subjectUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(subjectUtf8.data()) + MAX_LETTER_TITLE_LENGTH);
+    packet.push_back(photoDir);
+    packet.push_back(photoAction);
+    packet.push_back(static_cast<std::uint8_t>(memoSize & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((memoSize >> 8u) & 0xFFu));
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(memoUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(memoUtf8.data()) + memoSize);
+
+    // Louis: Send(TRUE, TRUE) => SimpleModulus + forced C4.
+    return SendEncryptedPacket(connection, packet, true);
+}
+
+bool DirectSession::SendLetterReadRequest(
+    Connection* connection, std::uint16_t letterId)
+{
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x06, 0xC7, 0x00,
+            static_cast<std::uint8_t>(letterId & 0xFFu),
+            static_cast<std::uint8_t>((letterId >> 8u) & 0xFFu)
+        });
+}
+
+bool DirectSession::SendLetterDeleteRequest(
+    Connection* connection, std::uint16_t letterId)
+{
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x06, 0xC8, 0x00,
+            static_cast<std::uint8_t>(letterId & 0xFFu),
+            static_cast<std::uint8_t>((letterId >> 8u) & 0xFFu)
+        });
+}
+
+bool DirectSession::SendLetterListRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x03, 0xC9});
+}
+
+bool DirectSession::SendChatRoomCreateRequest(
+    Connection* connection, const wchar_t* playerName)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x0D, 0xCA};
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendChatRoomInvitationRequest(
+    Connection* connection,
+    const wchar_t* playerName,
+    std::uint16_t roomNumber,
+    std::uint32_t windowUiId)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x14, 0xCB};
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    packet.push_back(0x00);
+    packet.push_back(static_cast<std::uint8_t>(roomNumber & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((roomNumber >> 8u) & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>(windowUiId & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((windowUiId >> 8u) & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((windowUiId >> 16u) & 0xFFu));
+    packet.push_back(static_cast<std::uint8_t>((windowUiId >> 24u) & 0xFFu));
     return SendXorPacket(connection, std::move(packet));
 }
 
