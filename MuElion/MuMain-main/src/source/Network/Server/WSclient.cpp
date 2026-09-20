@@ -6804,6 +6804,69 @@ void ReceiveCreateMoney(std::span<const BYTE> ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x20 [ReceiveCreateMoney]");
 }
 
+void ReceiveCreateItemViewportSeason52(std::span<const BYTE> ReceiveBuffer)
+{
+    constexpr std::size_t kHeaderSize = 5; // C2 sizeH sizeL 20 count
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 2 + 2 + kItemSize;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x20 item viewport packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return;
+    }
+
+    const BYTE count = ReceiveBuffer[4];
+    const std::size_t required =
+        kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+    if (ReceiveBuffer.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x20 item viewport: got={} expected>={} count={}",
+            ReceiveBuffer.size(), required, count);
+        return;
+    }
+
+    std::size_t offset = kHeaderSize;
+    for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        const BYTE* entry = ReceiveBuffer.data() + offset;
+        int key = (static_cast<int>(entry[0]) << 8) + entry[1];
+        const bool createFlag = (key & 0x8000) != 0;
+        key &= 0x7FFF;
+
+        if (key < 0 || key >= MAX_ITEMS)
+        {
+            mu::log::Get("network")->warn(
+                "S52: ignoring 0x20 item with invalid key {}", key);
+            continue;
+        }
+
+        const BYTE positionX = entry[2];
+        const BYTE positionY = entry[3];
+        const auto itemData = ReceiveBuffer.subspan(offset + 4, kItemSize);
+        const auto params = ParseItemDataOld(itemData);
+
+        vec3_t position{};
+        position[0] =
+            (static_cast<float>(positionX) + 0.5f) * TERRAIN_SCALE;
+        position[1] =
+            (static_cast<float>(positionY) + 0.5f) * TERRAIN_SCALE;
+
+        CreateItemDrop(&Items[key], params, position, createFlag);
+        MUHelper::g_MuHelper.AddItem(key, {positionX, positionY});
+    }
+
+    mu::log::Get("network")->info(
+        "S52: 0x20 materialized {} classic ground items", count);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0x20 [ReceiveCreateItemViewportSeason52(%d)]",
+        count);
+}
+
 void ReceiveCreateItemViewportExtended(std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PWHEADER_DEFAULT_WORD>(ReceiveBuffer);
@@ -14603,7 +14666,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveDeleteCharacterViewport(ReceiveBuffer);
         break;
     case 0x20: // create item
-        ReceiveCreateItemViewportExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveCreateItemViewportSeason52(received_span);
+        }
+        else
+        {
+            ReceiveCreateItemViewportExtended(received_span);
+        }
         break;
     case 0x2F:
         ReceiveCreateMoney(received_span);
