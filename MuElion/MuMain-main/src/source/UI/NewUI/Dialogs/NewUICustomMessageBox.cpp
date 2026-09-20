@@ -4045,7 +4045,14 @@ CALLBACK_RESULT CCherryBlossomMsgBox::GodCBBtnDown(class CNewUIMessageBoxBase* p
 
 CALLBACK_RESULT CCherryBlossomMsgBox::ExitBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    //	SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
     return CALLBACK_CONTINUE;
@@ -5618,7 +5625,14 @@ CALLBACK_RESULT SEASON3B::CLuckyTradeMenuMsgBox::LuckyItemRefineryBtnDown(class 
 
 CALLBACK_RESULT SEASON3B::CLuckyTradeMenuMsgBox::ExitBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -5807,7 +5821,14 @@ CALLBACK_RESULT SEASON3B::CTrainerMenuMsgBox::ReviveBtnDown(class CNewUIMessageB
 
 CALLBACK_RESULT SEASON3B::CTrainerMenuMsgBox::ExitBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -5976,7 +5997,14 @@ CALLBACK_RESULT SEASON3B::CTrainerRecoverMsgBox::LButtonUp(class CNewUIMessageBo
 CALLBACK_RESULT SEASON3B::CTrainerRecoverMsgBox::RecoverDarkSpiritrBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     npcBreeder::RecoverPet(REVIVAL_DARKSPIRIT);
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -5987,7 +6015,14 @@ CALLBACK_RESULT SEASON3B::CTrainerRecoverMsgBox::RecoverDarkSpiritrBtnDown(class
 CALLBACK_RESULT SEASON3B::CTrainerRecoverMsgBox::RecoverDarkHorseBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     npcBreeder::RecoverPet(REVIVAL_DARKHORSE);
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -5997,7 +6032,14 @@ CALLBACK_RESULT SEASON3B::CTrainerRecoverMsgBox::RecoverDarkHorseBtnDown(class C
 
 CALLBACK_RESULT SEASON3B::CTrainerRecoverMsgBox::ExitBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -6215,7 +6257,14 @@ CALLBACK_RESULT SEASON3B::CElpisMsgBox::RefineBtnDown(class CNewUIMessageBoxBase
 
 CALLBACK_RESULT SEASON3B::CElpisMsgBox::ExitBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -6440,7 +6489,14 @@ CALLBACK_RESULT SEASON3B::CSeedMasterMenuMsgBox::SeedSphereBtnDown(class CNewUIM
 
 CALLBACK_RESULT SEASON3B::CSeedMasterMenuMsgBox::ExitBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -6630,7 +6686,14 @@ CALLBACK_RESULT SEASON3B::CSeedInvestigatorMenuMsgBox::DetachSocketBtnDown(class
 
 CALLBACK_RESULT SEASON3B::CSeedInvestigatorMenuMsgBox::ExitBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -7363,7 +7426,14 @@ CALLBACK_RESULT SEASON3B::CDelgardoMainMenuMsgBox::ExchangeBtnDown(class CNewUIM
 
 CALLBACK_RESULT SEASON3B::CDelgardoMainMenuMsgBox::ExitBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
