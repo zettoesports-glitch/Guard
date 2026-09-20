@@ -1540,11 +1540,33 @@ bool CNewUIMyInventory::EquipmentWindowProcess()
 
                 if (g_pNewUISystem->IsVisible(INTERFACE_NPCSHOP) && g_pNPCShop->IsRepairShop())
                 {
-                    SocketClient->ToGameServer()->SendRepairItemRequest(m_iPointedSlot, 0);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendRepairItem(
+                            SocketClient,
+                            static_cast<std::uint8_t>(m_iPointedSlot),
+                            0);
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendRepairItemRequest(
+                            m_iPointedSlot, 0);
+                    }
                 }
                 else if (m_bRepairEnableLevel == true)
                 {
-                    SocketClient->ToGameServer()->SendRepairItemRequest(m_iPointedSlot, 1);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendRepairItem(
+                            SocketClient,
+                            static_cast<std::uint8_t>(m_iPointedSlot),
+                            1);
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendRepairItemRequest(
+                            m_iPointedSlot, 1);
+                    }
                 }
 
                 return true;
