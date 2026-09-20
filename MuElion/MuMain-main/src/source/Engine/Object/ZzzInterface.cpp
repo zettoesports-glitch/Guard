@@ -1149,7 +1149,25 @@ void SendRequestMagicContinue(int Type, int x, int y, int Angle, BYTE Dest, BYTE
 {
     CurrentSkill = Type;
 
-    SocketClient->ToGameServer()->SendAreaSkill(Type, x, y, Angle, TKey, MakeSkillSerialNumber(pSkillSerial));
+    const auto skillSerial = MakeSkillSerialNumber(pSkillSerial);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendAreaSkill(
+            SocketClient,
+            static_cast<std::uint16_t>(Type),
+            static_cast<std::uint8_t>(x),
+            static_cast<std::uint8_t>(y),
+            static_cast<std::uint8_t>(Angle),
+            Dest,
+            Tpos,
+            TKey,
+            skillSerial);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendAreaSkill(
+            Type, x, y, Angle, TKey, skillSerial);
+    }
 
     g_ConsoleDebug->Write(MCD_SEND, L"0x1E [SendRequestMagicContinue]");
 }
@@ -3423,7 +3441,16 @@ void SendMacroChat(wchar_t* Text)
         //    SendChat(Text);
         //}
 
-        SocketClient->ToGameServer()->SendPublicChatMessage(MU_C16(Hero->ID), MU_C16(Text));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPublicChat(
+                SocketClient, Hero->ID, Text);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPublicChatMessage(
+                MU_C16(Hero->ID), MU_C16(Text));
+        }
 
         LastMacroTime = GetTickCount64();
     }
