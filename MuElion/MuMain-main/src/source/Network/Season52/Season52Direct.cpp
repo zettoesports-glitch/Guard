@@ -624,6 +624,20 @@ bool DirectSession::SendCastleSiegeStatusRequest(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x04, 0xB2, 0x00});
 }
 
+bool DirectSession::SendCastleSiegeRegistrationStateRequest(
+    Connection* connection)
+{
+    // Louis Main 5.2 SendRequestBCRegInfo(): C1:B2:03, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xB2, 0x03});
+}
+
+bool DirectSession::SendCastleSiegeRegisteredGuildsListRequest(
+    Connection* connection)
+{
+    // Louis Main 5.2 SendRequestBCDeclareGuildList(): C1:B4, Send().
+    return SendXorPacket(connection, {0xC1, 0x03, 0xB4});
+}
+
 bool DirectSession::SendItemMove(
     Connection* connection,
     std::uint8_t sourceStorage,
