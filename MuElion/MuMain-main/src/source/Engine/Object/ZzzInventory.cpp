@@ -2,6 +2,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include <array>
 #include "Network/Season52/Season52Direct.h"
 #include "UI/Legacy/UIManager.h"
 #include "Render/Textures/ZzzOpenglUtil.h"
@@ -475,7 +476,39 @@ bool SendRequestEquipmentItem(STORAGE_TYPE iSrcType, int iSrcIndex, ITEM* pItem,
         spareBits = (((BYTE)pItem->Jewel_Of_Harmony_Option) << 4) + ((BYTE)pItem->Jewel_Of_Harmony_OptionLevel);
     }
 
-    SocketClient->ToGameServer()->SendItemMoveRequestExtended(static_cast<ItemStorageKind>(iSrcType), iSrcIndex, static_cast<ItemStorageKind>(iDstType), iDstIndex);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        const std::array<std::uint8_t, 5> socketOptions{
+            pItem->bySocketOption[0],
+            pItem->bySocketOption[1],
+            pItem->bySocketOption[2],
+            pItem->bySocketOption[3],
+            pItem->bySocketOption[4]
+        };
+
+        mu::net::s52::DirectSession::Instance().SendItemMove(
+            SocketClient,
+            static_cast<std::uint8_t>(iSrcType),
+            static_cast<std::uint8_t>(iSrcIndex),
+            static_cast<std::uint8_t>(pItem->Type & 0xFF),
+            static_cast<std::uint8_t>(pItem->Level & 0xFF),
+            static_cast<std::uint8_t>(pItem->Durability),
+            static_cast<std::uint8_t>(pItem->Option1),
+            static_cast<std::uint8_t>(pItem->ExtOption),
+            splitType,
+            spareBits,
+            socketOptions,
+            static_cast<std::uint8_t>(iDstType),
+            static_cast<std::uint8_t>(iDstIndex));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendItemMoveRequestExtended(
+            static_cast<ItemStorageKind>(iSrcType),
+            iSrcIndex,
+            static_cast<ItemStorageKind>(iDstType),
+            iDstIndex);
+    }
 
     g_ConsoleDebug->Write(MCD_SEND, L"0x24 [SendRequestEquipmentItem(%d %d %d %d %d %d %d)]", iSrcIndex, iDstIndex, iSrcType, iDstType, (pItem->Type & 0x1FFF), (BYTE)(pItem->Level), (BYTE)(pItem->Durability));
 
