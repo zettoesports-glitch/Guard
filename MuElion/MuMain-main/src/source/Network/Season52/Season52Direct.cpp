@@ -874,6 +874,28 @@ bool DirectSession::SendPing(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x03, 0x71});
 }
 
+bool DirectSession::SendVaultMoveMoney(Connection* connection,
+                                       std::uint8_t direction,
+                                       std::uint32_t amount)
+{
+    // Louis Main SendRequestStorageGold(): C1:81 + BYTE flag + DWORD gold.
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x08, 0x81, direction,
+            static_cast<std::uint8_t>(amount & 0xFFu),
+            static_cast<std::uint8_t>((amount >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((amount >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((amount >> 24u) & 0xFFu)
+        });
+}
+
+bool DirectSession::SendVaultClosed(Connection* connection)
+{
+    // Louis Main SendRequestStorageExit(): C1:82, spe.Send().
+    return SendXorPacket(connection, {0xC1, 0x03, 0x82});
+}
+
 bool DirectSession::SendLogin(Connection* connection,
                               const wchar_t* account,
                               const wchar_t* password,
