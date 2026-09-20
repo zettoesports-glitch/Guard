@@ -18,6 +18,7 @@
 #include "GameLogic/Items/InventoryUtils.h"
 #include "UI/NewUI/NewUISystem.h"
 #include "Core/Text/TextLineWrap.h"
+#include "Network/Season52/Season52Direct.h"
 
 extern int DeleteIndex;
 extern int AppointStatus;
@@ -4424,7 +4425,14 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueMsgBoxLayout::ProcessOk(class CN
     {
         if (g_pMyShopInventory->IsEnablePersonalShop() == true)
         {
-            SocketClient->ToGameServer()->SendPlayerShopClose();
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopClose(SocketClient);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopClose();
+            }
         }
 
         CNewUIPickedItem* pPickedItem = CNewUIInventoryCtrl::GetPickedItem();
@@ -4440,19 +4448,52 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueMsgBoxLayout::ProcessOk(class CN
 
             if (pPickedItem->GetOwnerInventory() == g_pMyInventory->GetInventoryCtrl())
             {
-                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iInputZen);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                        SocketClient,
+                        static_cast<std::uint8_t>(iSourceIndex),
+                        static_cast<std::uint32_t>(iInputZen));
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                        iSourceIndex, iInputZen);
+                }
 
                 SendRequestEquipmentItem(STORAGE_TYPE::INVENTORY, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
             }
             else if (pPickedItem->GetOwnerInventory() == nullptr)
             {
-                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iInputZen);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                        SocketClient,
+                        static_cast<std::uint8_t>(iSourceIndex),
+                        static_cast<std::uint32_t>(iInputZen));
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                        iSourceIndex, iInputZen);
+                }
 
                 SendRequestEquipmentItem(STORAGE_TYPE::INVENTORY, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
             }
             else if (pPickedItem->GetOwnerInventory() == g_pMyShopInventory->GetInventoryCtrl())
             {
-                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iInputZen);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                        SocketClient,
+                        static_cast<std::uint8_t>(iSourceIndex),
+                        static_cast<std::uint32_t>(iInputZen));
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                        iSourceIndex, iInputZen);
+                }
 
                 SendRequestEquipmentItem(STORAGE_TYPE::MYSHOP, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
             }
@@ -4462,7 +4503,18 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueMsgBoxLayout::ProcessOk(class CN
         else
         {
             iSourceIndex = g_pMyShopInventory->GetSourceIndex();
-            SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iInputZen);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iInputZen));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iInputZen);
+            }
             AddPersonalItemPrice(iSourceIndex, iInputZen, g_IsPurchaseShop);
         }
     }
