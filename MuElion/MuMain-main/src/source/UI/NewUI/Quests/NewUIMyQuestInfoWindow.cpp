@@ -125,8 +125,19 @@ bool SEASON3B::CNewUIMyQuestInfoWindow::BtnProcess()
 
     if (eTabBtnIndex == TAB_CASTLE_TEMPLE)
     {
-        SocketClient->ToGameServer()->SendMiniGameEventCountRequest(MiniGameType::BloodCastle);
-        SocketClient->ToGameServer()->SendMiniGameEventCountRequest(MiniGameType::CursedTemple);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            auto& direct = mu::net::s52::DirectSession::Instance();
+            direct.SendMiniGameEventCountRequest(SocketClient, 2);
+            direct.SendMiniGameEventCountRequest(SocketClient, 3);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendMiniGameEventCountRequest(
+                MiniGameType::BloodCastle);
+            SocketClient->ToGameServer()->SendMiniGameEventCountRequest(
+                MiniGameType::CursedTemple);
+        }
         return true;
     }
 
