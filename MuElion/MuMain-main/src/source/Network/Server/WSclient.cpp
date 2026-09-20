@@ -8389,6 +8389,179 @@ void ReceiveTradeYourInventoryExtended(std::span<const BYTE> ReceiveBuffer)
     g_pTrade->ProcessToReceiveYourItemAdd(Data->Index, itemData);
 }
 
+void ReceiveMixSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 4; // C1/C3 size 86 result
+    constexpr std::size_t kItemSize = 12;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x86 mix packet too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE result = packet[3];
+    std::span<const BYTE> itemData{};
+    if (packet.size() >= kHeaderSize + kItemSize)
+    {
+        itemData = packet.subspan(kHeaderSize, kItemSize);
+    }
+
+    switch (result)
+    {
+    case 0:
+    {
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_LUCKYITEMWND)
+            && g_pLuckyItemWnd->GetAct())
+        {
+            std::span<const BYTE> empty{};
+            g_pLuckyItemWnd->GetResult(0, result, empty);
+            break;
+        }
+
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        wchar_t text[256]{};
+        switch (g_MixRecipeMgr.GetMixInventoryType())
+        {
+        case SEASON3A::MIXTYPE_GOBLIN_NORMAL:
+        case SEASON3A::MIXTYPE_GOBLIN_CHAOSITEM:
+        case SEASON3A::MIXTYPE_GOBLIN_ADD380:
+        case SEASON3A::MIXTYPE_EXTRACT_SEED:
+        case SEASON3A::MIXTYPE_SEED_SPHERE:
+            mu_swprintf(text, I18N::Game::ChaosCombinationHasFailed);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_OSBOURNE:
+            mu_swprintf(text, I18N::Game::SHasFailed, I18N::Game::Refine);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_JERRIDON:
+            mu_swprintf(text, I18N::Game::SHasFailed, I18N::Game::Restore);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_ELPIS:
+            mu_swprintf(text, I18N::Game::SHasFailed2112, I18N::Game::Refine);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_CHAOS_CARD:
+            mu_swprintf(text, I18N::Game::SHasFailed2112, I18N::Game::ChaosCardCombination);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_CHERRYBLOSSOM:
+            mu_swprintf(text, I18N::Game::SHasFailed2112, I18N::Game::CherryBlossomsBranchesAssembly);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        default:
+            break;
+        }
+        break;
+    }
+    case 1:
+    {
+        if (itemData.size() < kItemSize)
+        {
+            mu::log::Get("network")->error(
+                "S52: successful 0x86 mix result missing 12-byte item");
+            return;
+        }
+
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_LUCKYITEMWND)
+            && g_pLuckyItemWnd->GetAct())
+        {
+            g_pLuckyItemWnd->GetResult(1, 0, itemData);
+            break;
+        }
+
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        wchar_t text[256]{};
+        switch (g_MixRecipeMgr.GetMixInventoryType())
+        {
+        case SEASON3A::MIXTYPE_GOBLIN_NORMAL:
+        case SEASON3A::MIXTYPE_GOBLIN_CHAOSITEM:
+        case SEASON3A::MIXTYPE_GOBLIN_ADD380:
+        case SEASON3A::MIXTYPE_EXTRACT_SEED:
+        case SEASON3A::MIXTYPE_SEED_SPHERE:
+            mu_swprintf(text, I18N::Game::ChaosCombinationHasSucceeded);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_OSBOURNE:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::Refine);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_JERRIDON:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::Restore);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_ELPIS:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::Refine);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_CHAOS_CARD:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::ChaosCardCombination);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_CHERRYBLOSSOM:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::CherryBlossomsBranchesAssembly);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        default:
+            break;
+        }
+
+        g_pMixInventory->DeleteAllItems();
+        g_pMixInventory->InsertItemOld(0, itemData);
+        PlayBuffer(SOUND_MIX01);
+        PlayBuffer(SOUND_JEWEL01);
+        break;
+    }
+    case 2:
+    case 0x0B:
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_READY);
+        g_pSystemLogBox->AddText(
+            I18N::Game::NotEnoughZenToCombineItems, SEASON3B::TYPE_ERROR_MESSAGE);
+        break;
+    case 4:
+        SEASON3B::CreateOkMessageBox(
+            I18N::Game::MustBeOverLevel10ToCombineTheInvitationToDevilSquare);
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        break;
+    case 9:
+        SEASON3B::CreateOkMessageBox(
+            I18N::Game::MustBeOverLevel15ToCombineACloakOfInvisibility);
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        break;
+    case 100:
+        if (itemData.size() < kItemSize)
+        {
+            mu::log::Get("network")->error(
+                "S52: 0x86 result 100 missing 12-byte item");
+            return;
+        }
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        g_pMixInventory->DeleteAllItems();
+        g_pMixInventory->InsertItemOld(0, itemData);
+        break;
+    case 0x20:
+        if (g_pLuckyItemWnd->GetAct())
+        {
+            g_pLuckyItemWnd->GetResult(0, result, itemData);
+        }
+        break;
+    case 3:
+    case 5:
+    case 7:
+    case 8:
+    case 0x0A:
+    default:
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        break;
+    }
+
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x86 [ReceiveMixSeason52(%d)]", result);
+}
+
 void ReceiveMixExtended(std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PHEADER_DEFAULT_ITEM_EXTENDED>(ReceiveBuffer);
@@ -16232,7 +16405,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveStorageStatus(ReceiveBuffer);
         break;
     case 0x86:
-        ReceiveMixExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveMixSeason52(received_span);
+        }
+        else
+        {
+            ReceiveMixExtended(received_span);
+        }
         break;
     case 0x87:
         ReceiveMixExit(ReceiveBuffer);
