@@ -288,14 +288,14 @@ bool DirectSession::SendServerList(Connection* connection)
 }
 
 bool DirectSession::SendServerAddress(Connection* connection,
-                                      std::uint8_t serverCode)
+                                      std::uint16_t serverId)
 {
     if (!DirectProtocolEnabled())
     {
         return false;
     }
 
-    return SendPacket(connection, BuildServerAddressRequest(serverCode));
+    return SendPacket(connection, BuildServerAddressRequest(serverId));
 }
 
 bool DirectSession::SendCharacterList(Connection* connection,
