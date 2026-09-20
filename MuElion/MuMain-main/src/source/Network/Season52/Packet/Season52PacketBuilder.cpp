@@ -135,6 +135,36 @@ std::vector<std::uint8_t> BuildPublicChatRequest(std::string_view character,
     return packet;
 }
 
+std::vector<std::uint8_t> BuildWhisperRequest(std::string_view target,
+                                              std::string_view text) {
+    constexpr std::size_t ChatSize = 90;
+    const auto targetField = FixedField<CharacterNameSize>(target);
+    const auto textBytes = std::min(text.size() + 1u, ChatSize);
+    const auto textChars = std::min(text.size(), textBytes);
+
+    std::vector<std::uint8_t> packet;
+    packet.reserve(3u + CharacterNameSize + textBytes);
+    packet.push_back(0xC1);
+    packet.push_back(0);
+    packet.push_back(0x02);
+    packet.insert(packet.end(), targetField.begin(), targetField.end());
+
+    if (textChars > 0) {
+        packet.insert(
+            packet.end(),
+            reinterpret_cast<const std::uint8_t*>(text.data()),
+            reinterpret_cast<const std::uint8_t*>(text.data()) + textChars);
+    }
+
+    if (textBytes > textChars) {
+        packet.push_back(0);
+    }
+
+    packet[1] = static_cast<std::uint8_t>(packet.size());
+    EncodePacketXor(packet.data(), packet.size());
+    return packet;
+}
+
 bool BuildAreaSkillRequest(std::uint16_t skillId,
                            std::uint8_t targetX,
                            std::uint8_t targetY,
@@ -275,7 +305,7 @@ bool BuildLoginRequest(std::string_view account,
     BuxTransform(passwordField.data(), passwordField.size());
 
     // Canonical pre-encryption packet:
-    // C1 size F1 01 account[10] password[12] tick[4] version[5] serial[16]
+    // C1 size F1 01 account[10] password[20] tick[4] version[5] serial[16]
     std::vector<std::uint8_t> plain;
     plain.reserve(4u + AccountSize + PasswordSize + 4u
                   + ProtocolVersionSize + ProtocolSerialSize);
