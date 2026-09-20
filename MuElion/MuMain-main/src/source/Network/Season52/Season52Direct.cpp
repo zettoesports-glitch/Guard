@@ -618,6 +618,12 @@ bool DirectSession::SendChecksumResponse(
         });
 }
 
+bool DirectSession::SendCastleSiegeStatusRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestBCStatus(): C1:B2:00, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xB2, 0x00});
+}
+
 bool DirectSession::SendItemMove(
     Connection* connection,
     std::uint8_t sourceStorage,
