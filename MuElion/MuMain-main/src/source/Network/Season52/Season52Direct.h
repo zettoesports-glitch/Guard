@@ -193,6 +193,10 @@ public:
                                  std::uint8_t selectedAnswer);
     bool SendAvailableQuestsRequest(Connection* connection);
     bool SendNpcBuffRequest(Connection* connection);
+    bool SendGensJoinRequest(Connection* connection, std::uint8_t influence);
+    bool SendGensLeaveRequest(Connection* connection);
+    bool SendGensRewardRequest(Connection* connection, std::uint8_t influence);
+    bool SendGensInfoOpenRequest(Connection* connection);
     bool SendVaultMoveMoney(Connection* connection,
                             std::uint8_t direction,
                             std::uint32_t amount);
