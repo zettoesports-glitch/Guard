@@ -78,6 +78,9 @@ public:
     bool SendTargetedSkill(Connection* connection,
                            std::uint16_t skillId,
                            std::uint16_t targetId);
+    bool SendMagicEffectCancelRequest(Connection* connection,
+                                      std::uint16_t skillId,
+                                      std::uint16_t playerId);
     bool SendPickupItem(Connection* connection, std::uint16_t itemId);
     bool SendDropItem(Connection* connection,
                       std::uint8_t targetX,
@@ -90,6 +93,8 @@ public:
     bool SendCastleSiegeStatusRequest(Connection* connection);
     bool SendCastleSiegeRegistrationStateRequest(Connection* connection);
     bool SendCastleSiegeRegisteredGuildsListRequest(Connection* connection);
+    bool SendCastleSiegeUnregisterRequest(Connection* connection,
+                                          std::uint8_t giveUp);
     bool SendPlayerShopSetItemPrice(Connection* connection, std::uint8_t itemSlot, std::uint32_t price);
     bool SendPlayerShopOpen(Connection* connection, const wchar_t* shopTitle);
     bool SendPlayerShopClose(Connection* connection);
@@ -144,6 +149,9 @@ public:
     bool SendTalkNpc(Connection* connection, std::uint16_t npcId);
     bool SendCloseNpc(Connection* connection);
     bool SendCraftingDialogClose(Connection* connection);
+    bool SendChaosMachineMixRequest(Connection* connection,
+                                    std::uint8_t mixType,
+                                    std::uint8_t mixSubType);
     bool SendConsumeItem(Connection* connection,
                          std::uint8_t itemSlot,
                          std::uint8_t targetSlot,
