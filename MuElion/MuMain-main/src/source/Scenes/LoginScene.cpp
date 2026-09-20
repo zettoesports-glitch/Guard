@@ -120,7 +120,19 @@ void DeleteCharacter()
     }
 
     CurrentProtocolState = REQUEST_DELETE_CHARACTER;
-    SocketClient->ToGameServer()->SendDeleteCharacter(MU_C16(CharactersClient[characterToDelete].ID), MU_C16(InputText[0]));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendDeleteCharacter(
+            SocketClient,
+            CharactersClient[characterToDelete].ID,
+            InputText[0]);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendDeleteCharacter(
+            MU_C16(CharactersClient[characterToDelete].ID),
+            MU_C16(InputText[0]));
+    }
 
     PlayBuffer(SOUND_MENU01);
 
