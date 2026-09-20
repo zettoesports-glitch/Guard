@@ -326,6 +326,17 @@ bool SEASON3B::CNewUINPCShop::InsertItem(int iIndex, std::span<const BYTE> pbyIt
     return false;
 }
 
+bool SEASON3B::CNewUINPCShop::InsertItemOld(
+    int iIndex, std::span<const BYTE> pbyItemPacket)
+{
+    if (m_pNewInventoryCtrl)
+    {
+        return m_pNewInventoryCtrl->AddItemOld(iIndex, pbyItemPacket);
+    }
+
+    return false;
+}
+
 bool SEASON3B::CNewUINPCShop::InventoryProcess()
 {
     CNewUIPickedItem* pPickedItem = CNewUIInventoryCtrl::GetPickedItem();
