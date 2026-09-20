@@ -26,6 +26,7 @@
 #include "Engine/Object/ZzzOpenData.h"
 #include "Render/Effects/ZzzEffect.h"
 #include "Scenes/SceneCore.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Engine/Pathing/ZzzPath.h"
 #include "Audio/DSPlaySound.h"
 #include "I18N/All.h"
@@ -1064,7 +1065,16 @@ void SendCharacterMove(unsigned short Key, float Angle, unsigned char PathNum, u
         Dir = ((BYTE)((Angle + 22.5f) / 360.f * 8.f + 1.f) % 8);
     }
 
-    SocketClient->ToGameServer()->SendWalkRequest(PathX[0], PathY[0], PathNum - 1, Dir, PathNew, PathNum / 2);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendWalk(
+            SocketClient, PathX[0], PathY[0], PathNum - 1, Dir, PathNew, PathNum / 2);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendWalkRequest(
+            PathX[0], PathY[0], PathNum - 1, Dir, PathNew, PathNum / 2);
+    }
 }
 
 void LetHeroStop(CHARACTER* c, BOOL bSetMovementFalse)
@@ -1106,7 +1116,17 @@ void SendRequestMagic(int Type, int Key)
     if (Type == 40 || Type == 263 || Type == 261 || abs((int)(GetTickCount() - g_dwLatestMagicTick)) > 300)
     {
         g_dwLatestMagicTick = GetTickCount();
-        SocketClient->ToGameServer()->SendTargetedSkill(Type, Key);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendTargetedSkill(
+                SocketClient,
+                static_cast<std::uint16_t>(Type),
+                static_cast<std::uint16_t>(Key));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendTargetedSkill(Type, Key);
+        }
         g_ConsoleDebug->Write(MCD_SEND, L"0x19 [SendRequestMagic(%d %d)]", Type, Key);
     }
 }
@@ -1230,7 +1250,15 @@ bool CheckArrow()
 void SendRequestAction(OBJECT& obj, BYTE action)
 {
     BYTE rotation = (BYTE)((obj.Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8;
-    SocketClient->ToGameServer()->SendAnimationRequest(rotation, action);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendAnimation(
+            SocketClient, rotation, action);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendAnimationRequest(rotation, action);
+    }
 }
 
 int ItemKey = 0;
@@ -1305,7 +1333,19 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
         c->TargetCharacter = ActionTarget;
         int Dir = ((BYTE)((Hero->Object.Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8);
         c->Skill = 0;
-        SocketClient->ToGameServer()->SendHitRequest(CharactersClient[ActionTarget].Key, AT_ATTACK1, Dir);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendHit(
+                SocketClient,
+                static_cast<std::uint16_t>(CharactersClient[ActionTarget].Key),
+                AT_ATTACK1,
+                static_cast<std::uint8_t>(Dir));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendHitRequest(
+                CharactersClient[ActionTarget].Key, AT_ATTACK1, Dir);
+        }
     }
     break;
     case MOVEMENT_SKILL:
@@ -1507,7 +1547,15 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
         if (Items[ItemKey].Item.Type == ITEM_ZEN && SendGetItem == -1)
         {
             SendGetItem = ItemKey;
-            SocketClient->ToGameServer()->SendPickupItemRequest(ItemKey);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPickupItem(
+                    SocketClient, static_cast<std::uint16_t>(ItemKey));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPickupItemRequest(ItemKey);
+            }
         }
         else if (g_pMyInventory->FindEmptySlotIncludingExtensions(&Items[ItemKey].Item) == -1)
         {
@@ -1523,7 +1571,15 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
         else if (SendGetItem == -1)
         {
             SendGetItem = ItemKey;
-            SocketClient->ToGameServer()->SendPickupItemRequest(ItemKey);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPickupItem(
+                    SocketClient, static_cast<std::uint16_t>(ItemKey));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPickupItemRequest(ItemKey);
+            }
         }
         break;
 	case MOVEMENT_TALK :
@@ -3126,7 +3182,16 @@ void MoveHero()
                 {
                     if (gCharacterManager.GetEquipedBowType(CharacterMachine->Equipment) != BOWTYPE_NONE)
                     {
-                        SocketClient->ToGameServer()->SendInstantMoveRequest(c->PositionX, c->PositionY);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendInstantMove(
+                        SocketClient, c->PositionX, c->PositionY);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendInstantMoveRequest(
+                        c->PositionX, c->PositionY);
+                }
                     }
                 }
 #endif
