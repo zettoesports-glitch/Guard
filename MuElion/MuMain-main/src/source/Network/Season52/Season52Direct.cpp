@@ -568,6 +568,24 @@ bool DirectSession::SendTargetedSkill(Connection* connection,
         });
 }
 
+bool DirectSession::SendMagicEffectCancelRequest(
+    Connection* connection,
+    std::uint16_t skillId,
+    std::uint16_t playerId)
+{
+    // Louis Main 5.2 SendRequestCancelMagic():
+    // C1:1B + skill H/L + target H/L, Send(TRUE).
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1, 0x07, 0x1B,
+            static_cast<std::uint8_t>((skillId >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>(skillId & 0xFFu),
+            static_cast<std::uint8_t>((playerId >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>(playerId & 0xFFu)
+        });
+}
+
 bool DirectSession::SendPickupItem(Connection* connection,
                                    std::uint16_t itemId)
 {
@@ -646,6 +664,15 @@ bool DirectSession::SendCastleSiegeRegisteredGuildsListRequest(
 {
     // Louis Main 5.2 SendRequestBCDeclareGuildList(): C1:B4, Send().
     return SendXorPacket(connection, {0xC1, 0x03, 0xB4});
+}
+
+bool DirectSession::SendCastleSiegeUnregisterRequest(
+    Connection* connection, std::uint8_t giveUp)
+{
+    // Louis Main 5.2 SendRequestBCGiveUp():
+    // C1:B2:02 + give-up flag, Send().
+    return SendXorPacket(
+        connection, {0xC1, 0x05, 0xB2, 0x02, giveUp});
 }
 
 bool DirectSession::SendPlayerShopSetItemPrice(
@@ -1108,6 +1135,16 @@ bool DirectSession::SendCraftingDialogClose(Connection* connection)
 {
     // Louis Main 5.2 SendRequestMixExit(): C1:87, Send().
     return SendXorPacket(connection, {0xC1, 0x03, 0x87});
+}
+
+bool DirectSession::SendChaosMachineMixRequest(
+    Connection* connection,
+    std::uint8_t mixType,
+    std::uint8_t mixSubType)
+{
+    // Louis Main 5.2 SendRequestMix(): C1:86 + type + subtype, Send().
+    return SendXorPacket(
+        connection, {0xC1, 0x05, 0x86, mixType, mixSubType});
 }
 
 bool DirectSession::SendConsumeItem(Connection* connection,
