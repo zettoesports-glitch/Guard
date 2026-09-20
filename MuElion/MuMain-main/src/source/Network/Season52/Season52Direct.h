@@ -3,6 +3,7 @@
 #include "Network/Season52/Crypto/Season52Crypto.hpp"
 #include "Network/Season52/Packet/MuPacketStream.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
