@@ -2378,6 +2378,97 @@ BOOL ReceiveInventoryExtended(std::span<const BYTE> ReceiveBuffer)
     return (TRUE);
 }
 
+void ReceiveTradeInventorySeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 6; // C2/C4 sizeH sizeL 31 subcode count
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 1 + kItemSize;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x31 inventory-list packet too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE subCode = packet[4];
+    const BYTE count = packet[5];
+    const std::size_t required =
+        kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+
+    if (packet.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x31 inventory-list: got={} expected>={} count={}",
+            packet.size(), required, count);
+        return;
+    }
+
+    if (subCode == 3)
+    {
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        PlayBuffer(SOUND_MIX01);
+        PlayBuffer(SOUND_BREAK01);
+        g_pMixInventory->DeleteAllItems();
+    }
+    else if (subCode == 5)
+    {
+        g_pSystemLogBox->AddText(
+            I18N::Game::ResurrectionFailed, SEASON3B::TYPE_ERROR_MESSAGE);
+        PlayBuffer(SOUND_MIX01);
+        PlayBuffer(SOUND_BREAK01);
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        g_pMixInventory->DeleteAllItems();
+    }
+    else
+    {
+        for (auto& item : ShopInventory)
+        {
+            item.Type = -1;
+            item.Number = 0;
+        }
+
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP))
+        {
+            g_pNPCShop->DeleteAllItems();
+        }
+    }
+
+    std::size_t offset = kHeaderSize;
+    for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        const int itemIndex = packet[offset];
+        const auto itemData = packet.subspan(offset + 1, kItemSize);
+        bool loaded = false;
+
+        if (subCode == 3 || subCode == 5)
+        {
+            loaded = g_pMixInventory->InsertItemOld(itemIndex, itemData);
+        }
+        else if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP))
+        {
+            loaded = g_pNPCShop->InsertItemOld(itemIndex, itemData);
+        }
+        else if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE))
+        {
+            auto* storage = g_pStorageInventory != nullptr
+                ? g_pStorageInventory->GetInventoryCtrl()
+                : nullptr;
+            loaded = storage != nullptr && storage->AddItemOld(itemIndex, itemData);
+        }
+
+        if (!loaded)
+        {
+            mu::log::Get("network")->warn(
+                "S52: failed to materialize 0x31 item subcode={} slot={}",
+                subCode, itemIndex);
+        }
+    }
+
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x31 [ReceiveTradeInventorySeason52 count=%d]", count);
+}
+
 void ReceiveTradeInventoryExtended(std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PHEADER_DEFAULT_SUBCODE_WORD>(ReceiveBuffer);
@@ -8109,6 +8200,62 @@ void ReceiveBuy(const BYTE* ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x32 [ReceiveBuy(%d)]", Data->Index);
 }*/
 
+void ReceiveBuySeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 4; // C1/C3 size 32 index
+    constexpr std::size_t kItemSize = 12;
+    constexpr BYTE kBuyFailed = 0xFE;
+    constexpr BYTE kBuyFailedSilent = 0xFF;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x32 buy packet too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE itemIndex = packet[3];
+
+    if (itemIndex == kBuyFailed)
+    {
+        g_pNewUISystem->HideAll();
+        g_pChatListBox->AddText(
+            Hero->ID, I18N::Game::CannotBeTraded, SEASON3B::TYPE_ERROR_MESSAGE);
+    }
+    else if (itemIndex != kBuyFailedSilent)
+    {
+        if (packet.size() < kHeaderSize + kItemSize)
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x32 buy item: got={} expected>={}",
+                packet.size(), kHeaderSize + kItemSize);
+            BuyCost = 0;
+            return;
+        }
+
+        const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+        if (IsMainInventorySlot(itemIndex))
+        {
+            if (!g_pMyInventory->InsertItemOld(itemIndex, itemData))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: failed to materialize bought item in slot {}", itemIndex);
+            }
+        }
+        else
+        {
+            mu::log::Get("network")->warn(
+                "S52: 0x32 returned unsupported inventory slot {}", itemIndex);
+        }
+
+        PlayBuffer(SOUND_GET_ITEM01);
+    }
+
+    BuyCost = 0;
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x32 [ReceiveBuySeason52(%d)]", itemIndex);
+}
+
 void ReceiveBuyExtended(const std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PHEADER_DEFAULT_ITEM_EXTENDED_HEAD>(ReceiveBuffer);
@@ -8155,6 +8302,24 @@ void ReceiveBuyExtended(const std::span<const BYTE> ReceiveBuffer)
     BuyCost = 0;
 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x32 [ReceiveBuy(%d)]", Data->Index);
+}
+
+void ReceiveTradeYourInventorySeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 4; // C1/C3 size 39 index
+    constexpr std::size_t kItemSize = 12;
+
+    if (packet.size() < kHeaderSize + kItemSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x39 trade item: got={} expected>={}",
+            packet.size(), kHeaderSize + kItemSize);
+        return;
+    }
+
+    const BYTE itemIndex = packet[3];
+    const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+    g_pTrade->ProcessToReceiveYourItemAddOld(itemIndex, itemData);
 }
 
 void ReceiveTradeYourInventoryExtended(std::span<const BYTE> ReceiveBuffer)
@@ -15804,10 +15969,24 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         break;
     case 0x31:
         // AddDebugText(ReceiveBuffer,Size);
-        ReceiveTradeInventoryExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveTradeInventorySeason52(received_span);
+        }
+        else
+        {
+            ReceiveTradeInventoryExtended(received_span);
+        }
         break;
     case 0x32:
-        ReceiveBuyExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveBuySeason52(received_span);
+        }
+        else
+        {
+            ReceiveBuyExtended(received_span);
+        }
         break;
     case 0x33:
         ReceiveSell(ReceiveBuffer);
@@ -15831,7 +16010,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         break;
     case 0x39:
         // AddDebugText(ReceiveBuffer,Size);
-        ReceiveTradeYourInventoryExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveTradeYourInventorySeason52(received_span);
+        }
+        else
+        {
+            ReceiveTradeYourInventoryExtended(received_span);
+        }
         break;
     case 0x3A:
         // AddDebugText(ReceiveBuffer,Size);
