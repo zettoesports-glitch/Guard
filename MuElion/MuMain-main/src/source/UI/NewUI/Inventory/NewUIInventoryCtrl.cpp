@@ -475,6 +475,30 @@ bool SEASON3B::CNewUIInventoryCtrl::AddItem(int iLinealPos, std::span<const BYTE
     return AddItem(iColumnX, iRowY, itemData);
 }
 
+bool SEASON3B::CNewUIInventoryCtrl::AddItemOld(
+    int iLinealPos, std::span<const BYTE> itemData)
+{
+    iLinealPos -= m_nIndexOffset;
+    if (iLinealPos < 0 || iLinealPos >= m_nColumn * m_nRow
+        || itemData.size() < 12 || m_pNewItemMng == nullptr)
+    {
+        return false;
+    }
+
+    const int iColumnX = iLinealPos % m_nColumn;
+    const int iRowY = iLinealPos / m_nColumn;
+
+    ITEM* item = m_pNewItemMng->CreateItemOld(itemData.first(12));
+    if (item == nullptr)
+    {
+        return false;
+    }
+
+    const bool added = AddItem(iColumnX, iRowY, item);
+    m_pNewItemMng->DeleteItem(item);
+    return added;
+}
+
 bool SEASON3B::CNewUIInventoryCtrl::AddItem(int iColumnX, int iRowY, std::span<const BYTE> itemData)
 {
     if (iColumnX < 0 || iRowY < 0 || iColumnX >= m_nColumn || iRowY >= m_nRow)
