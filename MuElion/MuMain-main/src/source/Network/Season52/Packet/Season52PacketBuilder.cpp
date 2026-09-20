@@ -241,6 +241,47 @@ bool BuildRepairItemRequest(std::uint8_t itemSlot,
     return crypto.Encode(canonical.data(), canonical.size(), wirePacket);
 }
 
+bool BuildItemMoveRequest(
+    std::uint8_t sourceStorage,
+    std::uint8_t sourceIndex,
+    std::uint8_t itemTypeLow,
+    std::uint8_t itemLevel,
+    std::uint8_t durability,
+    std::uint8_t option1,
+    std::uint8_t excellentOption,
+    std::uint8_t splitType,
+    std::uint8_t spareBits,
+    const std::array<std::uint8_t, 5>& socketOptions,
+    std::uint8_t targetStorage,
+    std::uint8_t targetIndex,
+    Season52Crypto& crypto,
+    std::vector<std::uint8_t>& wirePacket) {
+    std::vector<std::uint8_t> canonical{
+        0xC1, 0x13, 0x24,
+        sourceStorage,
+        sourceIndex,
+        itemTypeLow,
+        itemLevel,
+        durability,
+        option1,
+        excellentOption,
+        splitType,
+        spareBits
+    };
+
+    canonical.insert(
+        canonical.end(), socketOptions.begin(), socketOptions.end());
+    canonical.push_back(targetStorage);
+    canonical.push_back(targetIndex);
+
+    if (canonical.size() != 0x13u) {
+        return false;
+    }
+
+    return crypto.Encode(
+        canonical.data(), canonical.size(), wirePacket);
+}
+
 bool BuildMapServerMoveAuthRequest(
                        std::string_view account,
                        std::string_view character,
@@ -305,7 +346,7 @@ bool BuildLoginRequest(std::string_view account,
     BuxTransform(passwordField.data(), passwordField.size());
 
     // Canonical pre-encryption packet:
-    // C1 size F1 01 account[10] password[12] tick[4] version[5] serial[16]
+    // C1 size F1 01 account[10] password[20] tick[4] version[5] serial[16]
     std::vector<std::uint8_t> plain;
     plain.reserve(4u + AccountSize + PasswordSize + 4u
                   + ProtocolVersionSize + ProtocolSerialSize);
