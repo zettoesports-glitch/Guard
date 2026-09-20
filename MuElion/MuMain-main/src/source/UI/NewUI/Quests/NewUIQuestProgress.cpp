@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "UI/NewUI/Quests/NewUIQuestProgress.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "Audio/DSPlaySound.h"
 #include "UI/NewUI/NewUISystem.h"
@@ -140,9 +141,21 @@ bool CNewUIQuestProgress::ProcessBtns()
     {
         if (m_btnComplete.UpdateMouseEvent())
         {
-            const auto questNumber = static_cast<uint16_t>(LOWORD(m_dwCurQuestIndex));
-            const auto questGroup = static_cast<uint16_t>(HIWORD(m_dwCurQuestIndex));
-            SocketClient->ToGameServer()->SendQuestCompletionRequest(questNumber, questGroup);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendQuestCompletionRequest(
+                    SocketClient,
+                    static_cast<std::uint32_t>(m_dwCurQuestIndex));
+            }
+            else
+            {
+                const auto questNumber =
+                    static_cast<uint16_t>(LOWORD(m_dwCurQuestIndex));
+                const auto questGroup =
+                    static_cast<uint16_t>(HIWORD(m_dwCurQuestIndex));
+                SocketClient->ToGameServer()->SendQuestCompletionRequest(
+                    questNumber, questGroup);
+            }
             PlayBuffer(SOUND_CLICK01);
             m_bCanClick = false;
             return true;
@@ -175,9 +188,22 @@ bool CNewUIQuestProgress::UpdateSelTextMouseEvent()
             m_nSelAnswer = static_cast<QuestProceedAction>(i + 1);
             if (SEASON3B::IsRelease(VK_LBUTTON))
             {
-                const auto questNumber = static_cast<uint16_t>(LOWORD(m_dwCurQuestIndex));
-                const auto questGroup = static_cast<uint16_t>(HIWORD(m_dwCurQuestIndex));
-                SocketClient->ToGameServer()->SendQuestProceedRequest(questNumber, questGroup, m_nSelAnswer);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendQuestProceedRequest(
+                        SocketClient,
+                        static_cast<std::uint32_t>(m_dwCurQuestIndex),
+                        static_cast<std::uint8_t>(m_nSelAnswer));
+                }
+                else
+                {
+                    const auto questNumber =
+                        static_cast<uint16_t>(LOWORD(m_dwCurQuestIndex));
+                    const auto questGroup =
+                        static_cast<uint16_t>(HIWORD(m_dwCurQuestIndex));
+                    SocketClient->ToGameServer()->SendQuestProceedRequest(
+                        questNumber, questGroup, m_nSelAnswer);
+                }
                 PlayBuffer(SOUND_CLICK01);
                 m_bCanClick = false;
                 return true;
@@ -351,7 +377,14 @@ void CNewUIQuestProgress::ProcessOpening()
 bool CNewUIQuestProgress::ProcessClosing()
 {
     m_dwCurQuestIndex = 0;
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
     ::PlayBuffer(SOUND_CLICK01);
     return true;
 }
