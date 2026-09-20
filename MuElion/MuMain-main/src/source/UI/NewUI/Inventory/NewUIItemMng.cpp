@@ -207,7 +207,6 @@ ITEM* SEASON3B::CNewUIItemMng::CreateItemOld(
     {
         item->SocketSeedSetOption = SOCKET_EMPTY;
         item->SocketCount = 0;
-        item->HasHarmonyOption = itemData[6] != 0;
     }
 
     return item;
