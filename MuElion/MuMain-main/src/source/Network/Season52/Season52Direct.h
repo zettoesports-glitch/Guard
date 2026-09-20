@@ -181,6 +181,11 @@ public:
     bool SendQuestByEtcEPListRequest(Connection* connection);
     bool SendQuestClientActionRequest(Connection* connection,
                                       std::uint32_t questIndex);
+    bool SendProgressQuestRequestReward(Connection* connection,
+                                        std::uint32_t questIndex);
+    bool SendQuestSelection(Connection* connection,
+                            std::uint32_t questIndex,
+                            std::uint8_t selectedTextIndex);
     bool SendVaultMoveMoney(Connection* connection,
                             std::uint8_t direction,
                             std::uint32_t amount);
