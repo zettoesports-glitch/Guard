@@ -1555,6 +1555,13 @@ bool DirectSession::SendEnterUnitedMarketPlaceRequest(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x04, 0xBF, 0x17});
 }
 
+bool DirectSession::SendEnterEmpireGuardianEvent(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestEnterEmpireGuardianEvent():
+    // C1:F7:01:01, Send().
+    return SendXorPacket(connection, {0xC1, 0x05, 0xF7, 0x01, 0x01});
+}
+
 bool DirectSession::SendWhiteAngelItemRequest(Connection* connection)
 {
     return SendXorPacket(connection, {0xC1, 0x04, 0xD0, 0x03});
