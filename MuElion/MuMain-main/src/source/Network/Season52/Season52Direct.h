@@ -101,6 +101,21 @@ public:
     bool SendFriendAddRequest(Connection* connection, const wchar_t* playerName);
     bool SendFriendAddResponse(Connection* connection, std::uint8_t result, const wchar_t* playerName);
     bool SendFriendDeleteRequest(Connection* connection, const wchar_t* playerName);
+    bool SendLetterSendRequest(Connection* connection,
+                               std::uint32_t windowUiId,
+                               const wchar_t* recipient,
+                               const wchar_t* subject,
+                               std::uint8_t photoDir,
+                               std::uint8_t photoAction,
+                               const wchar_t* memo);
+    bool SendLetterReadRequest(Connection* connection, std::uint16_t letterId);
+    bool SendLetterDeleteRequest(Connection* connection, std::uint16_t letterId);
+    bool SendLetterListRequest(Connection* connection);
+    bool SendChatRoomCreateRequest(Connection* connection, const wchar_t* playerName);
+    bool SendChatRoomInvitationRequest(Connection* connection,
+                                       const wchar_t* playerName,
+                                       std::uint16_t roomNumber,
+                                       std::uint32_t windowUiId);
 
     bool SendItemMove(
         Connection* connection,
@@ -219,7 +234,8 @@ private:
     bool SendPacket(Connection* connection, const std::vector<std::uint8_t>& packet);
     bool SendXorPacket(Connection* connection, std::vector<std::uint8_t> packet);
     bool SendEncryptedPacket(Connection* connection,
-                             const std::vector<std::uint8_t>& canonicalPacket);
+                             const std::vector<std::uint8_t>& canonicalPacket,
+                             bool forceWide = false);
 
 private:
     Season52Crypto crypto_;
