@@ -317,8 +317,7 @@ void CreateLogInScene()
 
     ::PlayMp3(MUSIC_LOGIN_THEME);
 
-    g_ErrorReport.Write(L"> Login Scene init success.\r
-");
+    g_ErrorReport.Write(L"> Login Scene init success.\r\n");
 }
 
 void NewMoveLogInScene()
@@ -352,8 +351,7 @@ void NewMoveLogInScene()
     // ESC menu toggle is handled by CUIMng::Update()
     if (RECEIVE_LOG_IN_SUCCESS == CurrentProtocolState)
     {
-        g_ErrorReport.Write(L"> Request Character list\r
-");
+        g_ErrorReport.Write(L"> Request Character list\r\n");
 
         CCameraMove::GetInstancePtr()->SetTourMode(FALSE);
 
