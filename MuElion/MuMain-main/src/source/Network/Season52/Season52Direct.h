@@ -209,6 +209,9 @@ public:
     bool SendGensInfoOpenRequest(Connection* connection);
     bool SendMiniGameEventCountRequest(Connection* connection, std::uint8_t eventType);
     bool SendMiniGameOpeningStateRequest(Connection* connection, std::uint8_t eventType, std::uint8_t eventLevel);
+    bool SendChaosCastleEnterRequest(Connection* connection,
+                                     std::uint8_t castleLevel,
+                                     std::uint8_t inventoryIndex);
     bool SendEnterUnitedMarketPlaceRequest(Connection* connection);
     bool SendWhiteAngelItemRequest(Connection* connection);
     bool SendEnterWerewolfRequest(Connection* connection);
