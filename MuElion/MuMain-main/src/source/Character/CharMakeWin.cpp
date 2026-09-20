@@ -14,6 +14,7 @@
 #include "Audio/DSPlaySound.h"
 #include "Engine/AI/ZzzAI.h"
 #include "Scenes/SceneCore.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/Legacy/UIControls.h"
 #include "I18N/All.h"
 
@@ -378,7 +379,20 @@ void CCharMakeWin::RequestCreateCharacter()
     {
         const auto classByte = static_cast<CharacterClassNumber>((CharacterView.Class << 2) + CharacterView.Skin);
         CurrentProtocolState = REQUEST_CREATE_CHARACTER;
-        SocketClient->ToGameServer()->SendCreateCharacter(MU_C16(InputText[0]), classByte);
+
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCreateCharacter(
+                SocketClient,
+                InputText[0],
+                static_cast<std::uint8_t>(CharacterView.Class),
+                static_cast<std::uint8_t>(CharacterView.Skin));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCreateCharacter(
+                MU_C16(InputText[0]), classByte);
+        }
         //SendRequestCreateCharacter(InputText[0], CharacterView.Class, CharacterView.Skin);
         rUIMng.HideWin(this);
         rUIMng.PopUpMsgWin(MESSAGE_WAIT);
