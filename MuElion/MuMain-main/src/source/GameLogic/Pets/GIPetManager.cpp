@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "GIPetManager.h"
 
@@ -312,13 +313,41 @@ static std::uint8_t g_tabBar = 0;
                 CHARACTER* targetCharacter = &CharactersClient[SelectedCharacter];
                 if (targetCharacter->Object.Kind == KIND_MONSTER || targetCharacter->Object.Kind == KIND_PLAYER)
                 {
-                    SocketClient->ToGameServer()->SendPetCommandRequest(static_cast<PetType>(petSystem->GetPetType()), petCommand, targetCharacter->Key);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendPetCommandRequest(
+                            SocketClient,
+                            static_cast<std::uint8_t>(petSystem->GetPetType()),
+                            static_cast<std::uint8_t>(petCommand),
+                            static_cast<std::uint16_t>(targetCharacter->Key));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendPetCommandRequest(
+                            static_cast<PetType>(petSystem->GetPetType()),
+                            petCommand,
+                            targetCharacter->Key);
+                    }
                 }
             }
         }
         else
         {
-            SocketClient->ToGameServer()->SendPetCommandRequest(static_cast<PetType>(petSystem->GetPetType()), petCommand, kInvalidTargetKey);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPetCommandRequest(
+                    SocketClient,
+                    static_cast<std::uint8_t>(petSystem->GetPetType()),
+                    static_cast<std::uint8_t>(petCommand),
+                    static_cast<std::uint16_t>(kInvalidTargetKey));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPetCommandRequest(
+                    static_cast<PetType>(petSystem->GetPetType()),
+                    petCommand,
+                    kInvalidTargetKey);
+            }
         }
 
         ClearRightMouseInputState();
@@ -450,7 +479,21 @@ static std::uint8_t g_tabBar = 0;
                 iInvenType = StorageType::NpcShop;
             }
 
-            SocketClient->ToGameServer()->SendPetInfoRequest(static_cast<::PetType>(PetType), iInvenType, iItemIndex);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPetInfoRequest(
+                    SocketClient,
+                    PetType,
+                    static_cast<std::uint8_t>(iInvenType),
+                    static_cast<std::uint8_t>(iItemIndex));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPetInfoRequest(
+                    static_cast<::PetType>(PetType),
+                    iInvenType,
+                    iItemIndex);
+            }
 
             return true;
         }
