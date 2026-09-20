@@ -1287,6 +1287,18 @@ bool CheckArrow()
     return true;
 }
 
+void SendTalkToNpcProtocolAware(std::uint16_t npcId)
+{
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendTalkNpc(SocketClient, npcId);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendTalkToNpcRequest(npcId);
+    }
+}
+
 void SendRequestAction(OBJECT& obj, BYTE action)
 {
     BYTE rotation = (BYTE)((obj.Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8;
@@ -1665,8 +1677,13 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 				if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_MYQUEST))
 					g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYQUEST);
 
-				if (g_csQuest.IsInit())
+				if (g_csQuest.IsInit() && !mu::net::s52::DirectProtocolEnabled())
+				{
+					// The OpenMU legacy-quest request is not wire-compatible with
+					// the Louis EX502 protocol. Keep it disabled in direct mode
+					// until its classic request is ported explicitly.
 					SocketClient->ToGameServer()->SendLegacyQuestStateRequest();
+				}
 
 				// === Specjalne rozmowy ===
 				const int objectType = CharactersClient[TargetNpc].Object.Type;
@@ -1692,12 +1709,12 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 						}
 						else
 						{
-							SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+							SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 						}
 					}
 					else
 					{
-						SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+						SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					}
 				}
 				else if (M34CryWolf1st::IsCyrWolf1st())
@@ -1707,17 +1724,17 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 						if (objectType == MODEL_NPC_QUARREL)
 							SEASON3B::CreateMessageBox(MSGBOX_LAYOUT_CLASS(SEASON3B::CMapEnterWerwolfMsgBoxLayout));
 
-						SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+						SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					}
 				}
 				else if (SEASON3A::CGM3rdChangeUp::Instance().IsBalgasBarrackMap())
 				{
-					SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+					SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					SEASON3B::CreateMessageBox(MSGBOX_LAYOUT_CLASS(SEASON3B::CMapEnterGateKeeperMsgBoxLayout));
 				}
 				else if (monsterIndex >= MONSTER_LITTLE_SANTA_YELLOW && monsterIndex <= MONSTER_LITTLE_SANTA_PINK)
 				{
-					SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+					SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 
 					wchar_t temp[32] = { 0 };
 					if (monsterIndex == MONSTER_LITTLE_SANTA_RED)
@@ -1730,14 +1747,14 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 				else if (monsterIndex == MONSTER_DELGADO || monsterIndex == MONSTER_LUGARD ||
 					monsterIndex == MONSTER_MARKET_UNION_MEMBER_JULIA || monsterIndex == MONSTER_DAVID)
 				{
-					SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+					SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 				}
 				else
 				{
 					if (M38Kanturu2nd::Is_Kanturu2nd())
 					{
 						if (!g_pKanturu2ndEnterNpc->IsNpcAnimation())
-							SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+							SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					}
 					else if (gMapManager.IsCursedTemple())
 					{
@@ -1757,7 +1774,7 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 					}
 					else
 					{
-						SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+						SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					}
 				}
 
@@ -1767,11 +1784,19 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 				{
 					ITEM* pItem = &CharacterMachine->Equipment[EQUIPMENT_HELPER];
 					if (pItem->Type == ITEM_DARK_HORSE_ITEM)
-						SocketClient->ToGameServer()->SendPetInfoRequest(PetType::DarkHorse, StorageType::Inventory, EQUIPMENT_HELPER);
+						if (!mu::net::s52::DirectProtocolEnabled())
+						{
+							SocketClient->ToGameServer()->SendPetInfoRequest(
+								PetType::DarkHorse, StorageType::Inventory, EQUIPMENT_HELPER);
+						}
 
 					pItem = &CharacterMachine->Equipment[EQUIPMENT_WEAPON_LEFT];
 					if (pItem->Type == ITEM_DARK_RAVEN_ITEM)
-						SocketClient->ToGameServer()->SendPetInfoRequest(PetType::DarkRaven, StorageType::Inventory, EQUIPMENT_WEAPON_LEFT);
+						if (!mu::net::s52::DirectProtocolEnabled())
+						{
+							SocketClient->ToGameServer()->SendPetInfoRequest(
+								PetType::DarkRaven, StorageType::Inventory, EQUIPMENT_WEAPON_LEFT);
+						}
 				}
 			}
 
