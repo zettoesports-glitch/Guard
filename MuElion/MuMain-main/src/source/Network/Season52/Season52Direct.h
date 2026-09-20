@@ -38,6 +38,33 @@ public:
                              const wchar_t* personalCode);
     bool SendSelectCharacter(Connection* connection, const wchar_t* name);
     bool SendFinishLoading(Connection* connection);
+
+    bool SendWalk(Connection* connection,
+                  std::uint8_t sourceX,
+                  std::uint8_t sourceY,
+                  std::uint8_t stepCount,
+                  std::uint8_t targetRotation,
+                  const std::uint8_t* directions,
+                  std::size_t directionsSize);
+    bool SendInstantMove(Connection* connection,
+                         std::uint8_t targetX,
+                         std::uint8_t targetY);
+    bool SendAnimation(Connection* connection,
+                       std::uint8_t rotation,
+                       std::uint8_t animationNumber);
+    bool SendHit(Connection* connection,
+                 std::uint16_t targetId,
+                 std::uint8_t attackAnimation,
+                 std::uint8_t lookingDirection);
+    bool SendTargetedSkill(Connection* connection,
+                           std::uint16_t skillId,
+                           std::uint16_t targetId);
+    bool SendPickupItem(Connection* connection, std::uint16_t itemId);
+    bool SendDropItem(Connection* connection,
+                      std::uint8_t targetX,
+                      std::uint8_t targetY,
+                      std::uint8_t itemSlot);
+
     bool SendLogin(Connection* connection,
                    const wchar_t* account,
                    const wchar_t* password,
@@ -53,6 +80,9 @@ public:
 private:
     bool EnsureKeysLoaded();
     bool SendPacket(Connection* connection, const std::vector<std::uint8_t>& packet);
+    bool SendXorPacket(Connection* connection, std::vector<std::uint8_t> packet);
+    bool SendEncryptedPacket(Connection* connection,
+                             const std::vector<std::uint8_t>& canonicalPacket);
 
 private:
     Season52Crypto crypto_;
