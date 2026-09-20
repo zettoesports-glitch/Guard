@@ -2950,7 +2950,14 @@ BOOL ReceiveTeleport(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 
             if (gMapManager.WorldActive == WD_34CRYWOLF_1ST)
             {
-                SocketClient->ToGameServer()->SendCrywolfInfoRequest();
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendCrywolfInfoRequest(SocketClient);
+                }
+                else if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+                {
+                    SocketClient->ToGameServer()->SendCrywolfInfoRequest();
+                }
             }
 
             if ((gMapManager.InChaosCastle(OldWorld) == true && OldWorld != gMapManager.WorldActive) ||
@@ -14574,7 +14581,20 @@ void ReceiveCheckSumRequest(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPHEADER_DEFAULT_WORD)ReceiveBuffer;
     DWORD dwCheckSum = GetCheckSum(Data->Value);
-    SocketClient->ToGameServer()->SendChecksumResponse(dwCheckSum);
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        if (!mu::net::s52::DirectSession::Instance().SendChecksumResponse(
+                SocketClient, static_cast<std::uint32_t>(dwCheckSum)))
+        {
+            mu::log::Get("network")->warn(
+                "S52: failed to send checksum response");
+        }
+    }
+    else if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+    {
+        SocketClient->ToGameServer()->SendChecksumResponse(dwCheckSum);
+    }
 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x03 [ReceiveCheckSumRequest]");
 }
@@ -15861,7 +15881,11 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             ReceiveLevelUp(ReceiveBuffer, Size);
             break;
         case 0x06: // receive Add Point
-            if (Size >= sizeof(PRECEIVE_ADD_POINT_EXTENDED))
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveAddPoint(ReceiveBuffer);
+            }
+            else if (Size >= sizeof(PRECEIVE_ADD_POINT_EXTENDED))
             {
                 ReceiveAddPointExtended(ReceiveBuffer);
             }
