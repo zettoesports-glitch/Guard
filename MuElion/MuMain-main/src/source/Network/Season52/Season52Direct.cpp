@@ -1455,6 +1455,13 @@ bool DirectSession::SendMiniGameOpeningStateRequest(
         {0xC1, 0x05, 0x91, eventType, eventLevel});
 }
 
+bool DirectSession::SendEnterUnitedMarketPlaceRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestEnterUnitedMarketPlaceEvent():
+    // C1:BF:17, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xBF, 0x17});
+}
+
 bool DirectSession::SendPetCommandRequest(
     Connection* connection,
     std::uint8_t petType,
