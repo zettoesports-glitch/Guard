@@ -1864,7 +1864,18 @@ CALLBACK_RESULT SEASON3B::CChaosCastleTimeCheckMsgBoxLayout::OkBtnDown(class CNe
     if (pItem)
     {
         int iSrcIndex = g_pMyInventory->GetStandbyItemIndex();
-        SocketClient->ToGameServer()->SendChaosCastleEnterRequest(pItem->Level, iSrcIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendChaosCastleEnterRequest(
+                SocketClient,
+                static_cast<std::uint8_t>(pItem->Level),
+                static_cast<std::uint8_t>(iSrcIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendChaosCastleEnterRequest(
+                pItem->Level, iSrcIndex);
+        }
     }
 
     PlayBuffer(SOUND_CLICK01);
