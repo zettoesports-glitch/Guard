@@ -1443,6 +1443,18 @@ bool DirectSession::SendMiniGameEventCountRequest(
     return SendXorPacket(connection, {0xC1, 0x04, 0x9F, eventType});
 }
 
+bool DirectSession::SendMiniGameOpeningStateRequest(
+    Connection* connection,
+    std::uint8_t eventType,
+    std::uint8_t eventLevel)
+{
+    // Louis Main 5.2 SendRequestEventZoneOpenTime():
+    // C1:91 + BYTE event type + BYTE item/event level, Send().
+    return SendXorPacket(
+        connection,
+        {0xC1, 0x05, 0x91, eventType, eventLevel});
+}
+
 bool DirectSession::SendPetCommandRequest(
     Connection* connection,
     std::uint8_t petType,
