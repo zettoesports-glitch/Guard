@@ -210,6 +210,12 @@ public:
                             std::uint8_t direction,
                             std::uint32_t amount);
     bool SendVaultClosed(Connection* connection);
+    bool SendStoragePassword(Connection* connection,
+                             std::uint8_t type,
+                             std::uint16_t password,
+                             const wchar_t* authorityCode);
+    bool SendLogout(Connection* connection, std::uint8_t flag);
+    bool SendResetCharacterPointRequest(Connection* connection);
 
     // Guild / alliance protocol (classic Louis 5.2).
     bool SendGuildJoinRequest(Connection* connection, std::uint16_t targetId);
