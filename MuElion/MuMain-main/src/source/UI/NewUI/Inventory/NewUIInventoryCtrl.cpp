@@ -11,6 +11,7 @@
 #include "GameLogic/Pets/GIPetManager.h"
 #include "GameLogic/Items/CSItemOption.h"
 #include "Network/Server/SocketSystem.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/Scaling/UITransform.h"
 #include "World/MapInfra/MapManager.h"
 #include "GameLogic/Items/MixMgr.h"
@@ -690,7 +691,12 @@ void SEASON3B::CNewUIInventoryCtrl::RequestInventoryRefresh() const
 
     lastRefreshRequestTick = currentTick;
 
-    if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendInventoryRequest(
+            SocketClient);
+    }
+    else if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
     {
         SocketClient->ToGameServer()->SendInventoryRequest();
     }
