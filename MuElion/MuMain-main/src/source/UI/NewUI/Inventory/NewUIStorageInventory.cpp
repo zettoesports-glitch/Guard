@@ -689,6 +689,49 @@ void CNewUIStorageInventory::ProcessToReceiveStorageItems(int nIndex, std::span<
     }
 }
 
+void CNewUIStorageInventory::ProcessToReceiveStorageItemsOld(
+    int nIndex, std::span<const BYTE> pbyItemPacket)
+{
+    CNewUIInventoryCtrl::DeletePickedItem();
+
+    if (m_pNewInventoryCtrl == nullptr
+        || nIndex < 0
+        || nIndex >= (m_pNewInventoryCtrl->GetNumberOfColumn()
+            * m_pNewInventoryCtrl->GetNumberOfRow()))
+    {
+        return;
+    }
+
+    if (IsItemAutoMove())
+    {
+        if (m_nBackupSourceInvenIndex >= MAX_EQUIPMENT_INDEX
+            && m_nBackupSourceInvenIndex < MAX_MY_INVENTORY_INDEX)
+        {
+            g_pMyInventory->DeleteItem(m_nBackupSourceInvenIndex);
+        }
+        else if (m_nBackupSourceInvenIndex >= MAX_MY_INVENTORY_INDEX
+            && m_nBackupSourceInvenIndex < MAX_MY_INVENTORY_EX_INDEX)
+        {
+            g_pMyInventoryExt->DeleteItem(m_nBackupSourceInvenIndex);
+        }
+        else
+        {
+            CNewUIInventoryCtrl* pMyInvenCtrl = g_pMyInventory->GetInventoryCtrl();
+            ITEM* pItemObj = pMyInvenCtrl != nullptr
+                ? pMyInvenCtrl->FindItemAtPt(m_nBackupMouseX, m_nBackupMouseY)
+                : nullptr;
+            if (pMyInvenCtrl != nullptr && pItemObj != nullptr)
+            {
+                pMyInvenCtrl->RemoveItem(pItemObj);
+            }
+        }
+
+        SetItemAutoMove(false);
+    }
+
+    m_pNewInventoryCtrl->AddItemOld(nIndex, pbyItemPacket);
+}
+
 void CNewUIStorageInventory::ProcessStorageItemAutoMoveSuccess()
 {
     if (!IsVisible())
