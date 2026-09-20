@@ -100,6 +100,21 @@ std::vector<std::uint8_t> BuildFinishLoadingRequest() {
     return packet;
 }
 
+std::vector<std::uint8_t> BuildQuestHistoryRequest() {
+    // Louis Main: SendRequestQuestHistory()
+    // CStreamPacketEngine(C1:A0).Send(TRUE).
+    // Return the canonical pre-XOR/pre-SimpleModulus packet; Season52Crypto
+    // applies the encrypted C3 pipeline.
+    return {0xC1, 0x03, 0xA0};
+}
+
+std::vector<std::uint8_t> BuildQuestStateRequest(std::uint8_t questIndex,
+                                                 std::uint8_t questState) {
+    // Louis Main: SendRequestQuestState(index, state), C1:A2 + 2 bytes,
+    // followed by spe.Send(TRUE).
+    return {0xC1, 0x05, 0xA2, questIndex, questState};
+}
+
 std::vector<std::uint8_t> BuildCloseNpcRequest() {
     std::vector<std::uint8_t> packet{0xC1, 0x03, 0x31};
     EncodePacketXor(packet.data(), packet.size());
