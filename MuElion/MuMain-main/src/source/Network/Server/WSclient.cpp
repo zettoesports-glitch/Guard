@@ -2162,6 +2162,12 @@ void ReceiveDeleteInventory(const BYTE* ReceiveBuffer)
         {
             g_pMyInventory->DeleteItem(itemindex);
         }
+        else if (mu::net::s52::DirectProtocolEnabled()
+                 && IsSeason52ClassicPersonalShopSlot(itemindex))
+        {
+            g_pMyShopInventory->DeleteItem(
+                Season52ClassicToModernPersonalShopSlot(itemindex));
+        }
         else if (IsInventoryExtensionSlot(itemindex))
         {
             g_pMyInventoryExt->DeleteItem(itemindex);
@@ -8798,7 +8804,14 @@ void ReceiveDurability(const BYTE* ReceiveBuffer)
     else
     {
         ITEM* pItem = g_pMyInventory->FindItem(Data->Value);
-        if (pItem == nullptr && IsInventoryExtensionSlot(Data->Value))
+        if (pItem == nullptr
+            && mu::net::s52::DirectProtocolEnabled()
+            && IsSeason52ClassicPersonalShopSlot(Data->Value))
+        {
+            pItem = g_pMyShopInventory->FindItem(
+                Season52ClassicToModernPersonalShopSlot(Data->Value));
+        }
+        else if (pItem == nullptr && IsInventoryExtensionSlot(Data->Value))
         {
             pItem = g_pMyInventoryExt->FindItem(Data->Value);
         }
