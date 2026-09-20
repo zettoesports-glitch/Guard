@@ -2,6 +2,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/NewUI/NPCs/NewUINPCShop.h"
 #include "I18N/All.h"
 
@@ -125,7 +126,15 @@ bool SEASON3B::CNewUINPCShop::UpdateMouseEvent()
                 }
                 if (BuyCost == 0)
                 {
-                    SocketClient->ToGameServer()->SendBuyItemFromNpcRequest(iIndex);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendBuyItem(
+                            SocketClient, static_cast<std::uint8_t>(iIndex));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendBuyItemFromNpcRequest(iIndex);
+                    }
                     BuyCost = ItemValue(pItem, 0);
                     g_ConsoleDebug->Write(MCD_SEND, L"0x32 [SendRequestBuy(%d)]", iIndex);
                 }
@@ -363,7 +372,15 @@ bool SEASON3B::CNewUINPCShop::InventoryProcess()
             const int iSourceIndex = pPickedItem->GetSourceLinealPos();
             if (iSourceIndex >= MAX_EQUIPMENT_INDEX && iSourceIndex < MAX_MY_INVENTORY_EX_INDEX)
             {
-                SocketClient->ToGameServer()->SendSellItemToNpcRequest(iSourceIndex);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendSellItem(
+                        SocketClient, static_cast<std::uint8_t>(iSourceIndex));
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendSellItemToNpcRequest(iSourceIndex);
+                }
                 g_pNPCShop->SetSellingItem(true);
                 return true;
             }
@@ -391,7 +408,15 @@ bool SEASON3B::CNewUINPCShop::BtnProcess()
         }
         if (m_BtnRepairAll.UpdateMouseEvent() == true)
         {
-            SocketClient->ToGameServer()->SendRepairItemRequest(0xFF, 0);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendRepairItem(
+                    SocketClient, 0xFF, 0);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendRepairItemRequest(0xFF, 0);
+            }
 
             return true;
         }
@@ -420,7 +445,14 @@ void SEASON3B::CNewUINPCShop::OpenningProcess()
 
 void SEASON3B::CNewUINPCShop::ClosingProcess()
 {
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
 
     m_dwShopState = SHOP_STATE_BUYNSELL;
     m_iTaxRate = 0;
