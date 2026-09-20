@@ -18,7 +18,7 @@ inline constexpr std::size_t ProtocolVersionSize = 5;
 inline constexpr std::size_t ProtocolSerialSize = 16;
 
 std::vector<std::uint8_t> BuildServerListRequest();
-std::vector<std::uint8_t> BuildServerAddressRequest(std::uint16_t serverId);
+std::vector<std::uint8_t> BuildServerAddressRequest(std::uint8_t serverCode);
 
 std::vector<std::uint8_t> BuildCharacterListRequest(std::uint8_t language);
 std::vector<std::uint8_t> BuildCreateCharacterRequest(std::string_view name,
