@@ -896,6 +896,205 @@ bool DirectSession::SendVaultClosed(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x03, 0x82});
 }
 
+bool DirectSession::SendGuildJoinRequest(Connection* connection,
+                                         std::uint16_t targetId)
+{
+    return SendXorPacket(
+        connection,
+        {0xC1, 0x05, 0x50,
+         static_cast<std::uint8_t>((targetId >> 8u) & 0xFFu),
+         static_cast<std::uint8_t>(targetId & 0xFFu)});
+}
+
+bool DirectSession::SendGuildJoinResponse(Connection* connection,
+                                          std::uint8_t accepted,
+                                          std::uint16_t requesterId)
+{
+    return SendXorPacket(
+        connection,
+        {0xC1, 0x06, 0x51, accepted,
+         static_cast<std::uint8_t>((requesterId >> 8u) & 0xFFu),
+         static_cast<std::uint8_t>(requesterId & 0xFFu)});
+}
+
+bool DirectSession::SendGuildListRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x03, 0x52});
+}
+
+bool DirectSession::SendGuildLeave(Connection* connection,
+                                   const wchar_t* character,
+                                   const wchar_t* personalCode)
+{
+    if (character == nullptr || personalCode == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> characterUtf8{};
+    std::array<char, PersonalCodeSize + 1> codeUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        characterUtf8.data(), character, static_cast<int>(characterUtf8.size()));
+    CMultiLanguage::ConvertToUtf8(
+        codeUtf8.data(), personalCode, static_cast<int>(codeUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x21, 0x53};
+    packet.insert(packet.end(),
+                  reinterpret_cast<const std::uint8_t*>(characterUtf8.data()),
+                  reinterpret_cast<const std::uint8_t*>(characterUtf8.data()) + CharacterNameSize);
+    packet.insert(packet.end(),
+                  reinterpret_cast<const std::uint8_t*>(codeUtf8.data()),
+                  reinterpret_cast<const std::uint8_t*>(codeUtf8.data()) + PersonalCodeSize);
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendGuildMasterAnswer(Connection* connection,
+                                          std::uint8_t value)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0x54, value});
+}
+
+bool DirectSession::SendGuildCreate(Connection* connection,
+                                    std::uint8_t guildType,
+                                    const wchar_t* guildName,
+                                    const std::uint8_t* guildMark,
+                                    std::size_t guildMarkSize)
+{
+    if (guildName == nullptr || guildMark == nullptr || guildMarkSize < 32u)
+    {
+        return false;
+    }
+
+    std::array<char, 9> guildNameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        guildNameUtf8.data(), guildName, static_cast<int>(guildNameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x2C, 0x55, guildType};
+    packet.insert(packet.end(),
+                  reinterpret_cast<const std::uint8_t*>(guildNameUtf8.data()),
+                  reinterpret_cast<const std::uint8_t*>(guildNameUtf8.data()) + 8);
+    packet.insert(packet.end(), guildMark, guildMark + 32);
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendGuildTypeChange(Connection* connection,
+                                        std::uint8_t guildType)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0xE2, guildType});
+}
+
+bool DirectSession::SendGuildCreationCancel(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x03, 0x57});
+}
+
+bool DirectSession::SendGuildWarDeclare(Connection* connection,
+                                        const wchar_t* guildName)
+{
+    if (guildName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, 9> guildNameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        guildNameUtf8.data(), guildName, static_cast<int>(guildNameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x0B, 0x60};
+    packet.insert(packet.end(),
+                  reinterpret_cast<const std::uint8_t*>(guildNameUtf8.data()),
+                  reinterpret_cast<const std::uint8_t*>(guildNameUtf8.data()) + 8);
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendGuildWarResponse(Connection* connection,
+                                         std::uint8_t accepted)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0x61, accepted});
+}
+
+bool DirectSession::SendGuildInfoRequest(Connection* connection,
+                                         std::uint32_t guildKey)
+{
+    return SendXorPacket(
+        connection,
+        {0xC1, 0x08, 0x66, 0x00,
+         static_cast<std::uint8_t>(guildKey & 0xFFu),
+         static_cast<std::uint8_t>((guildKey >> 8u) & 0xFFu),
+         static_cast<std::uint8_t>((guildKey >> 16u) & 0xFFu),
+         static_cast<std::uint8_t>((guildKey >> 24u) & 0xFFu)});
+}
+
+bool DirectSession::SendGuildRoleAssign(Connection* connection,
+                                        std::uint8_t type,
+                                        std::uint8_t guildStatus,
+                                        const wchar_t* playerName)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x0F, 0xE1, type, guildStatus};
+    packet.insert(packet.end(),
+                  reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+                  reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendGuildRelationshipRequest(Connection* connection,
+                                                 std::uint8_t relationshipType,
+                                                 std::uint8_t requestType,
+                                                 std::uint16_t targetPlayerId)
+{
+    return SendXorPacket(
+        connection,
+        {0xC1, 0x07, 0xE5, relationshipType, requestType,
+         static_cast<std::uint8_t>((targetPlayerId >> 8u) & 0xFFu),
+         static_cast<std::uint8_t>(targetPlayerId & 0xFFu)});
+}
+
+bool DirectSession::SendGuildRelationshipResponse(Connection* connection,
+                                                  std::uint8_t relationshipType,
+                                                  std::uint8_t requestType,
+                                                  std::uint8_t result,
+                                                  std::uint16_t targetPlayerId)
+{
+    return SendXorPacket(
+        connection,
+        {0xC1, 0x08, 0xE6, relationshipType, requestType, result,
+         static_cast<std::uint8_t>((targetPlayerId >> 8u) & 0xFFu),
+         static_cast<std::uint8_t>(targetPlayerId & 0xFFu)});
+}
+
+bool DirectSession::SendAllianceListRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x03, 0xE9});
+}
+
+bool DirectSession::SendAllianceGuildBan(Connection* connection,
+                                         const wchar_t* guildName)
+{
+    if (guildName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, 9> guildNameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        guildNameUtf8.data(), guildName, static_cast<int>(guildNameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x0C, 0xEB, 0x01};
+    packet.insert(packet.end(),
+                  reinterpret_cast<const std::uint8_t*>(guildNameUtf8.data()),
+                  reinterpret_cast<const std::uint8_t*>(guildNameUtf8.data()) + 8);
+    return SendXorPacket(connection, std::move(packet));
+}
+
 bool DirectSession::SendLogin(Connection* connection,
                               const wchar_t* account,
                               const wchar_t* password,
