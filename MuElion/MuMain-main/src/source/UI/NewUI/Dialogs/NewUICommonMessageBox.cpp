@@ -1492,7 +1492,15 @@ CALLBACK_RESULT SEASON3B::CPersonalshopCreateMsgBoxLayout::OkBtnDown(class CNewU
     wchar_t shopTitle[MAX_SHOPTITLE]{};
     g_pMyShopInventory->GetTitle(shopTitle);
     wcscpy(g_szPersonalShopTitle, shopTitle);
-    SocketClient->ToGameServer()->SendPlayerShopOpen(MU_C16(shopTitle));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendPlayerShopOpen(
+            SocketClient, shopTitle);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendPlayerShopOpen(MU_C16(shopTitle));
+    }
 
     g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYSHOP_INVENTORY);
     g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);
@@ -2787,7 +2795,14 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueCheckMsgBoxLayout::OkBtnDown(cla
 
     if (g_pMyShopInventory->IsEnablePersonalShop() == true)
     {
-        SocketClient->ToGameServer()->SendPlayerShopClose();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPlayerShopClose(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPlayerShopClose();
+        }
     }
 
     CNewUIPickedItem* pPickedItem = CNewUIInventoryCtrl::GetPickedItem();
@@ -2803,14 +2818,36 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueCheckMsgBoxLayout::OkBtnDown(cla
         if (pPickedItem->GetOwnerInventory() == g_pMyInventory->GetInventoryCtrl())
         {
             int iItemPrice = pMsgBox->GetItemValue();
-            SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iItemPrice);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iItemPrice));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iItemPrice);
+            }
             SendRequestEquipmentItem(STORAGE_TYPE::INVENTORY, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
         }
         else if (pPickedItem->GetOwnerInventory() == NULL)
         {
             int iItemPrice = pMsgBox->GetItemValue();
             BYTE byIndex = iSourceIndex;
-            SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iItemPrice);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iItemPrice));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iItemPrice);
+            }
 
             SendRequestEquipmentItem(STORAGE_TYPE::INVENTORY, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
         }
@@ -2818,7 +2855,18 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueCheckMsgBoxLayout::OkBtnDown(cla
         {
             int iItemPrice = pMsgBox->GetItemValue();
             BYTE byIndex = MAX_MY_INVENTORY_EX_INDEX + iSourceIndex;
-            SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iItemPrice);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iItemPrice));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iItemPrice);
+            }
 
             SendRequestEquipmentItem(STORAGE_TYPE::MYSHOP, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
         }
@@ -2834,7 +2882,18 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueCheckMsgBoxLayout::OkBtnDown(cla
             if (iSourceIndex >= 0)
             {
                 int iItemPrice = pMsgBox->GetItemValue();
-                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iItemPrice);
+                if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iItemPrice));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iItemPrice);
+            }
                 AddPersonalItemPrice(iSourceIndex, iItemPrice, g_IsPurchaseShop);
             }
         }
@@ -2888,7 +2947,19 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemBuyMsgBoxLayout::OkBtnDown(class CNew
         int sourceIndex = g_pPurchaseShopInventory->GetItemInventoryIndex(pItem);
         if (sourceIndex >= 0)
         {
-            SocketClient->ToGameServer()->SendPlayerShopItemBuyRequest(pCha->Key, MU_C16(pCha->ID), sourceIndex);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopItemBuyRequest(
+                    SocketClient,
+                    static_cast<std::uint16_t>(pCha->Key),
+                    pCha->ID,
+                    static_cast<std::uint8_t>(sourceIndex));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopItemBuyRequest(
+                    pCha->Key, MU_C16(pCha->ID), sourceIndex);
+            }
         }
     }
 
