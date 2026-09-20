@@ -38,6 +38,17 @@ public:
                              const wchar_t* personalCode);
     bool SendSelectCharacter(Connection* connection, const wchar_t* name);
     bool SendFinishLoading(Connection* connection);
+    bool SendMapServerMoveAuth(
+        Connection* connection,
+        const wchar_t* account,
+        const wchar_t* character,
+        std::uint32_t authCode1,
+        std::uint32_t authCode2,
+        std::uint32_t authCode3,
+        std::uint32_t authCode4,
+        std::uint32_t tickCount,
+        const std::uint8_t* version,
+        const std::uint8_t* serial);
 
     bool SendWalk(Connection* connection,
                   std::uint8_t sourceX,
