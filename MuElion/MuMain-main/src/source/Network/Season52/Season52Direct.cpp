@@ -1363,6 +1363,53 @@ bool DirectSession::SendQuestSelection(
         });
 }
 
+bool DirectSession::SendQuestCompletionRequest(
+    Connection* connection, std::uint32_t questIndex)
+{
+    // Louis Main 5.2 SendRequestQuestComplete():
+    // C1:F6:0D + DWORD quest index, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x08, 0xF6, 0x0D,
+            static_cast<std::uint8_t>(questIndex & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 24u) & 0xFFu)
+        });
+}
+
+bool DirectSession::SendQuestProceedRequest(
+    Connection* connection,
+    std::uint32_t questIndex,
+    std::uint8_t selectedAnswer)
+{
+    // Louis Main 5.2 SendQuestSelAnswer():
+    // C1:F6:0B + DWORD quest index + selected answer, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x09, 0xF6, 0x0B,
+            static_cast<std::uint8_t>(questIndex & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 24u) & 0xFFu),
+            selectedAnswer
+        });
+}
+
+bool DirectSession::SendAvailableQuestsRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestQuestByNPCEPList(): C1:F6:30, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xF6, 0x30});
+}
+
+bool DirectSession::SendNpcBuffRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestAPDPUp(): C1:F6:31, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xF6, 0x31});
+}
+
 bool DirectSession::SendQuestState(Connection* connection,
                                    std::uint8_t questIndex,
                                    std::uint8_t questState)
