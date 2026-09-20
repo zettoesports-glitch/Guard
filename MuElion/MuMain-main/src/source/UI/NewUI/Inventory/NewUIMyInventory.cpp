@@ -897,7 +897,16 @@ void CNewUIMyInventory::OpenningProcess()
     {
         if (g_QuestMng.IsEPRequestRewardState(0x1000F))
         {
-            SocketClient->ToGameServer()->SendQuestClientActionRequest(1, 0x0F);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendQuestClientActionRequest(
+                    SocketClient, 0x0001000Fu);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendQuestClientActionRequest(
+                    1, 0x0F);
+            }
             g_QuestMng.SetEPRequestRewardState(0x1000F, false);
         }
     }
