@@ -22,7 +22,7 @@
 #include "Engine/Object/ZzzOpenData.h"
 #include "Scenes/SceneCore.h"
 #include "Network/Reconnect/ReconnectManager.h"
-#include "Network/IncomingPacketQueue.h"
+#include "Network/IncomingPacketQueue.h"\n#include "Network/Season52/Season52Direct.h"
 #include "I18N/All.h"
 
 #include "Audio/DSPlaySound.h"
@@ -350,9 +350,22 @@ BOOL CreateSocket(const wchar_t* IpAddr, unsigned short Port)
     BOOL bResult = TRUE;
     g_ConsoleDebug->Write(MCD_NORMAL, L"[Connect to Server] ip address = %ls, port = %d", IpAddr, Port);
 
-    // todo: generally, it's a bad idea to assume a specific port number (range).
-    const bool isEncrypted = Port > 0xADFF || Port < 0xAD00;
-    SocketClient = new Connection(MU_C16(IpAddr), Port, isEncrypted, &HandleIncomingPacket);
+    // Keep the existing endpoint heuristic for now, but separate endpoint role
+    // from transport encryption. In direct Season 5.2 mode the managed bridge
+    // is used only as a raw packet transport; XOR/SimpleModulus live in C++.
+    const bool isGameServerEndpoint = Port > 0xADFF || Port < 0xAD00;
+    const bool directSeason52 = mu::net::s52::DirectProtocolEnabled();
+
+    if (directSeason52
+        && !mu::net::s52::DirectSession::Instance().BeginConnection(isGameServerEndpoint))
+    {
+        g_ErrorReport.Write(L"NET: Season 5.2 direct protocol initialization failed.\r\n");
+        g_ErrorReport.WriteCurrentTime();
+        return FALSE;
+    }
+
+    const bool bridgeEncrypted = isGameServerEndpoint && !directSeason52;
+    SocketClient = new Connection(MU_C16(IpAddr), Port, bridgeEncrypted, &HandleIncomingPacket);
     if (!SocketClient->IsConnected())
     {
         bResult = FALSE;
@@ -375,7 +388,7 @@ BOOL CreateSocket(const wchar_t* IpAddr, unsigned short Port)
             }
         }
     }
-    else if (isEncrypted)
+    else if (isGameServerEndpoint)
     {
         // Remember the address we actually connected to so auto-reconnect can
         // probe it directly. Only cache game-server endpoints: a reconnect
@@ -398,6 +411,11 @@ void DeleteSocket()
     {
         SocketClient->Close();
         SocketClient = nullptr;
+    }
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().Reset();
     }
 }
 
@@ -543,7 +561,16 @@ void ReceiveServerConnect(const BYTE* ReceiveBuffer)
 void ReceiveServerConnectBusy(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPRECEIVE_SERVER_BUSY)ReceiveBuffer;
-    SocketClient->ToConnectServer()->SendServerListRequest();
+    (void)Data;
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendServerList(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToConnectServer()->SendServerListRequest();
+    }
 }
 
 void ReceiveJoinServer(const BYTE* ReceiveBuffer)
@@ -1826,7 +1853,14 @@ void ReceiveChat(const BYTE* ReceiveBuffer)
     if (SceneFlag == LOG_IN_SCENE)
     {
         g_ErrorReport.Write(L"Send Request Server List.\r\n");
-        SocketClient->ToConnectServer()->SendServerListRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendServerList(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToConnectServer()->SendServerListRequest();
+        }
     }
     else
     {
@@ -14992,16 +15026,34 @@ void ProcessPacketCallback(const PacketInfo* Packet)
 
 static void HandleIncomingPacket(int32_t Handle, const BYTE* ReceiveBuffer, int32_t Size)
 {
-    auto Packet = std::make_unique<PacketInfo>();
-    Packet->ReceiveBuffer = std::make_unique<BYTE[]>(Size);
-    std::copy(ReceiveBuffer, ReceiveBuffer + Size, Packet->ReceiveBuffer.get());
-    Packet->ConnectionHandle = Handle;
-    Packet->Size = Size;
+    const auto enqueue = [Handle](const BYTE* data, int32_t size)
+    {
+        auto packet = std::make_unique<PacketInfo>();
+        packet->ReceiveBuffer = std::make_unique<BYTE[]>(size);
+        std::copy(data, data + size, packet->ReceiveBuffer.get());
+        packet->ConnectionHandle = Handle;
+        packet->Size = size;
+        Network::IncomingPacketQueue::Instance().Push(std::move(packet));
+    };
 
-    // Hand the packet to the main thread for processing. The main loop drains
-    // this queue every frame and calls ProcessPacketCallback. Replaces the old
-    // PostMessage(WM_RECEIVE_BUFFER) round-trip through the Win32 message queue.
-    Network::IncomingPacketQueue::Instance().Push(std::move(Packet));
+    if (!mu::net::s52::DirectProtocolEnabled())
+    {
+        enqueue(ReceiveBuffer, Size);
+        return;
+    }
+
+    std::vector<std::vector<std::uint8_t>> packets;
+    if (!mu::net::s52::DirectSession::Instance().ProcessIncoming(
+            ReceiveBuffer, static_cast<std::size_t>(Size), packets))
+    {
+        return;
+    }
+
+    for (const auto& packet : packets)
+    {
+        enqueue(reinterpret_cast<const BYTE*>(packet.data()),
+                static_cast<int32_t>(packet.size()));
+    }
 }
 
 bool CheckExceptionBuff(eBuffState buff, OBJECT* o, bool iserase)
