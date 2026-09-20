@@ -29,8 +29,12 @@ std::vector<std::uint8_t> BuildServerListRequest() {
     return {0xC1, 0x04, 0xF4, 0x06};
 }
 
-std::vector<std::uint8_t> BuildServerAddressRequest(std::uint8_t serverCode) {
-    return {0xC1, 0x05, 0xF4, 0x03, serverCode};
+std::vector<std::uint8_t> BuildServerAddressRequest(std::uint16_t serverId) {
+    return {
+        0xC1, 0x06, 0xF4, 0x03,
+        static_cast<std::uint8_t>(serverId & 0xFFu),
+        static_cast<std::uint8_t>((serverId >> 8u) & 0xFFu)
+    };
 }
 
 std::vector<std::uint8_t> BuildCharacterListRequest(std::uint8_t language) {
