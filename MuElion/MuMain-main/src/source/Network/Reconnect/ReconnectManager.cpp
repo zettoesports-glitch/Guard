@@ -438,7 +438,7 @@ void ReconnectManager::UpdateRetrying()
     LogIn = 0;
     CurrentProtocolState = REQUEST_JOIN_SERVER;
     DeleteSocket();
-    CreateSocket(m_serverIp, m_serverPort);
+    CreateSocket(m_serverIp, m_serverPort, ServerEndpointRole::GameServer);
 
     if (IsSocketAlive())
     {
