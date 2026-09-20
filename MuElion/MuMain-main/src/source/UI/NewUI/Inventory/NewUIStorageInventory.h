@@ -99,6 +99,7 @@ namespace SEASON3B
 
         void ProcessToReceiveStorageStatus(BYTE byStatus);
         void ProcessToReceiveStorageItems(int nIndex, std::span<const BYTE> pbyItemPacket);
+        void ProcessToReceiveStorageItemsOld(int nIndex, std::span<const BYTE> pbyItemPacket);
         void ProcessStorageItemAutoMoveSuccess();
         void ProcessStorageItemAutoMoveFailure();
 
