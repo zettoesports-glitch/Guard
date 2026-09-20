@@ -143,6 +143,7 @@ public:
                        std::uint8_t skillSerial);
     bool SendTalkNpc(Connection* connection, std::uint16_t npcId);
     bool SendCloseNpc(Connection* connection);
+    bool SendCraftingDialogClose(Connection* connection);
     bool SendConsumeItem(Connection* connection,
                          std::uint8_t itemSlot,
                          std::uint8_t targetSlot,
