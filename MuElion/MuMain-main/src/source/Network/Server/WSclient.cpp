@@ -14882,6 +14882,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             }
             break;
         case 0x01: // receive create character
+            if (mu::net::s52::DirectProtocolEnabled() && Size < 19)
+            {
+                mu::log::Get("network")->error(
+                    "S52: truncated F3:01 create-character response: got={} expected>=19",
+                    Size);
+                break;
+            }
+
             ReceiveCreateCharacter(ReceiveBuffer);
             break;
         case 0x02: // receive delete character
