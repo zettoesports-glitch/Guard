@@ -13288,8 +13288,17 @@ void ReceiveBCGiveUp(const BYTE* ReceiveBuffer)
         g_pSystemLogBox->AddText(I18N::Game::SurrenderingCastleSiegeHasFailed, SEASON3B::TYPE_SYSTEM_MESSAGE);
         break;
     case 0x01:
-        SocketClient->ToGameServer()->SendCastleSiegeRegistrationStateRequest();
-        SocketClient->ToGameServer()->SendCastleSiegeRegisteredGuildsListRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            auto& direct = mu::net::s52::DirectSession::Instance();
+            direct.SendCastleSiegeRegistrationStateRequest(SocketClient);
+            direct.SendCastleSiegeRegisteredGuildsListRequest(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCastleSiegeRegistrationStateRequest();
+            SocketClient->ToGameServer()->SendCastleSiegeRegisteredGuildsListRequest();
+        }
         g_GuardsMan.SetRegStatus(0);
         g_pSystemLogBox->AddText(I18N::Game::SurrenderingCastleSiegeIsSuccessful, SEASON3B::TYPE_SYSTEM_MESSAGE);
         break;
