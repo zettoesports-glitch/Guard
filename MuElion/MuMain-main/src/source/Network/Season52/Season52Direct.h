@@ -119,6 +119,19 @@ public:
                      const wchar_t* target,
                      const wchar_t* text);
 
+    bool SendTradeRequest(Connection* connection, std::uint16_t targetId);
+    bool SendTradeResponse(Connection* connection, std::uint8_t accepted);
+    bool SendTradeMoney(Connection* connection, std::uint32_t amount);
+    bool SendTradeResult(Connection* connection, std::uint8_t accepted);
+    bool SendTradeExit(Connection* connection);
+
+    bool SendPartyInvite(Connection* connection, std::uint16_t targetId);
+    bool SendPartyResponse(Connection* connection,
+                           std::uint8_t accepted,
+                           std::uint16_t requesterId);
+    bool SendPartyList(Connection* connection);
+    bool SendPartyLeave(Connection* connection, std::uint8_t partyIndex);
+
     bool SendLogin(Connection* connection,
                    const wchar_t* account,
                    const wchar_t* password,
