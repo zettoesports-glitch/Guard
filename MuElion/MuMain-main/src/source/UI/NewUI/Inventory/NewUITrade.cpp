@@ -4,6 +4,7 @@
 
 #include "stdafx.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "UI/NewUI/Inventory/NewUITrade.h"
 #include "UI/NewUI/NewUISystem.h"
@@ -126,7 +127,14 @@ bool CNewUITrade::UpdateMouseEvent()
             && m_bMyConfirm)
         {
             m_bMyConfirm = false;
-            SocketClient->ToGameServer()->SendTradeButtonStateChange(TradeButtonState::Unchecked);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendTradeResult(SocketClient, 0);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendTradeButtonStateChange(TradeButtonState::Unchecked);
+            }
         }
 
         return false;
@@ -162,7 +170,14 @@ bool CNewUITrade::UpdateKeyEvent()
     {
         if (SEASON3B::IsPress(VK_ESCAPE) == true)
         {
-            SocketClient->ToGameServer()->SendTradeCancel();
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendTradeExit(SocketClient);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendTradeCancel();
+            }
             g_pNewUISystem->Hide(SEASON3B::INTERFACE_TRADE);
             PlayBuffer(SOUND_CLICK01);
 
@@ -473,7 +488,14 @@ void CNewUITrade::SendRequestItemToTrade(ITEM* pItemObj, int nInvenIndex,
     else
     {
         m_bMyConfirm = false;
-        SocketClient->ToGameServer()->SendTradeButtonStateChange(TradeButtonState::Unchecked);
+        if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendTradeResult(SocketClient, 0);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendTradeButtonStateChange(TradeButtonState::Unchecked);
+            }
 
         SendRequestEquipmentItem(STORAGE_TYPE::INVENTORY, nInvenIndex,
             pItemObj, STORAGE_TYPE::TRADE, nTradeIndex);
@@ -498,14 +520,29 @@ void CNewUITrade::SendRequestMyGoldInput(int nInputGold)
         if (m_bMyConfirm)
         {
             m_bMyConfirm = false;
-            SocketClient->ToGameServer()->SendTradeButtonStateChange(TradeButtonState::Unchecked);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendTradeResult(SocketClient, 0);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendTradeButtonStateChange(TradeButtonState::Unchecked);
+            }
         }
 
         if (m_nMyTradeGold > 0)
             m_nMyTradeWait = 150;
 
         m_nTempMyTradeGold = nInputGold;
-        SocketClient->ToGameServer()->SendSetTradeMoney(nInputGold);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendTradeMoney(
+                SocketClient, static_cast<std::uint32_t>(nInputGold));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendSetTradeMoney(nInputGold);
+        }
     }
     else
     {
@@ -518,7 +555,14 @@ void CNewUITrade::ProcessCloseBtn()
     if (CNewUIInventoryCtrl::GetPickedItem() == NULL)
     {
         m_bTradeAlert = false;
-        SocketClient->ToGameServer()->SendTradeCancel();
+        if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendTradeExit(SocketClient);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendTradeCancel();
+            }
     }
 }
 
@@ -575,7 +619,16 @@ void CNewUITrade::AlertTrade()
     m_bMyConfirm = !m_bMyConfirm;
 
     m_bTradeAlert = true;
-    SocketClient->ToGameServer()->SendTradeButtonStateChange(m_bMyConfirm ? TradeButtonState::Checked : TradeButtonState::Unchecked);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendTradeResult(
+            SocketClient, m_bMyConfirm ? 1 : 0);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendTradeButtonStateChange(
+            m_bMyConfirm ? TradeButtonState::Checked : TradeButtonState::Unchecked);
+    }
 }
 
 void CNewUITrade::GetYourID(wchar_t* pszYourID)
@@ -587,7 +640,14 @@ void CNewUITrade::ProcessToReceiveTradeRequest(char* pbyYourID)
 {
     if (g_pNewUISystem->IsImpossibleTradeInterface())
     {
-        SocketClient->ToGameServer()->SendTradeRequestResponse(false);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendTradeResponse(SocketClient, 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendTradeRequestResponse(false);
+        }
         return;
     }
 
