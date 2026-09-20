@@ -346,15 +346,20 @@ static int64_t SaturatingAddToUpper(const int64_t current, const int64_t add, in
     return current + add;
 }
 
-BOOL CreateSocket(const wchar_t* IpAddr, unsigned short Port)
+BOOL CreateSocket(
+    const wchar_t* IpAddr,
+    unsigned short Port,
+    ServerEndpointRole role)
 {
     BOOL bResult = TRUE;
     g_ConsoleDebug->Write(MCD_NORMAL, L"[Connect to Server] ip address = %ls, port = %d", IpAddr, Port);
 
-    // Keep the existing endpoint heuristic for now, but separate endpoint role
-    // from transport encryption. In direct Season 5.2 mode the managed bridge
-    // is used only as a raw packet transport; XOR/SimpleModulus live in C++.
-    const bool isGameServerEndpoint = Port > 0xADFF || Port < 0xAD00;
+    // Critical Season 5.2 connections identify their role explicitly.
+    // Auto retains the historical port heuristic only as a compatibility
+    // fallback for call sites which have not yet been migrated.
+    const bool isGameServerEndpoint =
+        role == ServerEndpointRole::GameServer
+        || (role == ServerEndpointRole::Auto && (Port > 0xADFF || Port < 0xAD00));
     const bool directSeason52 = mu::net::s52::DirectProtocolEnabled();
 
     if (directSeason52
@@ -549,7 +554,7 @@ void ReceiveServerConnect(const BYTE* ReceiveBuffer)
         SocketClient->Close();
     }
 
-    if (CreateSocket(IP, Data->Port))
+    if (CreateSocket(IP, Data->Port, ServerEndpointRole::GameServer))
     {
         g_bGameServerConnected = TRUE;
     }
