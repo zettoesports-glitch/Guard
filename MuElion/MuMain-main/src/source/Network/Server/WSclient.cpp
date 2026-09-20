@@ -9056,7 +9056,14 @@ void ReceiveGuildLeave(const BYTE* ReceiveBuffer)
     }
     else if (Data->Value == 5)
     {
-        SocketClient->ToGameServer()->SendGuildListRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildListRequest(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildListRequest();
+        }
     }
 }
 
@@ -9341,7 +9348,15 @@ void ReceiveGuildIDViewport(const BYTE* ReceiveBuffer)
             c->GuildMarkIndex = g_GuildCache.GetGuildMarkIndex(GuildKey);
         else
         {
-            SocketClient->ToGameServer()->SendGuildInfoRequest(GuildKey);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendGuildInfoRequest(
+                    SocketClient, static_cast<std::uint32_t>(GuildKey));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendGuildInfoRequest(GuildKey);
+            }
             c->GuildMarkIndex = g_GuildCache.MakeGuildMarkIndex(GuildKey);
         }
 
@@ -9561,7 +9576,14 @@ void ReceiveBanUnionGuildResult(const BYTE* ReceiveBuffer)
     {
         if (g_pGuildInfoWindow->GetUnionCount() > 2)
         {
-            SocketClient->ToGameServer()->SendRequestAllianceList();
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendAllianceListRequest(SocketClient);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendRequestAllianceList();
+            }
         }
         g_pGuildInfoWindow->UnionGuildClear();
     }
