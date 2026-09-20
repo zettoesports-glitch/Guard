@@ -310,6 +310,62 @@ bool DirectSession::SendFinishLoading(Connection* connection)
     return SendPacket(connection, BuildFinishLoadingRequest());
 }
 
+bool DirectSession::SendMapServerMoveAuth(
+    Connection* connection,
+    const wchar_t* account,
+    const wchar_t* character,
+    std::uint32_t authCode1,
+    std::uint32_t authCode2,
+    std::uint32_t authCode3,
+    std::uint32_t authCode4,
+    std::uint32_t tickCount,
+    const std::uint8_t* version,
+    const std::uint8_t* serial)
+{
+    if (!DirectProtocolEnabled() || !gameServer_
+        || connection == nullptr || account == nullptr || character == nullptr
+        || version == nullptr || serial == nullptr
+        || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::array<char, 13> accountUtf8{};
+    std::array<char, 13> characterUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        accountUtf8.data(), account, static_cast<int>(accountUtf8.size()));
+    CMultiLanguage::ConvertToUtf8(
+        characterUtf8.data(), character, static_cast<int>(characterUtf8.size()));
+
+    std::array<std::uint8_t, ProtocolVersionSize> protocolVersion{};
+    std::array<std::uint8_t, ProtocolSerialSize> protocolSerial{};
+    std::copy_n(version, protocolVersion.size(), protocolVersion.begin());
+    std::copy_n(serial, protocolSerial.size(), protocolSerial.begin());
+
+    std::vector<std::uint8_t> wire;
+    if (!BuildMapServerMoveAuthRequest(
+            accountUtf8.data(),
+            characterUtf8.data(),
+            authCode1,
+            authCode2,
+            authCode3,
+            authCode4,
+            tickCount,
+            protocolVersion,
+            protocolSerial,
+            crypto_,
+            wire))
+    {
+        mu::log::Get("network")->error(
+            "S52: failed to build encrypted B1:01 map-server auth packet");
+        return false;
+    }
+
+    mu::log::Get("network")->info(
+        "S52: sending encrypted B1:01 map-server auth ({} bytes)", wire.size());
+    return SendPacket(connection, wire);
+}
+
 bool DirectSession::SendWalk(Connection* connection,
                              std::uint8_t sourceX,
                              std::uint8_t sourceY,
