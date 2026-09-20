@@ -28,6 +28,10 @@ public:
                 std::size_t size,
                 std::vector<std::uint8_t>& encrypted) override;
 
+    bool EncodeForcedWide(const std::uint8_t* packet,
+                          std::size_t size,
+                          std::vector<std::uint8_t>& encrypted);
+
 private:
     SimpleModulusKey clientToServer_{};
     SimpleModulusKey serverToClient_{};
