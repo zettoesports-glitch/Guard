@@ -645,6 +645,143 @@ bool DirectSession::SendCastleSiegeRegisteredGuildsListRequest(
     return SendXorPacket(connection, {0xC1, 0x03, 0xB4});
 }
 
+bool DirectSession::SendPlayerShopSetItemPrice(
+    Connection* connection, std::uint8_t itemSlot, std::uint32_t price)
+{
+    // MuElion reserves inventory-extension slots 76..203, while EX502 uses
+    // 76..107 for the 8x4 personal shop. Translate only the modern shop range.
+    if (itemSlot >= MAX_MY_INVENTORY_EX_INDEX
+        && itemSlot < MAX_MY_INVENTORY_EX_INDEX + MAX_PERSONALSHOP_INVEN)
+    {
+        itemSlot = static_cast<std::uint8_t>(
+            MAX_MY_INVENTORY_INDEX
+            + (itemSlot - MAX_MY_INVENTORY_EX_INDEX));
+    }
+
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1, 0x09, 0x3F, 0x01, itemSlot,
+            static_cast<std::uint8_t>(price & 0xFFu),
+            static_cast<std::uint8_t>((price >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((price >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((price >> 24u) & 0xFFu)
+        });
+}
+
+bool DirectSession::SendPlayerShopOpen(
+    Connection* connection, const wchar_t* shopTitle)
+{
+    if (shopTitle == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, MAX_SHOPTITLE + 1> titleUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        titleUtf8.data(), shopTitle, static_cast<int>(titleUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x28, 0x3F, 0x02};
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(titleUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(titleUtf8.data()) + MAX_SHOPTITLE);
+    return SendEncryptedPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendPlayerShopClose(Connection* connection)
+{
+    return SendEncryptedPacket(connection, {0xC1, 0x04, 0x3F, 0x03});
+}
+
+bool DirectSession::SendPlayerShopItemListRequest(
+    Connection* connection,
+    std::uint16_t playerId,
+    const wchar_t* playerName)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{
+        0xC1, 0x10, 0x3F, 0x05,
+        static_cast<std::uint8_t>((playerId >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>(playerId & 0xFFu)
+    };
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    return SendEncryptedPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendPlayerShopItemBuyRequest(
+    Connection* connection,
+    std::uint16_t playerId,
+    const wchar_t* playerName,
+    std::uint8_t itemSlot)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    if (itemSlot >= MAX_MY_INVENTORY_EX_INDEX
+        && itemSlot < MAX_MY_INVENTORY_EX_INDEX + MAX_PERSONALSHOP_INVEN)
+    {
+        itemSlot = static_cast<std::uint8_t>(
+            MAX_MY_INVENTORY_INDEX
+            + (itemSlot - MAX_MY_INVENTORY_EX_INDEX));
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{
+        0xC1, 0x11, 0x3F, 0x06,
+        static_cast<std::uint8_t>((playerId >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>(playerId & 0xFFu)
+    };
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    packet.push_back(itemSlot);
+    return SendEncryptedPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendPlayerShopCloseOther(
+    Connection* connection,
+    std::uint16_t playerId,
+    const wchar_t* playerName)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{
+        0xC1, 0x10, 0x3F, 0x07,
+        static_cast<std::uint8_t>((playerId >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>(playerId & 0xFFu)
+    };
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    return SendEncryptedPacket(connection, std::move(packet));
+}
+
 bool DirectSession::SendItemMove(
     Connection* connection,
     std::uint8_t sourceStorage,
