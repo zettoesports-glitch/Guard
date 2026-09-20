@@ -2866,8 +2866,19 @@ void CheckGate()
                                 }
                                 else
                                 {
-                                    SocketClient->ToGameServer()->SendEnterGateRequest(i, 0, 0);
-                                    bResult = true;
+                                    if (mu::net::s52::DirectProtocolEnabled())
+                                    {
+                                        bResult = mu::net::s52::DirectSession::Instance().SendEnterGate(
+                                            SocketClient,
+                                            static_cast<std::uint16_t>(i),
+                                            0,
+                                            0);
+                                    }
+                                    else
+                                    {
+                                        SocketClient->ToGameServer()->SendEnterGateRequest(i, 0, 0);
+                                        bResult = true;
+                                    }
                                 }
                             }
 
