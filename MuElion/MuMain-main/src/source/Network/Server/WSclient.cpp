@@ -3307,6 +3307,203 @@ void ReceiveCreatePlayerViewportExtended(std::span<const BYTE> ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x12 [ReceiveCreatePlayerViewportExtended]");
 }
 
+void ReceiveCreateTransformViewportSeason52(std::span<const BYTE> ReceiveBuffer)
+{
+    constexpr std::size_t kHeaderSize = 5; // C2 sizeH sizeL 45 count
+    constexpr std::size_t kBaseEntrySize = 38;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x45 transform viewport packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return;
+    }
+
+    const BYTE count = ReceiveBuffer[4];
+    std::size_t offset = kHeaderSize;
+
+    for (BYTE i = 0; i < count; ++i)
+    {
+        if (offset + kBaseEntrySize > ReceiveBuffer.size())
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x45 transform viewport at entry {}",
+                i);
+            return;
+        }
+
+        const BYTE* entry = ReceiveBuffer.data() + offset;
+        WORD key = static_cast<WORD>(
+            (static_cast<WORD>(entry[0]) << 8) | entry[1]);
+        const bool createFlag = (key & 0x8000) != 0;
+        key &= 0x7FFF;
+
+        const BYTE positionX = entry[2];
+        const BYTE positionY = entry[3];
+        const WORD type = static_cast<WORD>(
+            (static_cast<WORD>(entry[4]) << 8) | entry[5]);
+
+        std::array<char, MAX_USERNAME_SIZE + 1> name{};
+        std::copy_n(
+            reinterpret_cast<const char*>(entry + 6),
+            MAX_USERNAME_SIZE,
+            name.data());
+
+        const BYTE targetX = entry[16];
+        const BYTE targetY = entry[17];
+        const BYTE path = entry[18];
+        const BYTE classRaw = entry[19];
+        BYTE* equipment = const_cast<BYTE*>(entry + 20);
+        const BYTE buffCount = entry[37];
+
+        const std::size_t entrySize =
+            kBaseEntrySize + static_cast<std::size_t>(buffCount);
+        if (offset + entrySize > ReceiveBuffer.size())
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x45 buffs at entry {} count={}",
+                i, buffCount);
+            return;
+        }
+
+        wchar_t characterName[MAX_USERNAME_SIZE + 1]{};
+        CMultiLanguage::ConvertFromUtf8(
+            characterName, name.data(), MAX_USERNAME_SIZE);
+
+        const int previousIndex = FindCharacterIndex(key);
+        short guildMarkIndex = -1;
+        BYTE guildStatus = 0;
+        BYTE guildType = 0;
+        BYTE guildRelationship = 0;
+        BYTE guildMasterKillCount = 0;
+        BYTE etcPart = 0;
+        BYTE ctlCode = 0;
+
+        if (previousIndex != MAX_CHARACTERS_CLIENT)
+        {
+            const CHARACTER& previous = CharactersClient[previousIndex];
+            guildMarkIndex = previous.GuildMarkIndex;
+            guildStatus = previous.GuildStatus;
+            guildType = previous.GuildType;
+            guildRelationship = previous.GuildRelationShip;
+            guildMasterKillCount = previous.GuildMasterKillCount;
+            etcPart = previous.EtcPart;
+            ctlCode = previous.CtlCode;
+        }
+
+        if (FindText(characterName, L"webzen") == false)
+        {
+            CHARACTER* character = CreateMonster(
+                static_cast<EMonsterType>(type),
+                positionX,
+                positionY,
+                key);
+
+            if (character == nullptr)
+            {
+                offset += entrySize;
+                continue;
+            }
+
+            OBJECT* object = &character->Object;
+
+            if (character->MonsterIndex == MONSTER_GIANT)
+            {
+                object->Scale = 0.8f;
+            }
+
+            if (type == MONSTER_JACK_OLANTERN
+                || type == MONSTER_MU_ALLIES
+                || type == MONSTER_ILLUSION_SORCERER)
+            {
+                DeleteCloth(character, object);
+            }
+
+            DeleteCloth(character, object);
+
+            character->GuildMarkIndex = guildMarkIndex;
+            character->GuildStatus = guildStatus;
+            character->GuildType = guildType;
+            character->GuildRelationShip = guildRelationship;
+            character->GuildMasterKillCount = guildMasterKillCount;
+            character->EtcPart = etcPart;
+            character->CtlCode = ctlCode;
+            character->Class = DecodeSeason52Class(classRaw);
+            character->SkinIndex =
+                gCharacterManager.GetSkinModelIndex(character->Class);
+            character->PK = path & 0x0F;
+            object->Kind = KIND_PLAYER;
+            character->Change = true;
+
+            for (BYTE buffIndex = 0; buffIndex < buffCount; ++buffIndex)
+            {
+                const auto buff = static_cast<eBuffState>(
+                    entry[kBaseEntrySize + buffIndex]);
+                RegisterBuff(buff, object);
+                battleCastle::SettingBattleFormation(character, buff);
+            }
+
+            character->PositionX = positionX;
+            character->PositionY = positionY;
+            character->TargetX = targetX;
+            character->TargetY = targetY;
+            object->Angle[2] =
+                (static_cast<float>(path >> 4) - 1.0f) * 45.0f;
+
+            if (createFlag)
+            {
+                object->Position[0] =
+                    (static_cast<float>(positionX) + 0.5f) * TERRAIN_SCALE;
+                object->Position[1] =
+                    (static_cast<float>(positionY) + 0.5f) * TERRAIN_SCALE;
+                object->Alpha = 0.0f;
+                CreateEffect(
+                    MODEL_MAGIC_CIRCLE1,
+                    object->Position,
+                    object->Angle,
+                    object->Light,
+                    0,
+                    object);
+                CreateParticle(
+                    BITMAP_LIGHTNING + 1,
+                    object->Position,
+                    object->Angle,
+                    object->Light,
+                    2,
+                    1.0f,
+                    object);
+            }
+            else if (PathFinding2(
+                         positionX,
+                         positionY,
+                         targetX,
+                         targetY,
+                         &character->Path))
+            {
+                character->Movement = true;
+            }
+
+            std::copy(
+                characterName,
+                characterName + MAX_USERNAME_SIZE,
+                character->ID);
+            character->ID[MAX_USERNAME_SIZE] = L'\0';
+
+            ChangeCharacterExt(FindCharacterIndex(key), equipment);
+        }
+
+        offset += entrySize;
+    }
+
+    mu::log::Get("network")->info(
+        "S52: 0x45 materialized {} classic transform entries", count);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0x45 [ReceiveCreateTransformViewportSeason52(%d)]",
+        count);
+}
+
 void ReceiveCreateTransformViewport(std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PWHEADER_DEFAULT_WORD>(ReceiveBuffer);
@@ -14390,9 +14587,16 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         // AddDebugText(ReceiveBuffer,Size);
         ReceiveCreateSummonViewport(ReceiveBuffer);
         break;
-    case 0x45: // create monsters
+    case 0x45: // transformed characters
         // AddDebugText(ReceiveBuffer,Size);
-        ReceiveCreateTransformViewport(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveCreateTransformViewportSeason52(received_span);
+        }
+        else
+        {
+            ReceiveCreateTransformViewport(received_span);
+        }
         break;
     case 0x14: // delete characters & monsters
         // AddDebugText(ReceiveBuffer,Size);
