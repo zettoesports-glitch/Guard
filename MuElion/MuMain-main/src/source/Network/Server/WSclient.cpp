@@ -360,8 +360,7 @@ BOOL CreateSocket(const wchar_t* IpAddr, unsigned short Port)
     if (directSeason52
         && !mu::net::s52::DirectSession::Instance().BeginConnection(isGameServerEndpoint))
     {
-        g_ErrorReport.Write(L"NET: Season 5.2 direct protocol initialization failed.\r
-");
+        g_ErrorReport.Write(L"NET: Season 5.2 direct protocol initialization failed.\r\n");
         g_ErrorReport.WriteCurrentTime();
         return FALSE;
     }
@@ -373,8 +372,7 @@ BOOL CreateSocket(const wchar_t* IpAddr, unsigned short Port)
         bResult = FALSE;
         wchar_t connectError[256];
         mu_swprintf_s(connectError, L"Cannot connect to %ls:%d. Server may be offline.", IpAddr, Port);
-        g_ErrorReport.Write(L"NET: %ls\r
-", connectError);
+        g_ErrorReport.Write(L"NET: %ls\r\n", connectError);
         g_ErrorReport.WriteCurrentTime();
         delete SocketClient;
         SocketClient = nullptr;
@@ -535,8 +533,7 @@ void ReceiveServerList(const BYTE* ReceiveBuffer)
         rUIMng.ShowWin(&rUIMng.m_LoginMainWin);
     }
 
-    g_ErrorReport.Write(L"Success Receive Server List.\r
-");
+    g_ErrorReport.Write(L"Success Receive Server List.\r\n");
 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0xF4 [ReceiveServerList]");
 }
@@ -626,8 +623,7 @@ void ReceiveJoinServer(const BYTE* ReceiveBuffer)
         {
             rUIMng.HideWin(&rUIMng.m_LoginWin);
             rUIMng.PopUpMsgWin(MESSAGE_VERSION);
-            g_ErrorReport.Write(L"Version dismatch - Join server.\r
-");
+            g_ErrorReport.Write(L"Version dismatch - Join server.\r\n");
         }
     }
 
@@ -639,8 +635,7 @@ void ReceiveJoinServer(const BYTE* ReceiveBuffer)
     //         wchar_t lpszTemp[256];
     //         if (Util_CheckOption(GetCommandLineW(), L'i', lpszTemp))
     //         {
-    //             g_ErrorReport.Write(L"> Try to Login \"%ls\"\r
-", m_ID);
+    //             g_ErrorReport.Write(L"> Try to Login \"%ls\"\r\n", m_ID);
     //             SendRequestLogIn(m_ID, lpszTemp);
     //         }
     //     }
@@ -1867,8 +1862,7 @@ void ReceiveChat(const BYTE* ReceiveBuffer)
 {
     if (SceneFlag == LOG_IN_SCENE)
     {
-        g_ErrorReport.Write(L"Send Request Server List.\r
-");
+        g_ErrorReport.Write(L"Send Request Server List.\r\n");
         if (mu::net::s52::DirectProtocolEnabled())
         {
             mu::net::s52::DirectSession::Instance().SendServerList(SocketClient);
@@ -8988,8 +8982,7 @@ void ReceiveSetAttribute(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPRECEIVE_SET_MAPATTRIBUTE)ReceiveBuffer;
 
-    g_ErrorReport.Write(L"Type:%d \r
-", Data->m_byType);
+    g_ErrorReport.Write(L"Type:%d \r\n", Data->m_byType);
 
     switch (Data->m_byType)
     {
@@ -9005,8 +8998,7 @@ void ReceiveSetAttribute(const BYTE* ReceiveBuffer)
             int dx = Data->m_vAttribute[(k * 2) + 1].m_byX - Data->m_vAttribute[(k * 2)].m_byX + 1;
             int dy = Data->m_vAttribute[(k * 2) + 1].m_byY - Data->m_vAttribute[(k * 2)].m_byY + 1;
 
-            g_ErrorReport.Write(L"count:%d, x:%d, y:%d \r
-", Data->m_byCount, dx, dy);
+            g_ErrorReport.Write(L"count:%d, x:%d, y:%d \r\n", Data->m_byCount, dx, dy);
 
             AddTerrainAttributeRange(Data->m_vAttribute[(k * 2)].m_byX, Data->m_vAttribute[(k * 2)].m_byY, dx, dy,
                                      Data->m_byMapAttr, 1 - Data->m_byMapSetType);
@@ -9019,15 +9011,13 @@ void ReceiveSetAttribute(const BYTE* ReceiveBuffer)
         {
             if (Data->m_byMapSetType)
             {
-                g_ErrorReport.Write(L"SubTerrainAttribute - count:%d, x:%d, y:%d \r
-", Data->m_byCount,
+                g_ErrorReport.Write(L"SubTerrainAttribute - count:%d, x:%d, y:%d \r\n", Data->m_byCount,
                                     Data->m_vAttribute[i].m_byX, Data->m_vAttribute[i].m_byY);
                 SubTerrainAttribute(Data->m_vAttribute[i].m_byX, Data->m_vAttribute[i].m_byY, Data->m_byMapAttr);
             }
             else
             {
-                g_ErrorReport.Write(L"AddTerrainAttribute - count:%d, x:%d, y:%d \r
-", Data->m_byCount,
+                g_ErrorReport.Write(L"AddTerrainAttribute - count:%d, x:%d, y:%d \r\n", Data->m_byCount,
                                     Data->m_vAttribute[i].m_byX, Data->m_vAttribute[i].m_byY);
                 AddTerrainAttribute(Data->m_vAttribute[i].m_byX, Data->m_vAttribute[i].m_byY, Data->m_byMapAttr);
             }
@@ -9357,8 +9347,7 @@ void ReceiveSetPriceResult(const BYTE* ReceiveBuffer)
 
         SocketClient->ToGameServer()->SendInventoryRequest();
 
-        g_ErrorReport.Write(L"@ [Fault] ReceiveSetPriceResult (result : %d)
-", Header->byResult);
+        g_ErrorReport.Write(L"@ [Fault] ReceiveSetPriceResult (result : %d)\n", Header->byResult);
     }
 }
 
@@ -9373,8 +9362,7 @@ void ReceiveCreatePersonalShop(const BYTE* ReceiveBuffer)
     else
     {
         // Header->btResult == 0x03
-        g_ErrorReport.Write(L"@ [Fault] ReceiveCreatePersonalShop (result : %d)
-", Header->byResult);
+        g_ErrorReport.Write(L"@ [Fault] ReceiveCreatePersonalShop (result : %d)\n", Header->byResult);
     }
 }
 void ReceiveDestroyPersonalShop(const BYTE* ReceiveBuffer)
@@ -9396,8 +9384,7 @@ void ReceiveDestroyPersonalShop(const BYTE* ReceiveBuffer)
     }
     else
     {
-        g_ErrorReport.Write(L"@ [Fault] ReceiveDestroyPersonalShop (result : %d)
-", Header->byResult);
+        g_ErrorReport.Write(L"@ [Fault] ReceiveDestroyPersonalShop (result : %d)\n", Header->byResult);
     }
 }
 
@@ -9462,8 +9449,7 @@ void ReceivePersonalShopItemList(std::span<const BYTE> ReceiveBuffer)
                                       L"[ReceivePersonalShopItemList]Item Count : %d, Item Index : %d, Item Price : %d",
                                       Header->ItemCount, i, pShopItem->MoneyPrice);
 
-                g_ErrorReport.Write(L"@ ReceivePersonalShopItemList - item price less than zero(%d)
-",
+                g_ErrorReport.Write(L"@ ReceivePersonalShopItemList - item price less than zero(%d)\n",
                                     pShopItem->MoneyPrice);
 
                 g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);
@@ -9492,8 +9478,7 @@ void ReceivePersonalShopItemList(std::span<const BYTE> ReceiveBuffer)
         break;
         case Fail2:
         default:
-            g_ErrorReport.Write(L"@ [Fault] ReceivePersonalShopItemList (result : %d)
-", Header->byResult);
+            g_ErrorReport.Write(L"@ [Fault] ReceivePersonalShopItemList (result : %d)\n", Header->byResult);
         }
     }
 
@@ -9573,13 +9558,11 @@ void ReceiveRefreshItemList(std::span<const BYTE> ReceiveBuffer)
             auto pCurrentInvenCtrl = g_pPurchaseShopInventory->GetInventoryCtrl();
 
             size_t uiCntInvenCtrl = pCurrentInvenCtrl->GetNumberOfItems();
-            g_ErrorReport.Write(L"@ [Notice] ReceiveRefreshItemList (InventoryCtrl Count Items(%d))
-", uiCntInvenCtrl);
+            g_ErrorReport.Write(L"@ [Notice] ReceiveRefreshItemList (InventoryCtrl Count Items(%d))\n", uiCntInvenCtrl);
         }
         else
         {
-            g_ErrorReport.Write(L"@ [Fault] ReceiveRefreshItemList (result : %d)
-", Header->byResult);
+            g_ErrorReport.Write(L"@ [Fault] ReceiveRefreshItemList (result : %d)\n", Header->byResult);
         }
     }
 }
@@ -9640,8 +9623,7 @@ void ReceivePurchaseItem(std::span<const BYTE> ReceiveBuffer)
         break;
         case PURCHASEITEM_RESULTINFO::ItemBlock:
         default:
-            g_ErrorReport.Write(L"@ [Fault] ReceivePurchaseItem (result : %d)
-", Header->Result);
+            g_ErrorReport.Write(L"@ [Fault] ReceivePurchaseItem (result : %d)\n", Header->Result);
         }
         SEASON3B::CNewUIInventoryCtrl::BackupPickedItem();
     }
@@ -13563,8 +13545,7 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
                 break;
             case 0x06:
                 CUIMng::Instance().PopUpMsgWin(RECEIVE_LOG_IN_FAIL_VERSION);
-                g_ErrorReport.Write(L"Version dismatch. - Login\r
-");
+                g_ErrorReport.Write(L"Version dismatch. - Login\r\n");
                 break;
             case 0x07:
             default:
