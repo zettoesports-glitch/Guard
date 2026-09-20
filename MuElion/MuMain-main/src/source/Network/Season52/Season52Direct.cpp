@@ -826,6 +826,12 @@ bool DirectSession::SendPartyLeave(Connection* connection,
         connection, {0xC1, 0x04, 0x43, partyIndex});
 }
 
+bool DirectSession::SendPing(Connection* connection)
+{
+    // Louis Main 5.2: C1:71 with no payload, spe.Send().
+    return SendXorPacket(connection, {0xC1, 0x03, 0x71});
+}
+
 bool DirectSession::SendLogin(Connection* connection,
                               const wchar_t* account,
                               const wchar_t* password,
