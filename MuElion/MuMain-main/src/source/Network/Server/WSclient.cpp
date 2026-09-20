@@ -3040,6 +3040,65 @@ void ReceiveChangePlayer(std::span<const BYTE> ReceiveBuffer)
     SetCharacterScale(c);
 }
 
+void ReceiveChangePlayerSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kPacketSize = 17;
+    constexpr std::size_t kItemOffset = 5;
+
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x25 character-equipment update: got={} expected>={}",
+            packet.size(), kPacketSize);
+        return;
+    }
+
+    const WORD key = static_cast<WORD>(
+        (static_cast<WORD>(packet[3]) << 8) | packet[4]);
+    const int characterIndex = FindCharacterIndex(key);
+    if (characterIndex == MAX_CHARACTERS_CLIENT)
+    {
+        mu::log::Get("network")->warn(
+            "S52: 0x25 references unknown character key {}", key);
+        return;
+    }
+
+    const auto itemData = packet.subspan(kItemOffset, 12);
+    const WORD itemType =
+        static_cast<WORD>(itemData[0])
+        + static_cast<WORD>((itemData[3] & 0x80) * 2)
+        + static_cast<WORD>((itemData[5] & 0xF0) * 32);
+
+    PCHANGE_CHARACTER_EXTENDED translated{};
+    translated.Key = key;
+    translated.ItemSlot = itemData[1] >> 4;
+
+    if (itemType == 0x1FFF)
+    {
+        translated.ItemGroup = 0xFF;
+        translated.ItemNumber = 0xFFFF;
+    }
+    else
+    {
+        translated.ItemGroup =
+            static_cast<BYTE>(itemType / MAX_ITEM_INDEX);
+        translated.ItemNumber =
+            static_cast<WORD>(itemType % MAX_ITEM_INDEX);
+    }
+
+    translated.ItemLevel =
+        static_cast<BYTE>(LevelConvert(itemData[1] & 0x0F));
+    translated.ExcellentFlags = itemData[3] & 0x3F;
+    translated.AncientDiscriminator = itemData[4];
+    translated.IsAncientSetComplete =
+        CharactersClient[characterIndex].ExtendState ? 1 : 0;
+
+    ReceiveChangePlayer(std::span<const BYTE>(
+        reinterpret_cast<const BYTE*>(&translated),
+        sizeof(translated)));
+}
+
+
 void RegisterBuff(eBuffState buff, OBJECT* o, const int bufftime = 0);
 
 void UnRegisterBuff(eBuffState buff, OBJECT* o);
@@ -15073,7 +15132,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         }
         break;
     case 0x25: // change character
-        ReceiveChangePlayer(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveChangePlayerSeason52(received_span);
+        }
+        else
+        {
+            ReceiveChangePlayer(received_span);
+        }
         break;
     case PACKET_ATTACK: // attack character
         ReceiveAttackDamageExtended(ReceiveBuffer);
