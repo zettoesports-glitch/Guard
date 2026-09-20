@@ -790,6 +790,74 @@ bool DirectSession::SendSetFriendOnlineState(
     return SendXorPacket(connection, {0xC1, 0x04, 0xC4, state});
 }
 
+bool DirectSession::SendFriendListRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestFriendList(): C1:C0, Send().
+    return SendXorPacket(connection, {0xC1, 0x03, 0xC0});
+}
+
+bool DirectSession::SendFriendAddRequest(
+    Connection* connection, const wchar_t* playerName)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x0D, 0xC1};
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendFriendAddResponse(
+    Connection* connection,
+    std::uint8_t result,
+    const wchar_t* playerName)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x0E, 0xC2, result};
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendFriendDeleteRequest(
+    Connection* connection, const wchar_t* playerName)
+{
+    if (playerName == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> nameUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        nameUtf8.data(), playerName, static_cast<int>(nameUtf8.size()));
+
+    std::vector<std::uint8_t> packet{0xC1, 0x0D, 0xC3};
+    packet.insert(
+        packet.end(),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()),
+        reinterpret_cast<const std::uint8_t*>(nameUtf8.data()) + CharacterNameSize);
+    return SendXorPacket(connection, std::move(packet));
+}
+
 bool DirectSession::SendItemMove(
     Connection* connection,
     std::uint8_t sourceStorage,
