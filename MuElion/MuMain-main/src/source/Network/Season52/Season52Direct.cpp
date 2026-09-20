@@ -1443,6 +1443,43 @@ bool DirectSession::SendMiniGameEventCountRequest(
     return SendXorPacket(connection, {0xC1, 0x04, 0x9F, eventType});
 }
 
+bool DirectSession::SendPetCommandRequest(
+    Connection* connection,
+    std::uint8_t petType,
+    std::uint8_t command,
+    std::uint16_t targetKey)
+{
+    // Louis Main 5.2 SendRequestPetCommand():
+    // C1:A7 + pet type + command + key H/L, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x07, 0xA7,
+            petType,
+            command,
+            static_cast<std::uint8_t>((targetKey >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>(targetKey & 0xFFu)
+        });
+}
+
+bool DirectSession::SendPetInfoRequest(
+    Connection* connection,
+    std::uint8_t petType,
+    std::uint8_t inventoryType,
+    std::uint8_t itemPosition)
+{
+    // Louis Main 5.2 SendRequestPetInfo():
+    // C1:A9 + pet type + inventory type + position, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x06, 0xA9,
+            petType,
+            inventoryType,
+            itemPosition
+        });
+}
+
 bool DirectSession::SendQuestState(Connection* connection,
                                    std::uint8_t questIndex,
                                    std::uint8_t questState)
