@@ -486,7 +486,18 @@ bool SEASON3B::CNewUICommandWindow::CommandPurchase(CHARACTER* pSelectedCha)
     if (pSelectedCha == nullptr)
         return false;
 
-    SocketClient->ToGameServer()->SendPlayerShopItemListRequest(pSelectedCha->Key, MU_C16(pSelectedCha->ID));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendPlayerShopItemListRequest(
+            SocketClient,
+            static_cast<std::uint16_t>(pSelectedCha->Key),
+            pSelectedCha->ID);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendPlayerShopItemListRequest(
+            pSelectedCha->Key, MU_C16(pSelectedCha->ID));
+    }
 
     return true;
 }
