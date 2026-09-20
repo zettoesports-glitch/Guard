@@ -1508,6 +1508,32 @@ bool DirectSession::SendMiniGameOpeningStateRequest(
         {0xC1, 0x05, 0x91, eventType, eventLevel});
 }
 
+bool DirectSession::SendChaosCastleEnterRequest(
+    Connection* connection,
+    std::uint8_t castleLevel,
+    std::uint8_t inventoryIndex)
+{
+    // Louis Main 5.2 SendRequestMoveToEventMatch2():
+    // C1:AF:01 + castle level + classic inventory slot.
+    // MuElion's inventory control index is relative to the bag; EX502 uses
+    // the absolute classic slot, after the equipment region.
+    const std::uint16_t classicSlot =
+        static_cast<std::uint16_t>(MAX_EQUIPMENT_INDEX)
+        + static_cast<std::uint16_t>(inventoryIndex);
+    if (classicSlot > 0xFFu)
+    {
+        return false;
+    }
+
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x06, 0xAF, 0x01,
+            castleLevel,
+            static_cast<std::uint8_t>(classicSlot)
+        });
+}
+
 bool DirectSession::SendEnterUnitedMarketPlaceRequest(Connection* connection)
 {
     // Louis Main 5.2 SendRequestEnterUnitedMarketPlaceEvent():
