@@ -706,6 +706,249 @@ void ReceiveChangePassword(const BYTE* ReceiveBuffer)
     }
 }
 
+namespace
+{
+constexpr std::size_t kSeason52CharacterListHeaderSize = 7;
+constexpr std::size_t kSeason52CharacterListEntrySize = 33;
+constexpr std::size_t kSeason52JoinMapPacketSize = 66;
+
+WORD ReadSeason52Word(const BYTE* data)
+{
+    return static_cast<WORD>(
+        static_cast<WORD>(data[0])
+        | (static_cast<WORD>(data[1]) << 8));
+}
+
+DWORD ReadSeason52Dword(const BYTE* data)
+{
+    return static_cast<DWORD>(
+        static_cast<DWORD>(data[0])
+        | (static_cast<DWORD>(data[1]) << 8)
+        | (static_cast<DWORD>(data[2]) << 16)
+        | (static_cast<DWORD>(data[3]) << 24));
+}
+
+CLASS_TYPE DecodeSeason52Class(BYTE encodedClass)
+{
+    const BYTE legacyClass =
+        static_cast<BYTE>((((encodedClass >> 4) & 0x01) << 3)
+        | (encodedClass >> 5)
+        | (((encodedClass >> 3) & 0x01) << 4));
+
+    const BYTE baseClass = legacyClass & 0x07;
+    const bool secondClass = ((legacyClass >> 3) & 0x01) != 0;
+    const bool thirdClass = ((legacyClass >> 4) & 0x01) != 0;
+
+    switch (baseClass)
+    {
+    case 0:
+        return thirdClass ? CLASS_GRANDMASTER
+                          : (secondClass ? CLASS_SOULMASTER : CLASS_WIZARD);
+    case 1:
+        return thirdClass ? CLASS_BLADEMASTER
+                          : (secondClass ? CLASS_BLADEKNIGHT : CLASS_KNIGHT);
+    case 2:
+        return thirdClass ? CLASS_HIGHELF
+                          : (secondClass ? CLASS_MUSEELF : CLASS_ELF);
+    case 3:
+        return thirdClass ? CLASS_DUELMASTER : CLASS_DARK;
+    case 4:
+        return thirdClass ? CLASS_LORDEMPEROR : CLASS_DARK_LORD;
+    case 5:
+        return thirdClass ? CLASS_DIMENSIONMASTER
+                          : (secondClass ? CLASS_BLOODYSUMMONER : CLASS_SUMMONER);
+    case 6:
+        return thirdClass ? CLASS_TEMPLENIGHT : CLASS_RAGEFIGHTER;
+    default:
+        return CLASS_WIZARD;
+    }
+}
+
+void Season52CharacterSelectionPosition(BYTE index, float& x, float& y, float& angle)
+{
+    switch (index)
+    {
+    case 0: x = 8008.0f; y = 18885.0f; angle = 115.0f; break;
+    case 1: x = 7986.0f; y = 19145.0f; angle = 90.0f; break;
+    case 2: x = 8046.0f; y = 19400.0f; angle = 75.0f; break;
+    case 3: x = 8133.0f; y = 19645.0f; angle = 60.0f; break;
+    case 4: x = 8282.0f; y = 19845.0f; angle = 35.0f; break;
+    default: x = 0.0f; y = 0.0f; angle = 0.0f; break;
+    }
+}
+} // namespace
+
+void ReceiveCharacterListSeason52(const BYTE* ReceiveBuffer, int Size)
+{
+    if (ReceiveBuffer == nullptr
+        || Size < static_cast<int>(kSeason52CharacterListHeaderSize))
+    {
+        g_ConsoleDebug->Write(
+            MCD_ERROR, L"S52: F3:00 character-list packet too small (%d)", Size);
+        return;
+    }
+
+    const BYTE maxClass = ReceiveBuffer[4];
+    const BYTE moveCount = ReceiveBuffer[5];
+    const BYTE characterCount = ReceiveBuffer[6];
+
+    if (characterCount > MAX_CHARACTERS_PER_ACCOUNT)
+    {
+        g_ConsoleDebug->Write(
+            MCD_ERROR, L"S52: F3:00 invalid character count %d", characterCount);
+        return;
+    }
+
+    const std::size_t required =
+        kSeason52CharacterListHeaderSize
+        + (static_cast<std::size_t>(characterCount) * kSeason52CharacterListEntrySize);
+
+    if (static_cast<std::size_t>(Size) < required)
+    {
+        g_ConsoleDebug->Write(
+            MCD_ERROR,
+            L"S52: F3:00 truncated character list: received=%d required=%u",
+            Size,
+            static_cast<unsigned>(required));
+        return;
+    }
+
+    InitGuildWar();
+    ClearCharacters();
+    SelectedCharacter = -1;
+    SelectedHero = -1;
+    CharacterAttribute->IsVaultExtended = 0;
+
+    std::size_t offset = kSeason52CharacterListHeaderSize;
+    for (BYTE i = 0; i < characterCount; ++i)
+    {
+        const BYTE* entry = ReceiveBuffer + offset;
+        const BYTE slot = entry[0];
+
+        if (slot >= MAX_CHARACTERS_PER_ACCOUNT)
+        {
+            g_ConsoleDebug->Write(
+                MCD_ERROR, L"S52: F3:00 invalid character slot %d", slot);
+            return;
+        }
+
+        const WORD level = ReadSeason52Word(entry + 11);
+        const BYTE ctlCode = entry[13];
+        const BYTE classRaw = entry[14];
+        BYTE* equipment = const_cast<BYTE*>(entry + 15);
+        const BYTE guildStatus = entry[32];
+
+        const CLASS_TYPE characterClass = DecodeSeason52Class(classRaw);
+
+        float x = 0.0f;
+        float y = 0.0f;
+        float angle = 0.0f;
+        Season52CharacterSelectionPosition(slot, x, y, angle);
+
+        CHARACTER* character =
+            CreateHero(slot, characterClass, 0, x, y, angle);
+
+        character->Level = level;
+        character->CtlCode = ctlCode;
+        character->Class = characterClass;
+        character->SkinIndex =
+            gCharacterManager.GetSkinModelIndex(characterClass);
+
+        memset(character->ID, 0, sizeof(character->ID));
+        CMultiLanguage::ConvertFromUtf8(
+            character->ID,
+            reinterpret_cast<const char*>(entry + 1),
+            MAX_USERNAME_SIZE);
+        character->ID[MAX_USERNAME_SIZE] = L'\0';
+
+        // The classic EX502 character list carries the original 17-byte
+        // equipment/CharSet representation. MuElion still has the native
+        // decoder for this representation, so preserve it instead of
+        // translating to the OpenMU variable-length equipment format.
+        ChangeCharacterExt(slot, equipment);
+
+        character->GuildStatus = guildStatus;
+        offset += kSeason52CharacterListEntrySize;
+    }
+
+    CurrentProtocolState = RECEIVE_CHARACTERS_LIST;
+
+    mu::log::Get("network")->info(
+        "S52: F3:00 character list count={} maxClass={} moveCount={}",
+        characterCount, maxClass, moveCount);
+}
+
+BOOL ReceiveJoinMapServerSeason52(const BYTE* ReceiveBuffer, int Size)
+{
+    if (ReceiveBuffer == nullptr || Size < static_cast<int>(kSeason52JoinMapPacketSize))
+    {
+        g_ConsoleDebug->Write(
+            MCD_ERROR,
+            L"S52: F3:03 join-map packet too small: received=%d expected=%u",
+            Size,
+            static_cast<unsigned>(kSeason52JoinMapPacketSize));
+        return FALSE;
+    }
+
+    PRECEIVE_JOIN_MAP_SERVER_EXTENDED translated{};
+
+    translated.SubCode = 0x03;
+    translated.PositionX = ReceiveBuffer[4];
+    translated.PositionY = ReceiveBuffer[5];
+    translated.Map = ReceiveBuffer[6];
+    translated.Angle = ReceiveBuffer[7];
+
+    // EX502 carries the two experience counters as eight network-order bytes.
+    // Copy the raw bytes because ReceiveJoinMapServer() already applies ntoh64.
+    memcpy(&translated.CurrentExperience, ReceiveBuffer + 8, sizeof(uint64_t));
+    memcpy(&translated.ExperienceForNextLevel, ReceiveBuffer + 16, sizeof(uint64_t));
+
+    translated.LevelUpPoint = ReadSeason52Word(ReceiveBuffer + 24);
+    translated.Strength = ReadSeason52Word(ReceiveBuffer + 26);
+    translated.Dexterity = ReadSeason52Word(ReceiveBuffer + 28);
+    translated.Vitality = ReadSeason52Word(ReceiveBuffer + 30);
+    translated.Energy = ReadSeason52Word(ReceiveBuffer + 32);
+
+    translated.Life = ReadSeason52Word(ReceiveBuffer + 34);
+    translated.LifeMax = ReadSeason52Word(ReceiveBuffer + 36);
+    translated.Mana = ReadSeason52Word(ReceiveBuffer + 38);
+    translated.ManaMax = ReadSeason52Word(ReceiveBuffer + 40);
+    translated.Shield = ReadSeason52Word(ReceiveBuffer + 42);
+    translated.ShieldMax = ReadSeason52Word(ReceiveBuffer + 44);
+    translated.SkillMana = ReadSeason52Word(ReceiveBuffer + 46);
+    translated.SkillManaMax = ReadSeason52Word(ReceiveBuffer + 48);
+
+    translated.Gold = ReadSeason52Dword(ReceiveBuffer + 50);
+    translated.PK = ReceiveBuffer[54];
+    translated.CtlCode = ReceiveBuffer[55];
+    translated.AddPoint = static_cast<short>(ReadSeason52Word(ReceiveBuffer + 56));
+    translated.MaxAddPoint = static_cast<short>(ReadSeason52Word(ReceiveBuffer + 58));
+    translated.Charisma = ReadSeason52Word(ReceiveBuffer + 60);
+    translated.wMinusPoint = ReadSeason52Word(ReceiveBuffer + 62);
+    translated.wMaxMinusPoint = ReadSeason52Word(ReceiveBuffer + 64);
+
+    // These fields do not exist in EX502's F3:03. Zero is intentional until
+    // their classic follow-up packets are ported.
+    translated.InventoryExtensions = 0;
+    translated.Resets = 0;
+    translated.AttackSpeed = 0;
+    translated.MagicSpeed = 0;
+    translated.MaxAttackSpeed = 0;
+
+    const auto* bytes = reinterpret_cast<const BYTE*>(&translated);
+    const std::span<const BYTE> translatedPacket(
+        bytes, sizeof(PRECEIVE_JOIN_MAP_SERVER_EXTENDED));
+
+    mu::log::Get("network")->info(
+        "S52: F3:03 join map={} x={} y={} gold={}",
+        translated.Map,
+        translated.PositionX,
+        translated.PositionY,
+        translated.Gold);
+
+    return ReceiveJoinMapServer(translatedPacket);
+}
+
 void ReceiveCharacterListExtended(const BYTE* ReceiveBuffer)
 {
     InitGuildWar();
@@ -848,10 +1091,22 @@ void ReceiveCreateCharacter(const BYTE* ReceiveBuffer)
 
         CreateHero(Data->Index, CharacterView.Class, CharacterView.Skin, fPos[0], fPos[1], fAngle);
         CharactersClient[Data->Index].Level = Data->Level;
-        auto serverClass = (SERVER_CLASS_TYPE)(Data->Class >> 3);
-        auto iClass = gCharacterManager.ChangeServerClassTypeToClientClassType(serverClass);
-        mu::log::Get("network")->info("[CreateCharacter] success serverClass={} clientClass={}",
-                                      static_cast<int>(serverClass), static_cast<int>(iClass));
+        CLASS_TYPE iClass;
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            iClass = DecodeSeason52Class(Data->Class);
+            mu::log::Get("network")->info(
+                "[CreateCharacter] S52 classic classRaw={} clientClass={}",
+                static_cast<int>(Data->Class), static_cast<int>(iClass));
+        }
+        else
+        {
+            auto serverClass = (SERVER_CLASS_TYPE)(Data->Class >> 3);
+            iClass = gCharacterManager.ChangeServerClassTypeToClientClassType(serverClass);
+            mu::log::Get("network")->info(
+                "[CreateCharacter] success serverClass={} clientClass={}",
+                static_cast<int>(serverClass), static_cast<int>(iClass));
+        }
 
         CharactersClient[Data->Index].Class = iClass;
         CharactersClient[Data->Index].SkinIndex = gCharacterManager.GetSkinModelIndex(iClass);
@@ -13649,7 +13904,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         switch (subcode)
         {
         case 0x00: // receive characters list
-            ReceiveCharacterListExtended(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveCharacterListSeason52(ReceiveBuffer, Size);
+            }
+            else
+            {
+                ReceiveCharacterListExtended(ReceiveBuffer);
+            }
             break;
         case 0x01: // receive create character
             ReceiveCreateCharacter(ReceiveBuffer);
@@ -13658,16 +13920,19 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             ReceiveDeleteCharacter(ReceiveBuffer);
             break;
         case 0x03: // receive join map server
-            if (!ReceiveJoinMapServer(received_span))
+        {
+            const BOOL joined = mu::net::s52::DirectProtocolEnabled()
+                ? ReceiveJoinMapServerSeason52(ReceiveBuffer, Size)
+                : ReceiveJoinMapServer(received_span);
+
+            if (!joined)
             {
-                // safe_cast logged the size mismatch; reiterate the user-visible
-                // symptom so the cause is obvious in the console.
                 g_ConsoleDebug->Write(
                     MCD_ERROR, L"[ReceiveJoinMapServer] dropped -- protocol state stays REQUEST_JOIN_MAP_SERVER, "
                                L"main render will not be enabled (loading screen will appear frozen).");
-                // return ( FALSE);
             }
             break;
+        }
         case 0x04: // receive revival
             ReceiveRevival(ReceiveBuffer);
             break;
