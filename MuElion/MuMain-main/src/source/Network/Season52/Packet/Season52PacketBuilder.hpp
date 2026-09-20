@@ -28,6 +28,9 @@ std::vector<std::uint8_t> BuildDeleteCharacterRequest(std::string_view name,
                                                        std::string_view personalCode);
 std::vector<std::uint8_t> BuildSelectCharacterRequest(std::string_view name);
 std::vector<std::uint8_t> BuildFinishLoadingRequest();
+std::vector<std::uint8_t> BuildQuestHistoryRequest();
+std::vector<std::uint8_t> BuildQuestStateRequest(std::uint8_t questIndex,
+                                                  std::uint8_t questState);
 
 std::vector<std::uint8_t> BuildCloseNpcRequest();
 std::vector<std::uint8_t> BuildPublicChatRequest(std::string_view character,
