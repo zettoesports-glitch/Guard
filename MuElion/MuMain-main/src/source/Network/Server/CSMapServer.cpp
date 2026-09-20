@@ -114,7 +114,7 @@ void CSMServer::ConnectChangeMapServer(MServerInfo sInfo)
     CMultiLanguage::ConvertFromUtf8(ipAddress.data(), m_serverInfo.m_szMapSvrIpAddress.data(),
                                     static_cast<int>(kIpAddressLength));
 
-    if (CreateSocket(ipAddress.data(), m_serverInfo.m_wMapSvrPort))
+    if (CreateSocket(ipAddress.data(), m_serverInfo.m_wMapSvrPort, ServerEndpointRole::GameServer))
     {
         g_bGameServerConnected = TRUE;
     }
