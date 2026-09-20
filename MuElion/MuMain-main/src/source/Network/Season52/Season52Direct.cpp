@@ -685,6 +685,28 @@ bool DirectSession::SendPublicChat(Connection* connection,
         BuildPublicChatRequest(characterUtf8.data(), textUtf8.data()));
 }
 
+bool DirectSession::SendWhisper(Connection* connection,
+                                const wchar_t* target,
+                                const wchar_t* text)
+{
+    if (!DirectProtocolEnabled() || !gameServer_
+        || connection == nullptr || target == nullptr || text == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> targetUtf8{};
+    std::array<char, 91> textUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        targetUtf8.data(), target, static_cast<int>(targetUtf8.size()));
+    CMultiLanguage::ConvertToUtf8(
+        textUtf8.data(), text, static_cast<int>(textUtf8.size()));
+
+    return SendPacket(
+        connection,
+        BuildWhisperRequest(targetUtf8.data(), textUtf8.data()));
+}
+
 bool DirectSession::SendLogin(Connection* connection,
                               const wchar_t* account,
                               const wchar_t* password,
