@@ -27,7 +27,7 @@ public:
     bool KeysLoaded() const noexcept { return keysLoaded_; }
 
     bool SendServerList(Connection* connection);
-    bool SendServerAddress(Connection* connection, std::uint16_t serverId);
+    bool SendServerAddress(Connection* connection, std::uint8_t serverCode);
     bool SendCharacterList(Connection* connection, std::uint8_t language);
     bool SendCreateCharacter(Connection* connection,
                              const wchar_t* name,
