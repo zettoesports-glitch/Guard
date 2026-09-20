@@ -6,7 +6,8 @@
 #include <cmath>
 #include <cwchar>
 
-#include "Network/Server/WSclient.h"\n#include "Network/Season52/Season52Direct.h"   // SocketClient, CreateSocket, DeleteSocket,
+#include "Network/Server/WSclient.h"
+#include "Network/Season52/Season52Direct.h"   // SocketClient, CreateSocket, DeleteSocket,
                                        // ResetClientToLoginScene, protocol states
 #include "Scenes/SceneCore.h"          // SceneFlag, szServerIpAddress, g_ServerPort
 #include "Scenes/SceneCommon.h"        // SelectedHero, MAX_CHARACTERS_PER_ACCOUNT
