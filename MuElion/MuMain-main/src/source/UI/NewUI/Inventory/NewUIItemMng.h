@@ -47,6 +47,7 @@ struct ItemCreationParams
 };
 
 ItemCreationParams ParseItemData(std::span<const BYTE> itemData);
+ItemCreationParams ParseItemDataOld(std::span<const BYTE> itemData);
 
 namespace SEASON3B
 {
