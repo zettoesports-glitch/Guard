@@ -97,6 +97,10 @@ public:
     bool SendPlayerShopItemBuyRequest(Connection* connection, std::uint16_t playerId, const wchar_t* playerName, std::uint8_t itemSlot);
     bool SendPlayerShopCloseOther(Connection* connection, std::uint16_t playerId, const wchar_t* playerName);
     bool SendSetFriendOnlineState(Connection* connection, std::uint8_t state);
+    bool SendFriendListRequest(Connection* connection);
+    bool SendFriendAddRequest(Connection* connection, const wchar_t* playerName);
+    bool SendFriendAddResponse(Connection* connection, std::uint8_t result, const wchar_t* playerName);
+    bool SendFriendDeleteRequest(Connection* connection, const wchar_t* playerName);
 
     bool SendItemMove(
         Connection* connection,
