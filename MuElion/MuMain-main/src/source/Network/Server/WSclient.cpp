@@ -1583,7 +1583,19 @@ BOOL ReceiveJoinMapServer(std::span<const BYTE> ReceiveBuffer)
 
     if (gMapManager.WorldActive == WD_34CRYWOLF_1ST)
     {
-        SocketClient->ToGameServer()->SendCrywolfInfoRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            if (SocketClient == nullptr
+                || !mu::net::s52::DirectSession::Instance().SendCrywolfInfoRequest(SocketClient))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: failed to request Crywolf state after map join");
+            }
+        }
+        else if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+        {
+            SocketClient->ToGameServer()->SendCrywolfInfoRequest();
+        }
     }
 
     matchEvent::CreateEventMatch(gMapManager.WorldActive);
