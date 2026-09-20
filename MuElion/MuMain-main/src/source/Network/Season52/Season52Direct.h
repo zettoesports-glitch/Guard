@@ -197,6 +197,7 @@ public:
     bool SendGensLeaveRequest(Connection* connection);
     bool SendGensRewardRequest(Connection* connection, std::uint8_t influence);
     bool SendGensInfoOpenRequest(Connection* connection);
+    bool SendMiniGameEventCountRequest(Connection* connection, std::uint8_t eventType);
     bool SendVaultMoveMoney(Connection* connection,
                             std::uint8_t direction,
                             std::uint32_t amount);
