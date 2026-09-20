@@ -2123,7 +2123,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                             return true;
                         }
 
-                        SocketClient->ToGameServer()->SendTradeRequest(c->Key);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendTradeRequest(
+                                SocketClient, static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendTradeRequest(c->Key);
+                        }
                         wchar_t message[100]{};
                         mu_swprintf(message, I18N::Game::YouHaveRequestedSToTrade, c->ID);
                         g_pSystemLogBox->AddText(message, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2147,7 +2155,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                         BYTE Dir1 = (BYTE)((o->Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8;
                         BYTE Dir2 = (BYTE)((Hero->Object.Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8;
                         if (abs(Dir1 - Dir2) == 4) {
+                            if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendTradeRequest(
+                                SocketClient, static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
                             SocketClient->ToGameServer()->SendTradeRequest(c->Key);
+                        }
                             wchar_t message[100]{};
                             mu_swprintf(message, I18N::Game::YouHaveRequestedSToTrade, c->ID);
                             g_pSystemLogBox->AddText(message, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2483,7 +2499,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                 if (o->Kind == KIND_PLAYER && c != Hero && (o->Type == MODEL_PLAYER || c->Change) && abs((c->PositionX) - (Hero->PositionX)) <= 1 && abs((c->PositionY) - (Hero->PositionY)) <= 1)
                 {
                     PartyKey = c->Key;
-                    SocketClient->ToGameServer()->SendPartyInviteRequest(c->Key);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendPartyInvite(
+                            SocketClient, static_cast<std::uint16_t>(c->Key));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendPartyInviteRequest(c->Key);
+                    }
                     wchar_t Text[100];
                     mu_swprintf(Text, I18N::Game::YouHaveRequestedSToJoinYourParty, c->ID);
                     g_pSystemLogBox->AddText(Text, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2500,7 +2524,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                     if (abs(Dir1 - Dir2) == 4)
                     {
                         PartyKey = c->Key;
+                        if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendPartyInvite(
+                            SocketClient, static_cast<std::uint16_t>(c->Key));
+                    }
+                    else
+                    {
                         SocketClient->ToGameServer()->SendPartyInviteRequest(c->Key);
+                    }
                         wchar_t Text[100];
                         mu_swprintf(Text, I18N::Game::YouHaveRequestedSToJoinYourParty, c->ID);
                         g_pSystemLogBox->AddText(Text, SEASON3B::TYPE_SYSTEM_MESSAGE);
