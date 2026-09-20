@@ -602,6 +602,13 @@ bool DirectSession::SendCrywolfInfoRequest(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x04, 0xBD, 0x00});
 }
 
+bool DirectSession::SendCrywolfChaosRateBenefitRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestCrywolfBenefitPlusChaosRate():
+    // C1:BD:09, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xBD, 0x09});
+}
+
 bool DirectSession::SendChecksumResponse(
     Connection* connection, std::uint32_t checksum)
 {
