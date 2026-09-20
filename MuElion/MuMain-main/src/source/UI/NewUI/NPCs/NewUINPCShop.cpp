@@ -178,7 +178,15 @@ bool SEASON3B::CNewUINPCShop::UpdateKeyEvent()
 
     if (SEASON3B::IsRepeat(VK_SHIFT) && SEASON3B::IsPress('L'))
     {
-        SocketClient->ToGameServer()->SendRepairItemRequest(0xFF, 0);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendRepairItem(
+                SocketClient, 0xFF, 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRepairItemRequest(0xFF, 0);
+        }
         return false;
     }
     if (SEASON3B::IsPress('L'))
