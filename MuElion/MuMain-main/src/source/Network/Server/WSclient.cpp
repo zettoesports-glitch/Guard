@@ -839,8 +839,12 @@ void ReceiveCharacterListSeason52(const BYTE* ReceiveBuffer, int Size)
 
         const WORD level = ReadSeason52Word(entry + 12);
         const BYTE ctlCode = entry[14];
-        const BYTE classRaw = entry[15];
-        BYTE* equipment = const_cast<BYTE*>(entry + 16);
+
+        // EX502 PMSG_CHARACTER_LIST stores the complete 18-byte CharSet at
+        // offset 15. CharSet[0] contains the preview/class bits, so it must
+        // remain part of the buffer passed to ChangeCharacterExt().
+        BYTE* charSet = const_cast<BYTE*>(entry + 15);
+        const BYTE classRaw = charSet[0];
         const BYTE guildStatus = entry[33];
 
         const CLASS_TYPE characterClass = DecodeSeason52Class(classRaw);
@@ -866,11 +870,10 @@ void ReceiveCharacterListSeason52(const BYTE* ReceiveBuffer, int Size)
             MAX_USERNAME_SIZE);
         character->ID[MAX_USERNAME_SIZE] = L'\0';
 
-        // The classic EX502 character list carries the original 17-byte
-        // equipment/CharSet representation. MuElion still has the native
-        // decoder for this representation, so preserve it instead of
-        // translating to the OpenMU variable-length equipment format.
-        ChangeCharacterExt(slot, equipment);
+        // The classic EX502 character list carries the complete original
+        // 18-byte CharSet representation. MuElion already has the native
+        // decoder for it, so preserve all 18 bytes (including CharSet[0]).
+        ChangeCharacterExt(slot, charSet);
 
         character->GuildStatus = guildStatus;
         offset += kSeason52CharacterListEntrySize;
