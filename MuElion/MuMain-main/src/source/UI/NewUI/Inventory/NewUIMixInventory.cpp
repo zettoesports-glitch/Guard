@@ -107,6 +107,14 @@ bool CNewUIMixInventory::InsertItem(int iIndex, std::span<const BYTE> pbyItemPac
     return false;
 }
 
+bool CNewUIMixInventory::InsertItemOld(
+    int iIndex, std::span<const BYTE> pbyItemPacket)
+{
+    if (m_pNewInventoryCtrl)
+        return m_pNewInventoryCtrl->AddItemOld(iIndex, pbyItemPacket);
+    return false;
+}
+
 void CNewUIMixInventory::DeleteItem(int iIndex)
 {
     if (m_pNewInventoryCtrl)
