@@ -2,6 +2,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/Legacy/UIManager.h"
 #include "Render/Textures/ZzzOpenglUtil.h"
 #include "Render/Renderer/MuRenderer.h"
@@ -423,7 +424,20 @@ void SendRequestUse(int Index, int Target, bool addPoints)
     }
 
     EnableUse = 10;
-    SocketClient->ToGameServer()->SendConsumeItemRequest(Index, Target, addPoints ? FruitUsage::AddPoints : FruitUsage::RemovePoints);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendConsumeItem(
+            SocketClient,
+            static_cast<std::uint8_t>(Index),
+            static_cast<std::uint8_t>(Target),
+            static_cast<std::uint8_t>(
+                addPoints ? FruitUsage::AddPoints : FruitUsage::RemovePoints));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendConsumeItemRequest(
+            Index, Target, addPoints ? FruitUsage::AddPoints : FruitUsage::RemovePoints);
+    }
     g_ConsoleDebug->Write(MCD_SEND, L"0x26 [SendRequestUse(%d)]", Index);
 }
 
@@ -10471,7 +10485,14 @@ void MoveServerDivisionInventory()
         MouseUpdateTime = 0;
         MouseUpdateTimeMax = 6;
 
-        SocketClient->ToGameServer()->SendCloseNpcRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCloseNpcRequest();
+        }
         g_pUIManager->CloseAll();
     }
 
@@ -10486,7 +10507,14 @@ void MoveServerDivisionInventory()
 
             g_bEventChipDialogEnable = EVENT_NONE;
 
+            if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+        }
+        else
+        {
             SocketClient->ToGameServer()->SendCloseNpcRequest();
+        }
             g_pUIManager->CloseAll();
         }
     }
