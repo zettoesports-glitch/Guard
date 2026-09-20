@@ -2777,8 +2777,11 @@ void ReceiveEquipment(std::span<const BYTE> ReceiveBuffer)
 
 void ReceiveEquipmentSeason52(std::span<const BYTE> packet)
 {
-    constexpr std::size_t kPacketSize = 25;
-    constexpr std::size_t kEquipmentOffset = 8;
+    // EX502 PMSG_ITEM_EQUIPMENT_SEND:
+    // PSBMSG_HEAD(4) + index[2] + CharSet[18] = 24 bytes.
+    constexpr std::size_t kPacketSize = 24;
+    constexpr std::size_t kIndexOffset = 4;
+    constexpr std::size_t kCharSetOffset = 6;
 
     if (packet.size() < kPacketSize)
     {
@@ -2789,7 +2792,9 @@ void ReceiveEquipmentSeason52(std::span<const BYTE> packet)
     }
 
     const WORD key = static_cast<WORD>(
-        (static_cast<WORD>(packet[5]) << 8) | packet[6]);
+        (static_cast<WORD>(packet[kIndexOffset]) << 8)
+        | packet[kIndexOffset + 1]);
+
     const int index = FindCharacterIndex(key);
     if (index == MAX_CHARACTERS_CLIENT)
     {
@@ -2800,7 +2805,7 @@ void ReceiveEquipmentSeason52(std::span<const BYTE> packet)
 
     ChangeCharacterExt(
         index,
-        const_cast<BYTE*>(packet.data() + kEquipmentOffset));
+        const_cast<BYTE*>(packet.data() + kCharSetOffset));
 }
 
 
