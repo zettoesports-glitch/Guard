@@ -1058,17 +1058,39 @@ void SendCharacterMove(unsigned short Key, float Angle, unsigned char PathNum, u
         }
     }
 
+    BYTE TargetDir = 0;
     if (PathNum == 1)
     {
-        // For example, it's 1 when the character stops walking by starting a skill.
-        // Then we just send the direction of the character and no steps.
-        Dir = ((BYTE)((Angle + 22.5f) / 360.f * 8.f + 1.f) % 8);
+        // Original Louis Main: when the character stops, the high nibble of
+        // Path[0] is the current facing direction and the low nibble is zero.
+        TargetDir = ((BYTE)((Angle + 22.5f) / 360.f * 8.f + 1.f) % 8);
+    }
+    else
+    {
+        // Original Louis Main calculates the metadata direction from the last
+        // path node to the requested cursor/target tile. It is not simply the
+        // direction of the last path segment.
+        for (int j = 0; j < 8; ++j)
+        {
+            if (DirTable[j * 2] == (TargetX - PathX[PathNum - 1])
+                && DirTable[j * 2 + 1] == (TargetY - PathY[PathNum - 1]))
+            {
+                TargetDir = static_cast<BYTE>(j);
+                break;
+            }
+        }
     }
 
     if (mu::net::s52::DirectProtocolEnabled())
     {
         mu::net::s52::DirectSession::Instance().SendWalk(
-            SocketClient, PathX[0], PathY[0], PathNum - 1, Dir, PathNew, PathNum / 2);
+            SocketClient,
+            PathX[0],
+            PathY[0],
+            PathNum - 1,
+            TargetDir,
+            PathNew,
+            PathNum / 2);
     }
     else
     {
