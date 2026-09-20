@@ -553,6 +553,12 @@ bool DirectSession::SendDropItem(Connection* connection,
         {0xC1, 0x06, 0x23, targetX, targetY, itemSlot});
 }
 
+bool DirectSession::SendInventoryRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestInventory(): C1:F3:10, Send(TRUE).
+    return SendEncryptedPacket(connection, {0xC1, 0x04, 0xF3, 0x10});
+}
+
 bool DirectSession::SendItemMove(
     Connection* connection,
     std::uint8_t sourceStorage,
