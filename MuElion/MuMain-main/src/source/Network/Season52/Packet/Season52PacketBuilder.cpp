@@ -164,7 +164,7 @@ bool BuildLoginRequest(std::string_view account,
     BuxTransform(passwordField.data(), passwordField.size());
 
     // Canonical pre-encryption packet:
-    // C1 size F1 01 account[10] password[20] tick[4] version[5] serial[16]
+    // C1 size F1 01 account[10] password[12] tick[4] version[5] serial[16]
     std::vector<std::uint8_t> plain;
     plain.reserve(4u + AccountSize + PasswordSize + 4u
                   + ProtocolVersionSize + ProtocolSerialSize);
