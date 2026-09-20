@@ -1,6 +1,6 @@
 #pragma once
 
-#include <array>
+#include <array>\n#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <vector>
