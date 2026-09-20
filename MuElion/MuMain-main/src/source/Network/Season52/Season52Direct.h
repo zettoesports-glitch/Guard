@@ -186,6 +186,13 @@ public:
     bool SendQuestSelection(Connection* connection,
                             std::uint32_t questIndex,
                             std::uint8_t selectedTextIndex);
+    bool SendQuestCompletionRequest(Connection* connection,
+                                    std::uint32_t questIndex);
+    bool SendQuestProceedRequest(Connection* connection,
+                                 std::uint32_t questIndex,
+                                 std::uint8_t selectedAnswer);
+    bool SendAvailableQuestsRequest(Connection* connection);
+    bool SendNpcBuffRequest(Connection* connection);
     bool SendVaultMoveMoney(Connection* connection,
                             std::uint8_t direction,
                             std::uint32_t amount);
