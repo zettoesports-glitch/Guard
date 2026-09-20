@@ -145,6 +145,42 @@ public:
                             std::uint32_t amount);
     bool SendVaultClosed(Connection* connection);
 
+    // Guild / alliance protocol (classic Louis 5.2).
+    bool SendGuildJoinRequest(Connection* connection, std::uint16_t targetId);
+    bool SendGuildJoinResponse(Connection* connection,
+                               std::uint8_t accepted,
+                               std::uint16_t requesterId);
+    bool SendGuildListRequest(Connection* connection);
+    bool SendGuildLeave(Connection* connection,
+                        const wchar_t* character,
+                        const wchar_t* personalCode);
+    bool SendGuildMasterAnswer(Connection* connection, std::uint8_t value);
+    bool SendGuildCreate(Connection* connection,
+                         std::uint8_t guildType,
+                         const wchar_t* guildName,
+                         const std::uint8_t* guildMark,
+                         std::size_t guildMarkSize);
+    bool SendGuildTypeChange(Connection* connection, std::uint8_t guildType);
+    bool SendGuildCreationCancel(Connection* connection);
+    bool SendGuildWarDeclare(Connection* connection, const wchar_t* guildName);
+    bool SendGuildWarResponse(Connection* connection, std::uint8_t accepted);
+    bool SendGuildInfoRequest(Connection* connection, std::uint32_t guildKey);
+    bool SendGuildRoleAssign(Connection* connection,
+                             std::uint8_t type,
+                             std::uint8_t guildStatus,
+                             const wchar_t* playerName);
+    bool SendGuildRelationshipRequest(Connection* connection,
+                                      std::uint8_t relationshipType,
+                                      std::uint8_t requestType,
+                                      std::uint16_t targetPlayerId);
+    bool SendGuildRelationshipResponse(Connection* connection,
+                                       std::uint8_t relationshipType,
+                                       std::uint8_t requestType,
+                                       std::uint8_t result,
+                                       std::uint16_t targetPlayerId);
+    bool SendAllianceListRequest(Connection* connection);
+    bool SendAllianceGuildBan(Connection* connection, const wchar_t* guildName);
+
     bool SendLogin(Connection* connection,
                    const wchar_t* account,
                    const wchar_t* password,
