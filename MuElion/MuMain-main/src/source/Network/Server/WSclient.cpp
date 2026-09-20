@@ -984,11 +984,15 @@ void ReceiveCharacterListSeason52(const BYTE* ReceiveBuffer, int Size)
         const WORD level = ReadSeason52Word(entry + 12);
         const BYTE ctlCode = entry[14];
 
-        // EX502 PMSG_CHARACTER_LIST stores the complete 18-byte CharSet at
-        // offset 15. CharSet[0] contains the preview/class bits, so it must
-        // remain part of the buffer passed to ChangeCharacterExt().
-        BYTE* charSet = const_cast<BYTE*>(entry + 15);
-        const BYTE classRaw = charSet[0];
+        // The original Louis/Webzen Main overlays the server's CharSet[18]
+        // as:
+        //   Class @ +15
+        //   Equipment[17] @ +16
+        //   GuildStatus @ +33
+        // Keep that exact client-side view. Passing CharSet[0] into
+        // ChangeCharacterExt() shifts every equipment byte by one.
+        const BYTE classRaw = entry[15];
+        BYTE* equipment = const_cast<BYTE*>(entry + 16);
         const BYTE guildStatus = entry[33];
 
         const CLASS_TYPE characterClass = DecodeSeason52Class(classRaw);
@@ -1014,10 +1018,9 @@ void ReceiveCharacterListSeason52(const BYTE* ReceiveBuffer, int Size)
             MAX_USERNAME_SIZE);
         character->ID[MAX_USERNAME_SIZE] = L'\0';
 
-        // The classic EX502 character list carries the complete original
-        // 18-byte CharSet representation. MuElion already has the native
-        // decoder for it, so preserve all 18 bytes (including CharSet[0]).
-        ChangeCharacterExt(slot, charSet);
+        // Match Louis Main exactly: Class is separated from the 17-byte
+        // equipment preview before calling ChangeCharacterExt().
+        ChangeCharacterExt(slot, equipment);
 
         character->GuildStatus = guildStatus;
         offset += kSeason52CharacterListEntrySize;
