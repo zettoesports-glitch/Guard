@@ -3522,7 +3522,16 @@ CALLBACK_RESULT SEASON3B::CMaster_Level_Interface::CancelBtnDown(class CNewUIMes
 CALLBACK_RESULT SEASON3B::CMaster_Level_Interface::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     auto In_Skill = g_pMasterLevelInterface->GetCurSkillID();
-    SocketClient->ToGameServer()->SendAddMasterSkillPoint(In_Skill);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendAddMasterSkillPoint(
+            SocketClient,
+            static_cast<std::uint32_t>(In_Skill));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendAddMasterSkillPoint(In_Skill);
+    }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -3574,7 +3583,16 @@ CALLBACK_RESULT SEASON3B::CCry_Wolf_Get_Temple::OkBtnDown(class CNewUIMessageBox
     else
     {
         Button_Down = 2;
-        SocketClient->ToGameServer()->SendCrywolfContractRequest(BackUp_Key);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCrywolfContractRequest(
+                SocketClient,
+                static_cast<std::uint16_t>(BackUp_Key));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCrywolfContractRequest(BackUp_Key);
+        }
     }
 
     PlayBuffer(SOUND_CLICK01);
