@@ -1414,7 +1414,14 @@ bool SEASON3B::CBattleSoccerMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CBattleSoccerMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildWarResponse(true);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildWarResponse(SocketClient, 1);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildWarResponse(true);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1424,7 +1431,14 @@ CALLBACK_RESULT SEASON3B::CBattleSoccerMsgBoxLayout::OkBtnDown(class CNewUIMessa
 
 CALLBACK_RESULT SEASON3B::CBattleSoccerMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildWarResponse(false);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildWarResponse(SocketClient, 0);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildWarResponse(false);
+    }
     InitGuildWar();
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
