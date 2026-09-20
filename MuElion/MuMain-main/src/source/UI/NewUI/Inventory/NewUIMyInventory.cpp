@@ -25,6 +25,7 @@ extern bool SelectFlag;
 #include "GameLogic/Items/CSItemOption.h"
 #include "World/MapInfra/MapManager.h"
 #include "Network/Server/SocketSystem.h"
+#include "Network/Season52/Season52Direct.h"
 #include "World/MapInfra/PortalMgr.h"
 #ifdef CSK_FIX_BLUELUCKYBAG_MOVECOMMAND
 #include "GameLogic/Events/Event.h"
@@ -587,13 +588,37 @@ bool CNewUIMyInventory::UpdateMouseEvent()
             {
                 if (Hero->Dead == 0)
                 {
-                    SocketClient->ToGameServer()->SendDropItemRequest(tx, ty, iSourceIndex);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendDropItem(
+                            SocketClient,
+                            static_cast<std::uint8_t>(tx),
+                            static_cast<std::uint8_t>(ty),
+                            static_cast<std::uint8_t>(iSourceIndex));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendDropItemRequest(
+                            tx, ty, iSourceIndex);
+                    }
                     SendDropItem = iSourceIndex;
                 }
             }
             else if (pItemObj && pItemObj->ex_src_type == ITEM_EX_SRC_EQUIPMENT)
             {
-                SocketClient->ToGameServer()->SendDropItemRequest(tx, ty, iSourceIndex);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendDropItem(
+                        SocketClient,
+                        static_cast<std::uint8_t>(tx),
+                        static_cast<std::uint8_t>(ty),
+                        static_cast<std::uint8_t>(iSourceIndex));
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendDropItemRequest(
+                        tx, ty, iSourceIndex);
+                }
                 SendDropItem = iSourceIndex;
             }
             MouseUpdateTime = 0;
