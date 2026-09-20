@@ -16,7 +16,7 @@
 #include "UI/Legacy/UIControls.h"
 
 #include "UI/NewUI/NewUISystem.h"
-#include "Network/Server/ServerListManager.h"
+#include "Network/Server/ServerListManager.h"\n#include "Network/Season52/Season52Direct.h"
 
 #define	SSW_GAP_WIDTH	28
 #define	SSW_GAP_HEIGHT	5
@@ -415,7 +415,14 @@ void CServerSelWin::UpdateWhileActive(double dDeltaTick)
             m_aServerGroupBtn[i].SetCheck(true);
             m_iSelectServerBtnIndex = i;
 
-            SocketClient->ToConnectServer()->SendServerListRequest();
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendServerList(SocketClient);
+            }
+            else
+            {
+                SocketClient->ToConnectServer()->SendServerListRequest();
+            }
         }
     }
 
@@ -436,7 +443,17 @@ void CServerSelWin::UpdateWhileActive(double dDeltaTick)
             {
                 CUIMng::Instance().HideWin(this);
 
-                SocketClient->ToConnectServer()->SendConnectionInfoRequest(static_cast<uint16_t>(pServerInfo->m_iConnectIndex));
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendServerAddress(
+                        SocketClient,
+                        static_cast<uint16_t>(pServerInfo->m_iConnectIndex));
+                }
+                else
+                {
+                    SocketClient->ToConnectServer()->SendConnectionInfoRequest(
+                        static_cast<uint16_t>(pServerInfo->m_iConnectIndex));
+                }
                 g_pSystemLogBox->AddText(I18N::Game::ConnectingToTheServer, SEASON3B::TYPE_SYSTEM_MESSAGE);
                 g_pSystemLogBox->AddText(I18N::Game::PleaseWait, SEASON3B::TYPE_SYSTEM_MESSAGE);
 
