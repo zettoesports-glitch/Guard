@@ -448,7 +448,7 @@ void CServerSelWin::UpdateWhileActive(double dDeltaTick)
                 {
                     mu::net::s52::DirectSession::Instance().SendServerAddress(
                         SocketClient,
-                        static_cast<uint16_t>(pServerInfo->m_iConnectIndex));
+                        static_cast<uint8_t>(pServerInfo->m_iConnectIndex));
                 }
                 else
                 {
