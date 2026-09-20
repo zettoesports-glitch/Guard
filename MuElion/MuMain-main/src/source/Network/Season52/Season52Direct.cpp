@@ -782,6 +782,14 @@ bool DirectSession::SendPlayerShopCloseOther(
     return SendEncryptedPacket(connection, std::move(packet));
 }
 
+bool DirectSession::SendSetFriendOnlineState(
+    Connection* connection, std::uint8_t state)
+{
+    // Louis Main 5.2 SendRequestChangeState(ChatState):
+    // C1:C4 + state, Send() => packet XOR only.
+    return SendXorPacket(connection, {0xC1, 0x04, 0xC4, state});
+}
+
 bool DirectSession::SendItemMove(
     Connection* connection,
     std::uint8_t sourceStorage,
