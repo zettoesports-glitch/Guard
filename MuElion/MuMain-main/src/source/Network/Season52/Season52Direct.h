@@ -76,6 +76,30 @@ public:
                       std::uint8_t targetY,
                       std::uint8_t itemSlot);
 
+    bool SendAreaSkill(Connection* connection,
+                       std::uint16_t skillId,
+                       std::uint8_t targetX,
+                       std::uint8_t targetY,
+                       std::uint8_t angle,
+                       std::uint8_t destination,
+                       std::uint8_t targetPosition,
+                       std::uint16_t targetId,
+                       std::uint8_t skillSerial);
+    bool SendTalkNpc(Connection* connection, std::uint16_t npcId);
+    bool SendCloseNpc(Connection* connection);
+    bool SendConsumeItem(Connection* connection,
+                         std::uint8_t itemSlot,
+                         std::uint8_t targetSlot,
+                         std::uint8_t fruitUsage);
+    bool SendBuyItem(Connection* connection, std::uint8_t itemSlot);
+    bool SendSellItem(Connection* connection, std::uint8_t itemSlot);
+    bool SendRepairItem(Connection* connection,
+                        std::uint8_t itemSlot,
+                        std::uint8_t addGold);
+    bool SendPublicChat(Connection* connection,
+                        const wchar_t* character,
+                        const wchar_t* text);
+
     bool SendLogin(Connection* connection,
                    const wchar_t* account,
                    const wchar_t* password,
