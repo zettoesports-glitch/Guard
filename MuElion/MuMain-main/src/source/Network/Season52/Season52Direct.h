@@ -188,6 +188,8 @@ public:
                             std::uint8_t selectedTextIndex);
     bool SendQuestCompletionRequest(Connection* connection,
                                     std::uint32_t questIndex);
+    bool SendQuestCancelRequest(Connection* connection,
+                                std::uint32_t questIndex);
     bool SendQuestProceedRequest(Connection* connection,
                                  std::uint32_t questIndex,
                                  std::uint8_t selectedAnswer);
@@ -200,6 +202,12 @@ public:
     bool SendMiniGameEventCountRequest(Connection* connection, std::uint8_t eventType);
     bool SendMiniGameOpeningStateRequest(Connection* connection, std::uint8_t eventType, std::uint8_t eventLevel);
     bool SendEnterUnitedMarketPlaceRequest(Connection* connection);
+    bool SendWhiteAngelItemRequest(Connection* connection);
+    bool SendEnterWerewolfRequest(Connection* connection);
+    bool SendEnterGatekeeperRequest(Connection* connection);
+    bool SendLeoHelperItemRequest(Connection* connection);
+    bool SendMoveToDeviasBySnowmanRequest(Connection* connection);
+    bool SendSantaClausItemRequest(Connection* connection);
     bool SendPetCommandRequest(Connection* connection,
                                std::uint8_t petType,
                                std::uint8_t command,
