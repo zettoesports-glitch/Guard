@@ -154,6 +154,45 @@ bool CNewUIMyInventory::EquipItem(int iIndex, std::span<const BYTE> pbyItemPacke
     return true;
 }
 
+bool CNewUIMyInventory::EquipItemOld(
+    int iIndex, std::span<const BYTE> pbyItemPacket)
+{
+    if (iIndex < 0 || iIndex >= MAX_EQUIPMENT_INDEX
+        || !g_pNewItemMng || !CharacterMachine || pbyItemPacket.size() < 12)
+    {
+        return false;
+    }
+
+    ITEM* pTargetItemSlot = &CharacterMachine->Equipment[iIndex];
+    if (pTargetItemSlot->Type > 0)
+    {
+        UnequipItem(iIndex);
+    }
+
+    ITEM* pTempItem = g_pNewItemMng->CreateItemOld(pbyItemPacket.first(12));
+    if (pTempItem == nullptr)
+    {
+        return false;
+    }
+
+    // The EX502 initial inventory packet contains the item itself but not the
+    // separate pet-detail response used by the managed/OpenMU path. Build the
+    // visible raven immediately; pet stats can be filled when the classic pet
+    // protocol is ported.
+    if (pTempItem->Type == ITEM_DARK_RAVEN_ITEM)
+    {
+        CreatePetDarkSpirit(Hero);
+    }
+
+    pTempItem->lineal_pos = iIndex;
+    pTempItem->ex_src_type = ITEM_EX_SRC_EQUIPMENT;
+    memcpy(pTargetItemSlot, pTempItem, sizeof(ITEM));
+    g_pNewItemMng->DeleteItem(pTempItem);
+
+    CreateEquippingEffect(pTargetItemSlot);
+    return true;
+}
+
 void CNewUIMyInventory::UnequipItem(int iIndex)
 {
     if (iIndex >= 0 && iIndex < MAX_EQUIPMENT_INDEX && g_pNewItemMng && CharacterMachine)
@@ -377,6 +416,17 @@ bool CNewUIMyInventory::InsertItem(int iIndex, std::span<const BYTE> pbyItemPack
     if (m_pNewInventoryCtrl)
     {
         return m_pNewInventoryCtrl->AddItem(iIndex, pbyItemPacket);
+    }
+
+    return false;
+}
+
+bool CNewUIMyInventory::InsertItemOld(
+    int iIndex, std::span<const BYTE> pbyItemPacket) const
+{
+    if (m_pNewInventoryCtrl)
+    {
+        return m_pNewInventoryCtrl->AddItemOld(iIndex, pbyItemPacket);
     }
 
     return false;
