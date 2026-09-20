@@ -32,6 +32,8 @@ std::vector<std::uint8_t> BuildFinishLoadingRequest();
 std::vector<std::uint8_t> BuildCloseNpcRequest();
 std::vector<std::uint8_t> BuildPublicChatRequest(std::string_view character,
                                                  std::string_view text);
+std::vector<std::uint8_t> BuildWhisperRequest(std::string_view target,
+                                              std::string_view text);
 
 bool BuildAreaSkillRequest(std::uint16_t skillId,
                            std::uint8_t targetX,
