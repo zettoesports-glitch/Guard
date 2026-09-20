@@ -1104,6 +1104,12 @@ bool DirectSession::SendCloseNpc(Connection* connection)
     return SendPacket(connection, BuildCloseNpcRequest());
 }
 
+bool DirectSession::SendCraftingDialogClose(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestMixExit(): C1:87, Send().
+    return SendXorPacket(connection, {0xC1, 0x03, 0x87});
+}
+
 bool DirectSession::SendConsumeItem(Connection* connection,
                                     std::uint8_t itemSlot,
                                     std::uint8_t targetSlot,
