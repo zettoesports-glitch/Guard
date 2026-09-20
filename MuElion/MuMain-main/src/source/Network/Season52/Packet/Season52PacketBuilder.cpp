@@ -100,6 +100,56 @@ std::vector<std::uint8_t> BuildFinishLoadingRequest() {
     return packet;
 }
 
+bool BuildMapServerMoveAuthRequest(
+                       std::string_view account,
+                       std::string_view character,
+                       std::uint32_t authCode1,
+                       std::uint32_t authCode2,
+                       std::uint32_t authCode3,
+                       std::uint32_t authCode4,
+                       std::uint32_t tickCount,
+                       const std::array<std::uint8_t, ProtocolVersionSize>& version,
+                       const std::array<std::uint8_t, ProtocolSerialSize>& serial,
+                       Season52Crypto& crypto,
+                       std::vector<std::uint8_t>& wirePacket) {
+    constexpr std::size_t MapAuthFieldSize = 12;
+
+    auto accountField = FixedField<MapAuthFieldSize>(account);
+    const auto characterField = FixedField<MapAuthFieldSize>(character);
+
+    // Louis/Webzen B1:01 applies BUX only to the account field.
+    BuxTransform(accountField.data(), accountField.size());
+
+    std::vector<std::uint8_t> plain;
+    plain.reserve(69);
+
+    plain.push_back(0xC1);
+    plain.push_back(69);
+    plain.push_back(0xB1);
+    plain.push_back(0x01);
+
+    plain.insert(plain.end(), accountField.begin(), accountField.end());
+    plain.insert(plain.end(), characterField.begin(), characterField.end());
+
+    WriteU32LE(plain, authCode1);
+    WriteU32LE(plain, authCode2);
+    WriteU32LE(plain, authCode3);
+    WriteU32LE(plain, authCode4);
+    WriteU32LE(plain, tickCount);
+
+    for (std::size_t i = 0; i < version.size(); ++i) {
+        plain.push_back(static_cast<std::uint8_t>(version[i] - (i + 1u)));
+    }
+
+    plain.insert(plain.end(), serial.begin(), serial.end());
+
+    if (plain.size() != 69) {
+        return false;
+    }
+
+    return crypto.Encode(plain.data(), plain.size(), wirePacket);
+}
+
 bool BuildLoginRequest(std::string_view account,
                        std::string_view password,
                        std::uint32_t tickCount,
