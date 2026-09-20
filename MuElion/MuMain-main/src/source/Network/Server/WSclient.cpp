@@ -1965,6 +1965,87 @@ int CalcItemLength(std::span<const BYTE> ReceiveBuffer)
     return size;
 }
 
+BOOL ReceiveInventorySeason52(std::span<const BYTE> ReceiveBuffer)
+{
+    constexpr std::size_t kHeaderSize = 6; // C2/C4 sizeH sizeL F3 10 count
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 1 + kItemSize;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: F3:10 inventory packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return FALSE;
+    }
+
+    const BYTE count = ReceiveBuffer[5];
+    const std::size_t required =
+        kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+
+    if (ReceiveBuffer.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F3:10 inventory: got={} expected>={} count={}",
+            ReceiveBuffer.size(), required, count);
+        return FALSE;
+    }
+
+    for (auto& item : CharacterMachine->Equipment)
+    {
+        item.Type = -1;
+        item.Number = 0;
+        item.ExcellentFlags = 0;
+    }
+
+    g_pMyInventory->UnequipAllItems();
+    g_pMyInventory->DeleteAllItems();
+    g_pMyInventoryExt->DeleteAllItems();
+    g_pMyShopInventory->DeleteAllItems();
+
+    DeleteMount(&Hero->Object);
+    giPetManager::DeletePet(Hero);
+    ThePetProcess().DeletePet(Hero);
+
+    SEASON3B::CNewUIInventoryCtrl::DeletePickedItem();
+
+    std::size_t offset = kHeaderSize;
+    for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        const int itemIndex = ReceiveBuffer[offset];
+        const auto itemData = ReceiveBuffer.subspan(offset + 1, kItemSize);
+
+        bool loaded = false;
+        if (itemIndex >= 0 && itemIndex < MAX_EQUIPMENT_INDEX)
+        {
+            loaded = g_pMyInventory->EquipItemOld(itemIndex, itemData);
+        }
+        else if (IsMainInventorySlot(itemIndex))
+        {
+            loaded = g_pMyInventory->InsertItemOld(itemIndex, itemData);
+        }
+        else
+        {
+            mu::log::Get("network")->warn(
+                "S52: ignoring F3:10 item in unsupported slot {}", itemIndex);
+            continue;
+        }
+
+        if (!loaded)
+        {
+            mu::log::Get("network")->warn(
+                "S52: failed to materialize classic inventory item in slot {}",
+                itemIndex);
+        }
+    }
+
+    mu::log::Get("network")->info(
+        "S52: F3:10 loaded {} classic inventory entries", count);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x10 [ReceiveInventorySeason52 count=%d]", count);
+    return TRUE;
+}
+
 BOOL ReceiveInventoryExtended(std::span<const BYTE> ReceiveBuffer)
 {
     for (auto& i : CharacterMachine->Equipment)
@@ -13943,7 +14024,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             ReceiveRevival(ReceiveBuffer);
             break;
         case 0x10: // receive inventory
-            ReceiveInventoryExtended(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveInventorySeason52(received_span);
+            }
+            else
+            {
+                ReceiveInventoryExtended(received_span);
+            }
             break;
         case 0x05: // receive level up
             ReceiveLevelUp(ReceiveBuffer, Size);
