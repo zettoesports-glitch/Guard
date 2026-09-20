@@ -9,6 +9,7 @@
 #include "GameLogic/Items/ChangeRingManager.h"
 #include "Core/Utilities/KeyGenerator.h"
 #include "Network/Server/ServerListManager.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Engine/Object/ZzzOpenData.h"
 #include "World/MapInfra/MapManager.h"
 #include "Character/CharacterManager.h"
@@ -416,7 +417,19 @@ bool SEASON3B::CNewUIMoveCommandWindow::BtnProcess()
                             SaveOptions();
                         }
 
-                        SocketClient->ToGameServer()->SendWarpCommandRequest(g_pMoveCommandWindow->GetMoveCommandKey(), (*li)->_ReqInfo.index);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendWarpCommand(
+                                SocketClient,
+                                g_pMoveCommandWindow->GetMoveCommandKey(),
+                                static_cast<std::uint16_t>((*li)->_ReqInfo.index));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendWarpCommandRequest(
+                                g_pMoveCommandWindow->GetMoveCommandKey(),
+                                (*li)->_ReqInfo.index);
+                        }
 
                         g_pNewUISystem->Hide(SEASON3B::INTERFACE_MOVEMAP);
                         return true;
