@@ -103,6 +103,7 @@ namespace SEASON3B
         void Release();
 
         bool EquipItem(int iIndex, std::span<const BYTE> pbyItemPacket);
+        bool EquipItemOld(int iIndex, std::span<const BYTE> pbyItemPacket);
         void UnequipItem(int iIndex);
         void UnequipAllItems();
 
@@ -114,6 +115,7 @@ namespace SEASON3B
         bool IsRepairEnableLevel() const override;
 
         bool InsertItem(int iIndex, std::span<const BYTE> pbyItemPacket) const;
+        bool InsertItemOld(int iIndex, std::span<const BYTE> pbyItemPacket) const;
         void DeleteItem(int iIndex) const;
         void DeleteAllItems() const;
 
