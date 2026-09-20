@@ -76,6 +76,21 @@ public:
                       std::uint8_t targetY,
                       std::uint8_t itemSlot);
 
+    bool SendItemMove(
+        Connection* connection,
+        std::uint8_t sourceStorage,
+        std::uint8_t sourceIndex,
+        std::uint8_t itemTypeLow,
+        std::uint8_t itemLevel,
+        std::uint8_t durability,
+        std::uint8_t option1,
+        std::uint8_t excellentOption,
+        std::uint8_t splitType,
+        std::uint8_t spareBits,
+        const std::array<std::uint8_t, 5>& socketOptions,
+        std::uint8_t targetStorage,
+        std::uint8_t targetIndex);
+
     bool SendAreaSkill(Connection* connection,
                        std::uint16_t skillId,
                        std::uint8_t targetX,
