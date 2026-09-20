@@ -89,6 +89,8 @@ public:
     bool SendInventoryRequest(Connection* connection);
     bool SendCrywolfInfoRequest(Connection* connection);
     bool SendCrywolfChaosRateBenefitRequest(Connection* connection);
+    bool SendCrywolfContractRequest(Connection* connection,
+                                    std::uint16_t altarKey);
     bool SendChecksumResponse(Connection* connection, std::uint32_t checksum);
     bool SendCastleSiegeStatusRequest(Connection* connection);
     bool SendCastleSiegeRegistrationStateRequest(Connection* connection);
@@ -237,6 +239,8 @@ public:
                              const wchar_t* authorityCode);
     bool SendLogout(Connection* connection, std::uint8_t flag);
     bool SendResetCharacterPointRequest(Connection* connection);
+    bool SendAddMasterSkillPoint(Connection* connection,
+                                    std::uint32_t skillId);
 
     // Guild / alliance protocol (classic Louis 5.2).
     bool SendGuildJoinRequest(Connection* connection, std::uint16_t targetId);
