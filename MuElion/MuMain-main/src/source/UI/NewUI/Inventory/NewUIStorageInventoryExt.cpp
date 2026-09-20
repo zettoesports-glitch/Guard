@@ -3,6 +3,7 @@
 //*****************************************************************************
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/NewUI/Inventory/NewUIStorageInventoryExt.h"
 #include "I18N/All.h"
 
@@ -210,7 +211,14 @@ bool CNewUIStorageInventoryExt::ProcessClosing() const
 
     CNewUIInventoryCtrl::BackupPickedItem();
     DeleteAllItems();
-    SocketClient->ToGameServer()->SendVaultClosed();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendVaultClosed(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendVaultClosed();
+    }
     return true;
 }
 
