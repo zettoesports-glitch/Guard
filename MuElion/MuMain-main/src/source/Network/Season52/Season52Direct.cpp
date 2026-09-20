@@ -553,6 +553,138 @@ bool DirectSession::SendDropItem(Connection* connection,
         {0xC1, 0x06, 0x23, targetX, targetY, itemSlot});
 }
 
+bool DirectSession::SendAreaSkill(Connection* connection,
+                                  std::uint16_t skillId,
+                                  std::uint8_t targetX,
+                                  std::uint8_t targetY,
+                                  std::uint8_t angle,
+                                  std::uint8_t destination,
+                                  std::uint8_t targetPosition,
+                                  std::uint16_t targetId,
+                                  std::uint8_t skillSerial)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> wire;
+    if (!BuildAreaSkillRequest(
+            skillId,
+            targetX,
+            targetY,
+            angle,
+            destination,
+            targetPosition,
+            targetId,
+            skillSerial,
+            crypto_,
+            wire))
+    {
+        return false;
+    }
+
+    return SendPacket(connection, wire);
+}
+
+bool DirectSession::SendTalkNpc(Connection* connection, std::uint16_t npcId)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> wire;
+    return BuildTalkNpcRequest(npcId, crypto_, wire)
+        && SendPacket(connection, wire);
+}
+
+bool DirectSession::SendCloseNpc(Connection* connection)
+{
+    if (!DirectProtocolEnabled() || !gameServer_)
+    {
+        return false;
+    }
+
+    return SendPacket(connection, BuildCloseNpcRequest());
+}
+
+bool DirectSession::SendConsumeItem(Connection* connection,
+                                    std::uint8_t itemSlot,
+                                    std::uint8_t targetSlot,
+                                    std::uint8_t fruitUsage)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> wire;
+    return BuildConsumeItemRequest(
+               itemSlot, targetSlot, fruitUsage, crypto_, wire)
+        && SendPacket(connection, wire);
+}
+
+bool DirectSession::SendBuyItem(Connection* connection, std::uint8_t itemSlot)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> wire;
+    return BuildBuyItemRequest(itemSlot, crypto_, wire)
+        && SendPacket(connection, wire);
+}
+
+bool DirectSession::SendSellItem(Connection* connection, std::uint8_t itemSlot)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> wire;
+    return BuildSellItemRequest(itemSlot, crypto_, wire)
+        && SendPacket(connection, wire);
+}
+
+bool DirectSession::SendRepairItem(Connection* connection,
+                                   std::uint8_t itemSlot,
+                                   std::uint8_t addGold)
+{
+    if (!DirectProtocolEnabled() || !gameServer_ || !EnsureKeysLoaded())
+    {
+        return false;
+    }
+
+    std::vector<std::uint8_t> wire;
+    return BuildRepairItemRequest(itemSlot, addGold, crypto_, wire)
+        && SendPacket(connection, wire);
+}
+
+bool DirectSession::SendPublicChat(Connection* connection,
+                                   const wchar_t* character,
+                                   const wchar_t* text)
+{
+    if (!DirectProtocolEnabled() || !gameServer_
+        || character == nullptr || text == nullptr)
+    {
+        return false;
+    }
+
+    std::array<char, CharacterNameSize + 1> characterUtf8{};
+    std::array<char, 91> textUtf8{};
+    CMultiLanguage::ConvertToUtf8(
+        characterUtf8.data(), character, static_cast<int>(characterUtf8.size()));
+    CMultiLanguage::ConvertToUtf8(
+        textUtf8.data(), text, static_cast<int>(textUtf8.size()));
+
+    return SendPacket(
+        connection,
+        BuildPublicChatRequest(characterUtf8.data(), textUtf8.data()));
+}
+
 bool DirectSession::SendLogin(Connection* connection,
                               const wchar_t* account,
                               const wchar_t* password,
