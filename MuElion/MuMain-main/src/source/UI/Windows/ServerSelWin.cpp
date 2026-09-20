@@ -16,7 +16,8 @@
 #include "UI/Legacy/UIControls.h"
 
 #include "UI/NewUI/NewUISystem.h"
-#include "Network/Server/ServerListManager.h"\n#include "Network/Season52/Season52Direct.h"
+#include "Network/Server/ServerListManager.h"
+#include "Network/Season52/Season52Direct.h"
 
 #define	SSW_GAP_WIDTH	28
 #define	SSW_GAP_HEIGHT	5
