@@ -1142,7 +1142,15 @@ CALLBACK_RESULT SEASON3B::CMapEnterWerwolfMsgBoxLayout::OkBtnDown(class CNewUIMe
 
     if (dwGold >= 3000000)
     {
-        SocketClient->ToGameServer()->SendEnterOnWerewolfRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendEnterWerewolfRequest(
+                SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendEnterOnWerewolfRequest();
+        }
     }
     else
     {
@@ -1185,7 +1193,15 @@ bool CMapEnterGateKeeperMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT CMapEnterGateKeeperMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendEnterOnGatekeeperRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendEnterGatekeeperRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendEnterOnGatekeeperRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1861,7 +1877,15 @@ bool SEASON3B::CHarvestEventLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CHarvestEventLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendLeoHelperItemRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendLeoHelperItemRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendLeoHelperItemRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1897,7 +1921,15 @@ bool SEASON3B::CWhiteAngelEventLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CWhiteAngelEventLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendWhiteAngelItemRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendWhiteAngelItemRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendWhiteAngelItemRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2482,7 +2514,17 @@ CALLBACK_RESULT SEASON3B::CQuestGiveUpMsgBoxLayout::OkBtnDown(class CNewUIMessag
     const DWORD dwSelectedQuest = g_pMyQuestInfoWindow->GetSelQuestIndex();
     const auto questNumber = static_cast<uint16_t>(LOWORD(dwSelectedQuest));
     const auto questGroup = static_cast<uint16_t>(HIWORD(dwSelectedQuest));
-    SocketClient->ToGameServer()->SendQuestCancelRequest(questNumber, questGroup);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendQuestCancelRequest(
+            SocketClient,
+            static_cast<std::uint32_t>(dwSelectedQuest));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendQuestCancelRequest(
+            questNumber, questGroup);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2592,7 +2634,16 @@ CALLBACK_RESULT SEASON3B::CHighValueItemCheckMsgBoxLayout::OkBtnDown(class CNewU
 
     if (iSourceIndex >= MAX_EQUIPMENT_INDEX && iSourceIndex < MAX_MY_INVENTORY_EX_INDEX)
     {
-        SocketClient->ToGameServer()->SendSellItemToNpcRequest(iSourceIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendSellItem(
+                SocketClient,
+                static_cast<std::uint8_t>(iSourceIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendSellItemToNpcRequest(iSourceIndex);
+        }
         g_pNPCShop->SetSellingItem(true);
         // Note: picked item will be cleaned up by ReceiveSell when server responds
     }
@@ -3599,7 +3650,15 @@ bool CSantaTownLeaveMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT CSantaTownLeaveMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendMoveToDeviasBySnowmanRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendMoveToDeviasBySnowmanRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendMoveToDeviasBySnowmanRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -3632,7 +3691,15 @@ bool CSantaTownSantaMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT CSantaTownSantaMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendSantaClausItemRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendSantaClausItemRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendSantaClausItemRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -3769,7 +3836,17 @@ CALLBACK_RESULT SEASON3B::CGambleBuyMsgBoxLayout::OkBtnDown(class CNewUIMessageB
     if (gambleSys.IsGambleShop() && BuyCost != 0)
     {
         const auto& itemInfo = gambleSys.GetBuyItemInfoConst();
-        SocketClient->ToGameServer()->SendBuyItemFromNpcRequest(itemInfo.ItemIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendBuyItem(
+                SocketClient,
+                static_cast<std::uint8_t>(itemInfo.ItemIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendBuyItemFromNpcRequest(
+                itemInfo.ItemIndex);
+        }
         BuyCost = itemInfo.ItemCost;
         g_ConsoleDebug->Write(MCD_SEND, L"0x32 [SendRequestBuy(%d)]", itemInfo.ItemIndex);
     }
