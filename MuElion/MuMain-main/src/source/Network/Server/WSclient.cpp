@@ -1335,7 +1335,14 @@ void InitGame()
 
     CheckInventory = nullptr;
 
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
 
     g_iFollowCharacter = -1;
 
@@ -8713,7 +8720,16 @@ void ReceiveTradeExit(const BYTE* ReceiveBuffer)
 
 void ReceivePing(const BYTE* ReceiveBuffer)
 {
-    SocketClient->ToGameServer()->SendPingResponse();
+    (void)ReceiveBuffer;
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendPing(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendPingResponse();
+    }
 }
 
 void ReceiveStorageGold(const BYTE* ReceiveBuffer)
