@@ -215,6 +215,7 @@ public:
                                      std::uint8_t castleLevel,
                                      std::uint8_t inventoryIndex);
     bool SendEnterUnitedMarketPlaceRequest(Connection* connection);
+    bool SendEnterEmpireGuardianEvent(Connection* connection);
     bool SendWhiteAngelItemRequest(Connection* connection);
     bool SendEnterWerewolfRequest(Connection* connection);
     bool SendEnterGatekeeperRequest(Connection* connection);
