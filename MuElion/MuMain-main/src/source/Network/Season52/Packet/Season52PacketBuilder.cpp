@@ -43,6 +43,63 @@ std::vector<std::uint8_t> BuildCharacterListRequest(std::uint8_t language) {
     return packet;
 }
 
+std::vector<std::uint8_t> BuildCreateCharacterRequest(std::string_view name,
+                                                       std::uint8_t classId,
+                                                       std::uint8_t skin) {
+    const auto nameField = FixedField<CharacterNameSize>(name);
+
+    std::vector<std::uint8_t> packet{
+        0xC1,
+        static_cast<std::uint8_t>(4u + CharacterNameSize + 1u),
+        0xF3,
+        0x01
+    };
+    packet.insert(packet.end(), nameField.begin(), nameField.end());
+    packet.push_back(static_cast<std::uint8_t>((classId << 4u) + skin));
+
+    EncodePacketXor(packet.data(), packet.size());
+    return packet;
+}
+
+std::vector<std::uint8_t> BuildDeleteCharacterRequest(std::string_view name,
+                                                       std::string_view personalCode) {
+    const auto nameField = FixedField<CharacterNameSize>(name);
+    const auto codeField = FixedField<PersonalCodeSize>(personalCode);
+
+    std::vector<std::uint8_t> packet{
+        0xC1,
+        static_cast<std::uint8_t>(4u + CharacterNameSize + PersonalCodeSize),
+        0xF3,
+        0x02
+    };
+    packet.insert(packet.end(), nameField.begin(), nameField.end());
+    packet.insert(packet.end(), codeField.begin(), codeField.end());
+
+    EncodePacketXor(packet.data(), packet.size());
+    return packet;
+}
+
+std::vector<std::uint8_t> BuildSelectCharacterRequest(std::string_view name) {
+    const auto nameField = FixedField<CharacterNameSize>(name);
+
+    std::vector<std::uint8_t> packet{
+        0xC1,
+        static_cast<std::uint8_t>(4u + CharacterNameSize),
+        0xF3,
+        0x03
+    };
+    packet.insert(packet.end(), nameField.begin(), nameField.end());
+
+    EncodePacketXor(packet.data(), packet.size());
+    return packet;
+}
+
+std::vector<std::uint8_t> BuildFinishLoadingRequest() {
+    std::vector<std::uint8_t> packet{0xC1, 0x04, 0xF3, 0x12};
+    EncodePacketXor(packet.data(), packet.size());
+    return packet;
+}
+
 bool BuildLoginRequest(std::string_view account,
                        std::string_view password,
                        std::uint32_t tickCount,
