@@ -630,6 +630,20 @@ bool DirectSession::SendCrywolfChaosRateBenefitRequest(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x04, 0xBD, 0x09});
 }
 
+bool DirectSession::SendCrywolfContractRequest(
+    Connection* connection, std::uint16_t altarKey)
+{
+    // Louis Main 5.2 SendRequestCrywolfAltarContract():
+    // C1:BD:03 + altar key H/L, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x06, 0xBD, 0x03,
+            static_cast<std::uint8_t>((altarKey >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>(altarKey & 0xFFu)
+        });
+}
+
 bool DirectSession::SendChecksumResponse(
     Connection* connection, std::uint32_t checksum)
 {
@@ -1684,6 +1698,22 @@ bool DirectSession::SendResetCharacterPointRequest(Connection* connection)
 {
     // Louis Main 5.2 SendRequestResetCharacterPoint(): C1:F2:00, Send().
     return SendXorPacket(connection, {0xC1, 0x04, 0xF2, 0x00});
+}
+
+bool DirectSession::SendAddMasterSkillPoint(
+    Connection* connection, std::uint32_t skillId)
+{
+    // Louis Main 5.2 SendRequestMasterLevelSkill():
+    // C1:F3:52 + int SkillNum, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x08, 0xF3, 0x52,
+            static_cast<std::uint8_t>(skillId & 0xFFu),
+            static_cast<std::uint8_t>((skillId >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((skillId >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((skillId >> 24u) & 0xFFu)
+        });
 }
 
 bool DirectSession::SendGuildJoinRequest(Connection* connection,
