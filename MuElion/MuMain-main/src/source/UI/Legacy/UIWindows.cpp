@@ -35,6 +35,38 @@ extern void ReceiveLetterText(std::span<const BYTE> ReceiveBuffer, bool isCached
 extern void ReceiveLetterTextSeason52(
     std::span<const BYTE> ReceiveBuffer, bool isCached);
 
+namespace
+{
+void OpenCachedOrRequestLetterText(DWORD letterId)
+{
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        const auto* cached =
+            g_pLetterList->GetLetterTextSeason52(letterId);
+        if (cached == nullptr)
+        {
+            mu::net::s52::DirectSession::Instance().SendLetterReadRequest(
+                SocketClient, static_cast<std::uint16_t>(letterId));
+            return;
+        }
+
+        ReceiveLetterTextSeason52(
+            std::span<const BYTE>(cached->data(), cached->size()), true);
+        return;
+    }
+
+    auto* cached = g_pLetterList->GetLetterText(letterId);
+    if (cached == nullptr)
+    {
+        SocketClient->ToGameServer()->SendLetterReadRequest(letterId);
+        return;
+    }
+
+    auto* data = reinterpret_cast<const BYTE*>(cached);
+    ReceiveLetterText(std::span(data, sizeof(FS_LETTER_TEXT)), true);
+}
+} // namespace
+
 int g_iLetterReadNextPos_x, g_iLetterReadNextPos_y;
 
 CUIWindowMgr::CUIWindowMgr()
@@ -1687,10 +1719,21 @@ BOOL CUIChatWindow::HandleMessage()
                 }
                 else
                 {
-                    SocketClient->ToGameServer()->SendChatRoomInvitationRequest(
-                        MU_C16(m_InvitePalListBox.GetSelectedText()->m_szID),
-                        m_dwRoomNumber,
-                        GetUIID());
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendChatRoomInvitationRequest(
+                            SocketClient,
+                            m_InvitePalListBox.GetSelectedText()->m_szID,
+                            static_cast<std::uint16_t>(m_dwRoomNumber),
+                            static_cast<std::uint32_t>(GetUIID()));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendChatRoomInvitationRequest(
+                            MU_C16(m_InvitePalListBox.GetSelectedText()->m_szID),
+                            m_dwRoomNumber,
+                            GetUIID());
+                    }
                 }
             }
             break;
@@ -2920,7 +2963,23 @@ BOOL CUILetterWriteWindow::HandleMessage()
                 int iZoom = (m_Photo.GetCurrentZoom() * 100.0f - 80 + 5) / 10;
                 BYTE Data1 = (iZoom << 6) & 0xC0 | iAngle & 0x3F;
                 BYTE Data2 = m_Photo.GetCurrentAction() - AT_ATTACK1;
-                SocketClient->ToGameServer()->SendLetterSendRequest(GetUIID(), MU_C16(szMailto), MU_C16(szTitle), Data1, Data2, len, MU_C16(szText));
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendLetterSendRequest(
+                        SocketClient,
+                        static_cast<std::uint32_t>(GetUIID()),
+                        szMailto,
+                        szTitle,
+                        Data1,
+                        Data2,
+                        szText);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendLetterSendRequest(
+                        GetUIID(), MU_C16(szMailto), MU_C16(szTitle),
+                        Data1, Data2, len, MU_C16(szText));
+                }
             }
             break;
         case 2:
@@ -3204,15 +3263,7 @@ BOOL CUILetterReadWindow::HandleMessage()
                 g_iLetterReadNextPos_y = GetPosition_y();
                 if (g_pWindowMgr->LetterReadCheck(dwPrevID) == FALSE)
                 {
-                    if (g_pLetterList->GetLetterText(dwPrevID) == NULL)
-                    {
-                        SocketClient->ToGameServer()->SendLetterReadRequest(dwPrevID);
-                    }
-                    else
-                    {
-                        auto data = reinterpret_cast<const BYTE*>(g_pLetterList->GetLetterText(dwPrevID));
-                        ReceiveLetterText(std::span(data, sizeof(FS_LETTER_TEXT)), true);
-                    }
+                    OpenCachedOrRequestLetterText(dwPrevID);
                 }
                 else
                 {
@@ -3245,15 +3296,7 @@ BOOL CUILetterReadWindow::HandleMessage()
                 g_iLetterReadNextPos_y = GetPosition_y();
                 if (g_pWindowMgr->LetterReadCheck(dwNextID) == FALSE)
                 {
-                    if (g_pLetterList->GetLetterText(dwNextID) == NULL)
-                    {
-                        SocketClient->ToGameServer()->SendLetterReadRequest(dwNextID);
-                    }
-                    else
-                    {
-                        auto data = reinterpret_cast<const BYTE*>(g_pLetterList->GetLetterText(dwNextID));
-                        ReceiveLetterText(std::span(data, sizeof(FS_LETTER_TEXT)), true);
-                    }
+                    OpenCachedOrRequestLetterText(dwNextID);
                 }
                 else
                 {
@@ -3279,7 +3322,17 @@ BOOL CUILetterReadWindow::HandleMessage()
     case UI_MESSAGE_YNRETURN:
         if (m_WorkMessage.m_iParam2 == 1)
         {
-            SocketClient->ToGameServer()->SendLetterDeleteRequest(m_LetterHead.m_dwLetterID);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendLetterDeleteRequest(
+                    SocketClient,
+                    static_cast<std::uint16_t>(m_LetterHead.m_dwLetterID));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendLetterDeleteRequest(
+                    m_LetterHead.m_dwLetterID);
+            }
             g_pWindowMgr->SendUIMessage(UI_MESSAGE_CLOSE, GetUIID(), 0);
         }
         break;
@@ -3583,7 +3636,16 @@ BOOL CUIFriendListTabWindow::HandleMessage()
                     if (g_pWindowMgr->GetChatReject() == FALSE && g_pFriendMenu->IsRequestWindow(pszName) == FALSE)
                     {
                         g_pFriendMenu->AddRequestWindow(pszName);
-                        SocketClient->ToGameServer()->SendChatRoomCreateRequest(MU_C16(pszName));
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendChatRoomCreateRequest(
+                                SocketClient, pszName);
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendChatRoomCreateRequest(
+                                MU_C16(pszName));
+                        }
                     }
                 }
                 else if (dwDuplicationCheck == -1);
@@ -4564,15 +4626,7 @@ BOOL CUILetterBoxTabWindow::HandleMessage()
             if (g_pWindowMgr->LetterReadCheck(dwLetterID) == FALSE)
             {
                 // 캐시
-                if (g_pLetterList->GetLetterText(dwLetterID) == NULL)
-                {
-                    SocketClient->ToGameServer()->SendLetterReadRequest(dwLetterID);
-                }
-                else
-                {
-                    auto data = reinterpret_cast<const BYTE*>(g_pLetterList->GetLetterText(dwLetterID));
-                    ReceiveLetterText(std::span(data, sizeof(FS_LETTER_TEXT)), true);
-                }
+                OpenCachedOrRequestLetterText(dwLetterID);
             }
             else
             {
@@ -4609,7 +4663,15 @@ BOOL CUILetterBoxTabWindow::HandleMessage()
         break;
         case 5:
         {
-            SocketClient->ToGameServer()->SendLetterListRequest();
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendLetterListRequest(
+                    SocketClient);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendLetterListRequest();
+            }
         }
         break;
         default:
@@ -4636,7 +4698,17 @@ BOOL CUILetterBoxTabWindow::HandleMessage()
                 if (m_LetterListBox.GetCheckedLines(&letterlist) == 0) break;
                 for (std::deque<LETTERLIST_TEXT*>::iterator iter = letterlist.begin(); iter != letterlist.end(); ++iter)
                 {
-                    SocketClient->ToGameServer()->SendLetterDeleteRequest((*iter)->m_dwLetterID);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendLetterDeleteRequest(
+                            SocketClient,
+                            static_cast<std::uint16_t>((*iter)->m_dwLetterID));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendLetterDeleteRequest(
+                            (*iter)->m_dwLetterID);
+                    }
                 }
                 //m_LetterListBox.Scrolling(0);
             }
