@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "UI/NewUI/Quests/NewUIMyQuestInfoWindow.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "GameLogic/Quests/CSQuest.h"
 #include "GameLogic/Quests/QuestMng.h"
@@ -361,7 +362,14 @@ void SEASON3B::CNewUIMyQuestInfoWindow::OpenningProcess()
 void SEASON3B::CNewUIMyQuestInfoWindow::ClosingProcess()
 {
     UnselectQuestList();
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
     ::PlayBuffer(SOUND_CLICK01);
 }
 
