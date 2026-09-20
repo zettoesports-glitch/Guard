@@ -12098,7 +12098,15 @@ void ReceiveFriendList(const BYTE* ReceiveBuffer)
     g_pWindowMgr->SetServerEnable(TRUE);
     if (g_iChatInputType == 0)
     {
-        SocketClient->ToGameServer()->SendSetFriendOnlineState(2);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendSetFriendOnlineState(
+                SocketClient, 2);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendSetFriendOnlineState(2);
+        }
     }
 
     g_iMaxLetterCount = Header->MaxMemo;
