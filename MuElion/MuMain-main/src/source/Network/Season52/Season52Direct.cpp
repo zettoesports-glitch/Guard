@@ -1300,6 +1300,34 @@ bool DirectSession::SendQuestHistory(Connection* connection)
     return SendEncryptedPacket(connection, BuildQuestHistoryRequest());
 }
 
+bool DirectSession::SendProgressQuestListRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestProgressQuestList(): C1:F6:1A, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xF6, 0x1A});
+}
+
+bool DirectSession::SendQuestByEtcEPListRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestQuestByEtcEPList(): C1:F6:21, Send().
+    return SendXorPacket(connection, {0xC1, 0x04, 0xF6, 0x21});
+}
+
+bool DirectSession::SendQuestClientActionRequest(
+    Connection* connection, std::uint32_t questIndex)
+{
+    // Louis Main 5.2 SendSatisfyQuestRequestFromClient(dwQuestIndex):
+    // C1:F6:10 + DWORD quest index, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x08, 0xF6, 0x10,
+            static_cast<std::uint8_t>(questIndex & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 24u) & 0xFFu)
+        });
+}
+
 bool DirectSession::SendQuestState(Connection* connection,
                                    std::uint8_t questIndex,
                                    std::uint8_t questState)
