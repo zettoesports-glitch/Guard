@@ -198,6 +198,7 @@ public:
     bool SendGensRewardRequest(Connection* connection, std::uint8_t influence);
     bool SendGensInfoOpenRequest(Connection* connection);
     bool SendMiniGameEventCountRequest(Connection* connection, std::uint8_t eventType);
+    bool SendMiniGameOpeningStateRequest(Connection* connection, std::uint8_t eventType, std::uint8_t eventLevel);
     bool SendPetCommandRequest(Connection* connection,
                                std::uint8_t petType,
                                std::uint8_t command,
