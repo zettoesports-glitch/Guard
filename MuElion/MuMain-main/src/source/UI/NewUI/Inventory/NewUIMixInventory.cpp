@@ -173,15 +173,36 @@ bool CNewUIMixInventory::ClosingProcess()
     case SEASON3A::MIXTYPE_CHERRYBLOSSOM:
     case SEASON3A::MIXTYPE_EXTRACT_SEED:
     case SEASON3A::MIXTYPE_SEED_SPHERE:
-        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+        }
         break;
     case SEASON3A::MIXTYPE_TRAINER:
-        SocketClient->ToGameServer()->SendCloseNpcRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCloseNpcRequest();
+        }
         break;
     case SEASON3A::MIXTYPE_ATTACH_SOCKET:
     case SEASON3A::MIXTYPE_DETACH_SOCKET:
         m_SocketListBox.Clear();
-        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+        }
         break;
     default:
         break;
