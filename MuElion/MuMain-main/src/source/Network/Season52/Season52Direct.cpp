@@ -1379,6 +1379,22 @@ bool DirectSession::SendQuestCompletionRequest(
         });
 }
 
+bool DirectSession::SendQuestCancelRequest(
+    Connection* connection, std::uint32_t questIndex)
+{
+    // Louis Main 5.2 SendRequestQuestGiveUp():
+    // C1:F6:0F + DWORD quest index, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x08, 0xF6, 0x0F,
+            static_cast<std::uint8_t>(questIndex & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 24u) & 0xFFu)
+        });
+}
+
 bool DirectSession::SendQuestProceedRequest(
     Connection* connection,
     std::uint32_t questIndex,
@@ -1460,6 +1476,36 @@ bool DirectSession::SendEnterUnitedMarketPlaceRequest(Connection* connection)
     // Louis Main 5.2 SendRequestEnterUnitedMarketPlaceEvent():
     // C1:BF:17, Send().
     return SendXorPacket(connection, {0xC1, 0x04, 0xBF, 0x17});
+}
+
+bool DirectSession::SendWhiteAngelItemRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0xD0, 0x03});
+}
+
+bool DirectSession::SendEnterWerewolfRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0xD0, 0x07});
+}
+
+bool DirectSession::SendEnterGatekeeperRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0xD0, 0x08});
+}
+
+bool DirectSession::SendLeoHelperItemRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0xD0, 0x09});
+}
+
+bool DirectSession::SendMoveToDeviasBySnowmanRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0xD0, 0x0A});
+}
+
+bool DirectSession::SendSantaClausItemRequest(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0xD0, 0x10});
 }
 
 bool DirectSession::SendPetCommandRequest(
