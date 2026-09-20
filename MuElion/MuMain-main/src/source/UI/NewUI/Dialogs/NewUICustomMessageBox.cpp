@@ -2343,7 +2343,15 @@ CALLBACK_RESULT SEASON3B::CSystemMenuMsgBox::GameOverBtnDown(class CNewUIMessage
     {
         MUHelper::g_MuHelper.TriggerStop();
         LogOut = true;
-        SocketClient->ToGameServer()->SendLogOut(LogOutType::CloseGame);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendLogout(
+                SocketClient, 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendLogOut(LogOutType::CloseGame);
+        }
         PostMessage(g_hWnd, WM_CLOSE, 0, 0);
         g_ConsoleDebug->Write(MCD_SEND, L"0xF1 [SendRequestLogOut] 0");
     }
@@ -2375,7 +2383,16 @@ CALLBACK_RESULT SEASON3B::CSystemMenuMsgBox::ChooseServerBtnDown(class CNewUIMes
         MUHelper::g_MuHelper.TriggerStop();
         g_pNewUIMng->ResetActiveUIObj();
         LogOut = true;
-        SocketClient->ToGameServer()->SendLogOut(LogOutType::BackToServerSelection);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendLogout(
+                SocketClient, 2);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendLogOut(
+                LogOutType::BackToServerSelection);
+        }
         g_ConsoleDebug->Write(MCD_SEND, L"0xF1 [SendRequestLogOut] 2");
     }
 
@@ -2406,7 +2423,17 @@ CALLBACK_RESULT SEASON3B::CSystemMenuMsgBox::ChooseCharacterBtnDown(class CNewUI
     {
         MUHelper::g_MuHelper.TriggerStop();
         g_pNewUIMng->ResetActiveUIObj();
-        LogOut = true;SocketClient->ToGameServer()->SendLogOut(LogOutType::BackToCharacterSelection);
+        LogOut = true;
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendLogout(
+                SocketClient, 1);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendLogOut(
+                LogOutType::BackToCharacterSelection);
+        }
         g_ConsoleDebug->Write(MCD_SEND, L"0xF1 [SendRequestLogOut] 1");
     }
 
@@ -4754,7 +4781,15 @@ CALLBACK_RESULT SEASON3B::CPasswordKeyPadMsgBoxLayout::OkBtnDown(class CNewUIMes
     if (pMsgBox->GetInputSize() == pMsgBox->GetInputLimit())
     {
         WORD wInputNumber = (WORD)_wtoi(pMsgBox->GetInputText());
-        SocketClient->ToGameServer()->SendUnlockVault(wInputNumber);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendStoragePassword(
+                SocketClient, 0, wInputNumber, nullptr);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendUnlockVault(wInputNumber);
+        }
     }
     else
     {
@@ -4961,7 +4996,19 @@ CALLBACK_RESULT SEASON3B::CStorageLockMsgBoxLayout::ProcessOk(class CNewUIMessag
 
     if (iInputTextSize > 0)
     {
-        SocketClient->ToGameServer()->SendSetVaultPin(pMsgBox->GetPassword(), MU_C16(strText));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendStoragePassword(
+                SocketClient,
+                1,
+                pMsgBox->GetPassword(),
+                strText);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendSetVaultPin(
+                pMsgBox->GetPassword(), MU_C16(strText));
+        }
     }
     else
     {
@@ -5014,7 +5061,20 @@ CALLBACK_RESULT SEASON3B::CStorageLockFinalKeyPadMsgBoxLayout::OkBtnDown(class C
     {
         if (pMsgBox->GetStoragePassword() != 0)
         {
-            SocketClient->ToGameServer()->SendSetVaultPin(pMsgBox->GetStoragePassword(), MU_C16(pMsgBox->GetInputText()));
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendStoragePassword(
+                    SocketClient,
+                    1,
+                    pMsgBox->GetStoragePassword(),
+                    pMsgBox->GetInputText());
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendSetVaultPin(
+                    pMsgBox->GetStoragePassword(),
+                    MU_C16(pMsgBox->GetInputText()));
+            }
         }
         g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -5075,7 +5135,15 @@ CALLBACK_RESULT SEASON3B::CStorageUnlockMsgBoxLayout::OkBtnDown(class CNewUIMess
 
     if (iInputTextSize > 0)
     {
-        SocketClient->ToGameServer()->SendRemoveVaultPin(MU_C16(strText));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendStoragePassword(
+                SocketClient, 2, 0, strText);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRemoveVaultPin(MU_C16(strText));
+        }
     }
     else
     {
@@ -5124,7 +5192,16 @@ CALLBACK_RESULT SEASON3B::CStorageUnlockKeyPadMsgBoxLayout::OkBtnDown(class CNew
 
     if (pMsgBox->GetInputSize() == pMsgBox->GetInputLimit())
     {
-        SocketClient->ToGameServer()->SendRemoveVaultPin(MU_C16(pMsgBox->GetInputText()));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendStoragePassword(
+                SocketClient, 2, 0, pMsgBox->GetInputText());
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRemoveVaultPin(
+                MU_C16(pMsgBox->GetInputText()));
+        }
     }
     else
     {
@@ -6985,7 +7062,15 @@ CALLBACK_RESULT SEASON3B::CResetCharacterPointMsgBox::ResetCharacterPointBtnDown
         }
     }
 
-    SocketClient->ToGameServer()->SendResetCharacterPointRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendResetCharacterPointRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendResetCharacterPointRequest();
+    }
 
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
     return CALLBACK_BREAK;
@@ -7050,7 +7135,18 @@ CALLBACK_RESULT SEASON3B::CGuildBreakPasswordMsgBoxLayout::ProcessOk(class CNewU
 
     if (iInputTextSize > 0)
     {
-        SocketClient->ToGameServer()->SendGuildKickPlayerRequest(MU_C16(GuildList[DeleteIndex].Name), MU_C16(strText));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildLeave(
+                SocketClient,
+                GuildList[DeleteIndex].Name,
+                strText);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildKickPlayerRequest(
+                MU_C16(GuildList[DeleteIndex].Name), MU_C16(strText));
+        }
     }
     else
     {
