@@ -39,7 +39,7 @@ void SendMiniGameOpeningStateRequestCompat(
     }
     else
     {
-        SendMiniGameOpeningStateRequestCompat(
+        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(
             eventType, eventLevel);
     }
 }
