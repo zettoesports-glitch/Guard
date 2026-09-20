@@ -8105,7 +8105,14 @@ BOOL ReceiveTalk(const BYTE* ReceiveBuffer, BOOL bEncrypted)
         break;
 
     case 0x0D:
-        SocketClient->ToGameServer()->SendCastleSiegeStatusRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCastleSiegeStatusRequest(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCastleSiegeStatusRequest();
+        }
         break;
     case 0x11:
     {
