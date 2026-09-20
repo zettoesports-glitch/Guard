@@ -1436,6 +1436,13 @@ bool DirectSession::SendGensInfoOpenRequest(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x04, 0xF8, 0x0B});
 }
 
+bool DirectSession::SendMiniGameEventCountRequest(
+    Connection* connection, std::uint8_t eventType)
+{
+    // Louis Main 5.2 SendRequestEventCount(wType): C1:9F + BYTE type.
+    return SendXorPacket(connection, {0xC1, 0x04, 0x9F, eventType});
+}
+
 bool DirectSession::SendQuestState(Connection* connection,
                                    std::uint8_t questIndex,
                                    std::uint8_t questState)
