@@ -76,6 +76,7 @@ public:
                       std::uint8_t targetX,
                       std::uint8_t targetY,
                       std::uint8_t itemSlot);
+    bool SendInventoryRequest(Connection* connection);
 
     bool SendItemMove(
         Connection* connection,
