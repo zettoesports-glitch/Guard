@@ -1328,6 +1328,41 @@ bool DirectSession::SendQuestClientActionRequest(
         });
 }
 
+bool DirectSession::SendProgressQuestRequestReward(
+    Connection* connection, std::uint32_t questIndex)
+{
+    // Louis Main 5.2 SendRequestProgressQuestRequestReward():
+    // C1:F6:1B + DWORD quest index, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x08, 0xF6, 0x1B,
+            static_cast<std::uint8_t>(questIndex & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 24u) & 0xFFu)
+        });
+}
+
+bool DirectSession::SendQuestSelection(
+    Connection* connection,
+    std::uint32_t questIndex,
+    std::uint8_t selectedTextIndex)
+{
+    // Louis Main 5.2 SendQuestSelection():
+    // C1:F6:0A + DWORD quest index + selected answer, Send().
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x09, 0xF6, 0x0A,
+            static_cast<std::uint8_t>(questIndex & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((questIndex >> 24u) & 0xFFu),
+            selectedTextIndex
+        });
+}
+
 bool DirectSession::SendQuestState(Connection* connection,
                                    std::uint8_t questIndex,
                                    std::uint8_t questState)
