@@ -20,7 +20,8 @@
 #include "World/MapInfra/MapManager.h"
 #include "UI/Legacy/UIMng.h"
 #include "Core/Input/Input.h"
-#include "Network/Server/WSclient.h"\n#include "Network/Season52/Season52Direct.h"
+#include "Network/Server/WSclient.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Core/Utilities/Log/muConsoleDebug.h"
 #include "I18N/All.h"
 #include "Engine/Object/ZzzCharacter.h"
@@ -316,7 +317,8 @@ void CreateLogInScene()
 
     ::PlayMp3(MUSIC_LOGIN_THEME);
 
-    g_ErrorReport.Write(L"> Login Scene init success.\r\n");
+    g_ErrorReport.Write(L"> Login Scene init success.\r
+");
 }
 
 void NewMoveLogInScene()
@@ -350,7 +352,8 @@ void NewMoveLogInScene()
     // ESC menu toggle is handled by CUIMng::Update()
     if (RECEIVE_LOG_IN_SUCCESS == CurrentProtocolState)
     {
-        g_ErrorReport.Write(L"> Request Character list\r\n");
+        g_ErrorReport.Write(L"> Request Character list\r
+");
 
         CCameraMove::GetInstancePtr()->SetTourMode(FALSE);
 
