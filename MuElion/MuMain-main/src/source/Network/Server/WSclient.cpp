@@ -13187,8 +13187,18 @@ void ReceiveProgressQuestRequestReward(const BYTE* ReceiveBuffer)
 void ReceiveProgressQuestListReady(const BYTE* ReceiveBuffer)
 {
     g_QuestMng.SetQuestIndexByEtcList(nullptr, 0);
-    SocketClient->ToGameServer()->SendActiveQuestListRequest();
-    SocketClient->ToGameServer()->SendEventQuestStateListRequest();
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        auto& direct = mu::net::s52::DirectSession::Instance();
+        direct.SendProgressQuestListRequest(SocketClient);
+        direct.SendQuestByEtcEPListRequest(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendActiveQuestListRequest();
+        SocketClient->ToGameServer()->SendEventQuestStateListRequest();
+    }
 }
 
 void ReceiveGensJoining(const BYTE* ReceiveBuffer)
