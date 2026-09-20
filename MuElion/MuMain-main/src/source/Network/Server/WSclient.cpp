@@ -12395,6 +12395,99 @@ void ReceiveWTBattleSoccerGoalIn(const BYTE* ReceiveBuffer)
         CreateEffect(BITMAP_FIRECRACKERRISE,Position,Angle,Light);*/
 }
 
+void ReceiveChangeMapServerInfoSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PMSG_MAP_SERVER_MOVE_SEND:
+    // PSBMSG_HEAD(4) + IP[16] + port[2] + serverCode[2] + 4 auth DWORDs.
+    constexpr std::size_t kPacketSize = 40;
+    constexpr std::size_t kIpOffset = 4;
+    constexpr std::size_t kIpSize = 16;
+    constexpr std::size_t kPortOffset = 20;
+    constexpr std::size_t kServerCodeOffset = 22;
+    constexpr std::size_t kAuth1Offset = 24;
+    constexpr std::size_t kAuth2Offset = 28;
+    constexpr std::size_t kAuth3Offset = 32;
+    constexpr std::size_t kAuth4Offset = 36;
+
+    if (packet.size() < kPacketSize
+        || packet[0] != 0xC1
+        || packet[2] != 0xB1
+        || packet[3] != 0x00)
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid B1:00 map-server redirect ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    MServerInfo info{};
+    std::copy_n(
+        reinterpret_cast<const char*>(packet.data() + kIpOffset),
+        kIpSize,
+        info.m_szMapSvrIpAddress.begin());
+
+    info.m_wMapSvrPort = ReadSeason52Word(packet.data() + kPortOffset);
+    info.m_wMapSvrCode = ReadSeason52Word(packet.data() + kServerCodeOffset);
+    info.m_iJoinAuthCode1 = static_cast<std::int32_t>(
+        ReadSeason52Dword(packet.data() + kAuth1Offset));
+    info.m_iJoinAuthCode2 = static_cast<std::int32_t>(
+        ReadSeason52Dword(packet.data() + kAuth2Offset));
+    info.m_iJoinAuthCode3 = static_cast<std::int32_t>(
+        ReadSeason52Dword(packet.data() + kAuth3Offset));
+    info.m_iJoinAuthCode4 = static_cast<std::int32_t>(
+        ReadSeason52Dword(packet.data() + kAuth4Offset));
+
+    if (info.m_wMapSvrPort == 0)
+    {
+        LoadingWorld = 0;
+        mu::log::Get("network")->error(
+            "S52: B1:00 returned map-server port 0");
+        return;
+    }
+
+    std::array<char, kIpSize + 1> ipLog{};
+    std::copy(
+        info.m_szMapSvrIpAddress.begin(),
+        info.m_szMapSvrIpAddress.end(),
+        ipLog.begin());
+
+    mu::log::Get("network")->info(
+        "S52: B1:00 map-server redirect {}:{} code={}",
+        ipLog.data(), info.m_wMapSvrPort, info.m_wMapSvrCode);
+
+    g_PortalMgr.Reset();
+    g_csMapServer.ConnectChangeMapServer(info);
+}
+
+void ReceiveChangeMapServerResultSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kPacketSize = 5;
+
+    if (packet.size() < kPacketSize
+        || packet[0] != 0xC1
+        || packet[2] != 0xB1
+        || packet[3] != 0x01)
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid B1:01 map-server auth result ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    const BYTE result = packet[4];
+    if (result == 1)
+    {
+        mu::log::Get("network")->info(
+            "S52: B1:01 map-server authentication accepted");
+    }
+    else
+    {
+        mu::log::Get("network")->error(
+            "S52: B1:01 map-server authentication rejected result={}",
+            result);
+    }
+}
+
 void ReceiveChangeMapServerInfo(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPHEADER_MAP_CHANGESERVER_INFO)ReceiveBuffer;
@@ -15919,11 +16012,25 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         switch (subcode)
         {
         case 0x00:
-            ReceiveChangeMapServerInfo(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveChangeMapServerInfoSeason52(received_span);
+            }
+            else
+            {
+                ReceiveChangeMapServerInfo(ReceiveBuffer);
+            }
             break;
 
         case 0x01:
-            ReceiveChangeMapServerResult(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveChangeMapServerResultSeason52(received_span);
+            }
+            else
+            {
+                ReceiveChangeMapServerResult(ReceiveBuffer);
+            }
             break;
         }
     }
