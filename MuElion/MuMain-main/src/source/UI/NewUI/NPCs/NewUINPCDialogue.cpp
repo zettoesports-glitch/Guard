@@ -618,19 +618,63 @@ void CNewUINPCDialogue::ProcessSelTextResult()
                 g_pNewUISystem->Hide(SEASON3B::INTERFACE_NPC_DIALOGUE);
                 break;
             case 903:
-                SocketClient->ToGameServer()->SendGensJoinRequest(GensType::Duprian);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendGensJoinRequest(
+                        SocketClient, 1);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendGensJoinRequest(
+                        GensType::Duprian);
+                }
                 break;
             case 904:
-                SocketClient->ToGameServer()->SendGensJoinRequest(GensType::Vanert);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendGensJoinRequest(
+                        SocketClient, 2);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendGensJoinRequest(
+                        GensType::Vanert);
+                }
                 break;
             case 905:
-                SocketClient->ToGameServer()->SendGensLeaveRequest();
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendGensLeaveRequest(
+                        SocketClient);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendGensLeaveRequest();
+                }
                 break;
             case 906:
-                SocketClient->ToGameServer()->SendGensRewardRequest(GensType::Duprian);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendGensRewardRequest(
+                        SocketClient, 1);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendGensRewardRequest(
+                        GensType::Duprian);
+                }
                 break;
             case 907:
-                SocketClient->ToGameServer()->SendGensRewardRequest(GensType::Vanert);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendGensRewardRequest(
+                        SocketClient, 2);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendGensRewardRequest(
+                        GensType::Vanert);
+                }
                 break;
 
             default:
