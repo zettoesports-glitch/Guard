@@ -1725,6 +1725,54 @@ void ReceiveRevival(const BYTE* ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x04 [ReceiveRevival]");
 }
 
+void ReceiveRevivalSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kPacketSize = 28;
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F3:04 revival: got={} expected>={}",
+            packet.size(), kPacketSize);
+        return;
+    }
+
+    PRECEIVE_REVIVAL_EXTENDED translated{};
+    translated.PositionX = packet[4];
+    translated.PositionY = packet[5];
+    translated.Map = packet[6];
+    translated.Angle = packet[7];
+    translated.Life = static_cast<DWORD>(
+        packet[8] | (static_cast<WORD>(packet[9]) << 8));
+    translated.Mana = static_cast<DWORD>(
+        packet[10] | (static_cast<WORD>(packet[11]) << 8));
+    translated.Shield = static_cast<DWORD>(
+        packet[12] | (static_cast<WORD>(packet[13]) << 8));
+    translated.SkillMana = static_cast<DWORD>(
+        packet[14] | (static_cast<WORD>(packet[15]) << 8));
+
+    std::memcpy(
+        &translated.CurrentExperience,
+        packet.data() + 16,
+        sizeof(translated.CurrentExperience));
+
+    translated.Gold =
+        static_cast<DWORD>(packet[24])
+        | (static_cast<DWORD>(packet[25]) << 8)
+        | (static_cast<DWORD>(packet[26]) << 16)
+        | (static_cast<DWORD>(packet[27]) << 24);
+
+    mu::log::Get("network")->info(
+        "S52: adapting F3:04 revival map={} x={} y={} hp={} mp={}",
+        translated.Map,
+        translated.PositionX,
+        translated.PositionY,
+        translated.Life,
+        translated.Mana);
+
+    ReceiveRevival(reinterpret_cast<const BYTE*>(&translated));
+}
+
+
 void ReceiveMagicList(const BYTE* ReceiveBuffer)
 {
     int Master_Skill_Bool = -1;
@@ -2723,6 +2771,35 @@ void ReceiveEquipment(std::span<const BYTE> ReceiveBuffer)
     int Key = ((int)(Data->KeyH) << 8) + Data->KeyL;
     ReadEquipmentExtended(FindCharacterIndex(Key), 0, Data->Equipment);
 }
+
+void ReceiveEquipmentSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kPacketSize = 25;
+    constexpr std::size_t kEquipmentOffset = 8;
+
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F3:13 equipment preview: got={} expected>={}",
+            packet.size(), kPacketSize);
+        return;
+    }
+
+    const WORD key = static_cast<WORD>(
+        (static_cast<WORD>(packet[5]) << 8) | packet[6]);
+    const int index = FindCharacterIndex(key);
+    if (index == MAX_CHARACTERS_CLIENT)
+    {
+        mu::log::Get("network")->warn(
+            "S52: F3:13 references unknown character key {}", key);
+        return;
+    }
+
+    ChangeCharacterExt(
+        index,
+        const_cast<BYTE*>(packet.data() + kEquipmentOffset));
+}
+
 
 void ReceiveChangePlayer(std::span<const BYTE> ReceiveBuffer)
 {
@@ -7266,6 +7343,61 @@ void ReceiveModifyItemExtended(std::span<const BYTE> ReceiveBuffer)
         PlayBuffer(SOUND_JEWEL01);
     }
 }
+
+void ReceiveModifyItemSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 5;
+    constexpr std::size_t kItemSize = 12;
+
+    if (packet.size() < kHeaderSize + kItemSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F3:14 modify-item packet ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    if (SEASON3B::CNewUIInventoryCtrl::GetPickedItem())
+    {
+        SEASON3B::CNewUIInventoryCtrl::DeletePickedItem();
+    }
+
+    const int itemIndex = packet[4];
+    const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+
+    if (IsMainInventorySlot(itemIndex))
+    {
+        if (g_pMyInventory->FindItem(itemIndex))
+        {
+            g_pMyInventory->DeleteItem(itemIndex);
+        }
+
+        if (!g_pMyInventory->InsertItemOld(itemIndex, itemData))
+        {
+            mu::log::Get("network")->warn(
+                "S52: failed to apply F3:14 item update in slot {}", itemIndex);
+            return;
+        }
+    }
+    else
+    {
+        mu::log::Get("network")->warn(
+            "S52: F3:14 unsupported item slot {}", itemIndex);
+        return;
+    }
+
+    const auto params = ParseItemDataOld(itemData);
+    const int itemType = params.Group * MAX_ITEM_INDEX + params.Number;
+    if (itemType == ITEM_LOST_MAP || itemType == ITEM_POTION + 111)
+    {
+        PlayBuffer(SOUND_KUNDUN_ITEM_SOUND);
+    }
+    else if (!GambleSystem::Instance().IsGambleShop())
+    {
+        PlayBuffer(SOUND_JEWEL01);
+    }
+}
+
 
 BOOL ReceiveTalk(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 {
@@ -14489,7 +14621,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             break;
         }
         case 0x04: // receive revival
-            ReceiveRevival(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveRevivalSeason52(received_span);
+            }
+            else
+            {
+                ReceiveRevival(ReceiveBuffer);
+            }
             break;
         case 0x10: // receive inventory
             if (mu::net::s52::DirectProtocolEnabled())
@@ -14525,11 +14664,25 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             ReceiveMagicList(ReceiveBuffer);
             break;
         case 0x13:
-            // not really in use in OpenMU
-            ReceiveEquipment(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveEquipmentSeason52(received_span);
+            }
+            else
+            {
+                // not really in use in OpenMU
+                ReceiveEquipment(received_span);
+            }
             break;
         case 0x14:
-            ReceiveModifyItemExtended(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveModifyItemSeason52(received_span);
+            }
+            else
+            {
+                ReceiveModifyItemExtended(received_span);
+            }
             break;
         case 0x20:
             ReceiveSummonLife(ReceiveBuffer);
