@@ -12,13 +12,13 @@ class Season52Crypto;
 
 inline constexpr std::size_t AccountSize = 10;
 inline constexpr std::size_t CharacterNameSize = 10;
-inline constexpr std::size_t PasswordSize = 12;
+inline constexpr std::size_t PasswordSize = 20;
 inline constexpr std::size_t PersonalCodeSize = 20;
 inline constexpr std::size_t ProtocolVersionSize = 5;
 inline constexpr std::size_t ProtocolSerialSize = 16;
 
 std::vector<std::uint8_t> BuildServerListRequest();
-std::vector<std::uint8_t> BuildServerAddressRequest(std::uint8_t serverCode);
+std::vector<std::uint8_t> BuildServerAddressRequest(std::uint16_t serverId);
 
 std::vector<std::uint8_t> BuildCharacterListRequest(std::uint8_t language);
 std::vector<std::uint8_t> BuildCreateCharacterRequest(std::string_view name,
