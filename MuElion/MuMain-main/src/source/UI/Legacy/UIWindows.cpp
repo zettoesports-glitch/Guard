@@ -32,6 +32,8 @@ extern DWORD g_dwMouseUseUIID;
 extern DWORD g_dwTopWindow;
 extern DWORD g_dwKeyFocusUIID;
 extern void ReceiveLetterText(std::span<const BYTE> ReceiveBuffer, bool isCached);
+extern void ReceiveLetterTextSeason52(
+    std::span<const BYTE> ReceiveBuffer, bool isCached);
 
 int g_iLetterReadNextPos_x, g_iLetterReadNextPos_y;
 
@@ -2398,6 +2400,20 @@ void CUIPhotoViewer::SetEquipmentPacket(BYTE* pbyEquip)
         m_PhotoChar.SafeZone = false;
 }
 
+void CUIPhotoViewer::SetEquipmentPacketOld(BYTE* pbyEquip)
+{
+    if (m_bIsInitialized == FALSE || pbyEquip == nullptr) return;
+
+    ChangeCharacterExt(0, pbyEquip, &m_PhotoChar, &m_PhotoHelper);
+
+    m_fPhotoHelperScale = m_PhotoHelper.Scale * 0.7f / Hero->Object.Scale;
+
+    if (m_PhotoChar.Wing.Type != -1 && m_iSettingAnimation > AT_HEALING1)
+        m_PhotoChar.SafeZone = true;
+    else
+        m_PhotoChar.SafeZone = false;
+}
+
 void CUIPhotoViewer::SetAngle(float fDegree)
 {
     if (m_bIsInitialized == FALSE) return;
@@ -4294,6 +4310,29 @@ LPFS_LETTER_TEXT CLetterList::GetLetterText(DWORD dwIndex)
     return &m_LetterCacheIter->second;
 }
 
+void CLetterList::CacheLetterTextSeason52(
+    DWORD dwIndex, const BYTE* data, std::size_t size)
+{
+    if (data == nullptr || size == 0)
+    {
+        return;
+    }
+
+    m_LetterCacheSeason52[dwIndex] =
+        std::vector<BYTE>(data, data + size);
+}
+
+const std::vector<BYTE>* CLetterList::GetLetterTextSeason52(
+    DWORD dwIndex) const
+{
+    const auto it = m_LetterCacheSeason52.find(dwIndex);
+    if (it == m_LetterCacheSeason52.end())
+    {
+        return nullptr;
+    }
+    return &it->second;
+}
+
 void CLetterList::RemoveLetterTextCache(DWORD dwIndex)
 {
     m_LetterCacheIter = m_LetterCache.find(dwIndex);
@@ -4301,11 +4340,13 @@ void CLetterList::RemoveLetterTextCache(DWORD dwIndex)
     {
         m_LetterCache.erase(m_LetterCacheIter);
     }
+    m_LetterCacheSeason52.erase(dwIndex);
 }
 
 void CLetterList::ClearLetterTextCache()
 {
     m_LetterCache.clear();
+    m_LetterCacheSeason52.clear();
 }
 
 int CLetterList::GetLineNum(DWORD dwLetterID)
