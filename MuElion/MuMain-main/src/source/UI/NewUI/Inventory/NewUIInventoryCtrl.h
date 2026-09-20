@@ -190,6 +190,7 @@ namespace SEASON3B
         void Release();
 
         bool AddItem(int iLinealPos, std::span<const BYTE> pbyItemPacket);
+        bool AddItemOld(int iLinealPos, std::span<const BYTE> pbyItemPacket);
         bool AddItem(int iColumnX, int iRowY, std::span<const BYTE> pbyItemPacket);
         bool AddItem(int iColumnX, int iRowY, ITEM* pItem);
         bool AddItem(int iColumnX, int iRowY, BYTE byType, BYTE bySubType, BYTE byLevel = 0, BYTE byDurability = 255,
