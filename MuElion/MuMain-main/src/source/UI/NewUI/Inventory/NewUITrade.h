@@ -126,6 +126,7 @@ namespace SEASON3B
         void ProcessToReceiveYourConfirm(BYTE byState);
         void ProcessToReceiveTradeExit(BYTE byState);
         void ProcessToReceiveTradeItems(int nIndex, std::span<const BYTE> pbyItemPacket);
+        void ProcessToReceiveTradeItemsOld(int nIndex, std::span<const BYTE> pbyItemPacket);
 
         void AlertTrade();
 
