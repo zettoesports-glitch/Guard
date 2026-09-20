@@ -485,6 +485,24 @@ bool DirectSession::SendInstantMove(Connection* connection,
         {0xC1, 0x05, 0x15, targetX, targetY});
 }
 
+bool DirectSession::SendEnterGate(Connection* connection,
+                                  std::uint16_t gateNumber,
+                                  std::uint8_t targetX,
+                                  std::uint8_t targetY)
+{
+    // Louis Main SendRequestMagicTeleport():
+    // C1:1C + alignment byte + WORD gate + X + Y, Send(TRUE).
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1, 0x08, 0x1C, 0x00,
+            static_cast<std::uint8_t>(gateNumber & 0xFFu),
+            static_cast<std::uint8_t>((gateNumber >> 8u) & 0xFFu),
+            targetX,
+            targetY
+        });
+}
+
 bool DirectSession::SendAnimation(Connection* connection,
                                   std::uint8_t rotation,
                                   std::uint8_t animationNumber)
