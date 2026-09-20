@@ -84,6 +84,7 @@ public:
                       std::uint8_t targetY,
                       std::uint8_t itemSlot);
     bool SendInventoryRequest(Connection* connection);
+    bool SendCrywolfInfoRequest(Connection* connection);
 
     bool SendItemMove(
         Connection* connection,
