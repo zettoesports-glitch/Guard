@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "UI/NewUI/Quests/NewUIMyQuestInfoWindow.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "GameLogic/Quests/CSQuest.h"
 #include "GameLogic/Quests/QuestMng.h"
@@ -124,8 +125,19 @@ bool SEASON3B::CNewUIMyQuestInfoWindow::BtnProcess()
 
     if (eTabBtnIndex == TAB_CASTLE_TEMPLE)
     {
-        SocketClient->ToGameServer()->SendMiniGameEventCountRequest(MiniGameType::BloodCastle);
-        SocketClient->ToGameServer()->SendMiniGameEventCountRequest(MiniGameType::CursedTemple);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            auto& direct = mu::net::s52::DirectSession::Instance();
+            direct.SendMiniGameEventCountRequest(SocketClient, 2);
+            direct.SendMiniGameEventCountRequest(SocketClient, 3);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendMiniGameEventCountRequest(
+                MiniGameType::BloodCastle);
+            SocketClient->ToGameServer()->SendMiniGameEventCountRequest(
+                MiniGameType::CursedTemple);
+        }
         return true;
     }
 
@@ -361,7 +373,14 @@ void SEASON3B::CNewUIMyQuestInfoWindow::OpenningProcess()
 void SEASON3B::CNewUIMyQuestInfoWindow::ClosingProcess()
 {
     UnselectQuestList();
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
     ::PlayBuffer(SOUND_CLICK01);
 }
 

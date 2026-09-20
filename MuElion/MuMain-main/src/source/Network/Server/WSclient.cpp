@@ -23,6 +23,7 @@
 #include "Scenes/SceneCore.h"
 #include "Network/Reconnect/ReconnectManager.h"
 #include "Network/IncomingPacketQueue.h"
+#include "Network/Season52/Season52Direct.h"
 #include "I18N/All.h"
 
 #include "Audio/DSPlaySound.h"
@@ -345,14 +346,32 @@ static int64_t SaturatingAddToUpper(const int64_t current, const int64_t add, in
     return current + add;
 }
 
-BOOL CreateSocket(const wchar_t* IpAddr, unsigned short Port)
+BOOL CreateSocket(
+    const wchar_t* IpAddr,
+    unsigned short Port,
+    ServerEndpointRole role)
 {
     BOOL bResult = TRUE;
     g_ConsoleDebug->Write(MCD_NORMAL, L"[Connect to Server] ip address = %ls, port = %d", IpAddr, Port);
 
-    // todo: generally, it's a bad idea to assume a specific port number (range).
-    const bool isEncrypted = Port > 0xADFF || Port < 0xAD00;
-    SocketClient = new Connection(MU_C16(IpAddr), Port, isEncrypted, &HandleIncomingPacket);
+    // Critical Season 5.2 connections identify their role explicitly.
+    // Auto retains the historical port heuristic only as a compatibility
+    // fallback for call sites which have not yet been migrated.
+    const bool isGameServerEndpoint =
+        role == ServerEndpointRole::GameServer
+        || (role == ServerEndpointRole::Auto && (Port > 0xADFF || Port < 0xAD00));
+    const bool directSeason52 = mu::net::s52::DirectProtocolEnabled();
+
+    if (directSeason52
+        && !mu::net::s52::DirectSession::Instance().BeginConnection(isGameServerEndpoint))
+    {
+        g_ErrorReport.Write(L"NET: Season 5.2 direct protocol initialization failed.\r\n");
+        g_ErrorReport.WriteCurrentTime();
+        return FALSE;
+    }
+
+    const bool bridgeEncrypted = isGameServerEndpoint && !directSeason52;
+    SocketClient = new Connection(MU_C16(IpAddr), Port, bridgeEncrypted, &HandleIncomingPacket);
     if (!SocketClient->IsConnected())
     {
         bResult = FALSE;
@@ -375,7 +394,7 @@ BOOL CreateSocket(const wchar_t* IpAddr, unsigned short Port)
             }
         }
     }
-    else if (isEncrypted)
+    else if (isGameServerEndpoint)
     {
         // Remember the address we actually connected to so auto-reconnect can
         // probe it directly. Only cache game-server endpoints: a reconnect
@@ -398,6 +417,11 @@ void DeleteSocket()
     {
         SocketClient->Close();
         SocketClient = nullptr;
+    }
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().Reset();
     }
 }
 
@@ -477,6 +501,145 @@ void InitGuildWar()
 
 BOOL Util_CheckOption(std::wstring lpszCommandLine, wchar_t cOption, std::wstring& lpszString);
 
+void ReceiveServerListSeason52(std::span<const BYTE> packet)
+{
+    // EX502 ConnectServer PMSG_SERVER_LIST_SEND:
+    // C2 sizeH sizeL F4 06 countH countL = 7-byte header.
+    constexpr std::size_t kHeaderSize = 7;
+    constexpr std::size_t kEntrySize = 4; // WORD ServerCode + UserTotal + type
+
+    if (packet.size() < kHeaderSize || packet[0] != 0xC2
+        || packet[3] != 0xF4 || packet[4] != 0x06)
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid F4:06 server-list header ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    const std::size_t declaredSize =
+        (static_cast<std::size_t>(packet[1]) << 8u)
+        | static_cast<std::size_t>(packet[2]);
+    if (declaredSize != packet.size())
+    {
+        mu::log::Get("network")->error(
+            "S52: F4:06 size mismatch: declared={} received={}",
+            declaredSize, packet.size());
+        return;
+    }
+
+    const std::size_t count =
+        (static_cast<std::size_t>(packet[5]) << 8u)
+        | static_cast<std::size_t>(packet[6]);
+    const std::size_t required = kHeaderSize + count * kEntrySize;
+
+    if (required > packet.size())
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F4:06 server list: count={} got={} expected>={}",
+            count, packet.size(), required);
+        return;
+    }
+
+    g_ServerListManager->Release();
+    g_ServerListManager->SetTotalServer(static_cast<int>(count));
+
+    std::size_t offset = kHeaderSize;
+    for (std::size_t i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        // ServerCode is copied as a native WORD by the Windows ConnectServer,
+        // therefore it is little-endian on the wire.
+        const WORD serverCode = static_cast<WORD>(
+            static_cast<WORD>(packet[offset])
+            | (static_cast<WORD>(packet[offset + 1]) << 8u));
+        const BYTE userTotal = packet[offset + 2];
+        const BYTE type = packet[offset + 3];
+
+        g_ServerListManager->InsertServerGroup(serverCode, userTotal);
+
+        mu::log::Get("network")->debug(
+            "S52: server-list entry {} code={} load={} type=0x{:02X}",
+            i, serverCode, userTotal, type);
+    }
+
+    CUIMng& rUIMng = CUIMng::Instance();
+    if (!rUIMng.m_CreditWin.IsShow())
+    {
+        rUIMng.ShowWin(&rUIMng.m_ServerSelWin);
+        rUIMng.m_ServerSelWin.UpdateDisplay();
+        rUIMng.ShowWin(&rUIMng.m_LoginMainWin);
+    }
+
+    g_ErrorReport.Write(L"Success Receive Server List (S52 EX502).\r\n");
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0xF4 [ReceiveServerListSeason52 count=%d]",
+        static_cast<int>(count));
+}
+
+void ReceiveServerConnectSeason52(std::span<const BYTE> packet)
+{
+    // EX502 ConnectServer PMSG_SERVER_INFO_SEND:
+    // C1 size F4 03 + ServerAddress[16] + WORD ServerPort = 22 bytes.
+    constexpr std::size_t kPacketSize = 22;
+    constexpr std::size_t kAddressOffset = 4;
+    constexpr std::size_t kAddressSize = 16;
+    constexpr std::size_t kPortOffset = 20;
+
+    if (packet.size() < kPacketSize || packet[0] != 0xC1
+        || packet[2] != 0xF4 || packet[3] != 0x03)
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid F4:03 server-info packet ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    if (packet[1] != kPacketSize)
+    {
+        mu::log::Get("network")->warn(
+            "S52: F4:03 declared size={} expected={}",
+            packet[1], kPacketSize);
+    }
+
+    std::array<char, kAddressSize + 1> address{};
+    std::copy_n(
+        reinterpret_cast<const char*>(packet.data() + kAddressOffset),
+        kAddressSize,
+        address.data());
+    address[kAddressSize] = '\0';
+
+    const WORD port = static_cast<WORD>(
+        static_cast<WORD>(packet[kPortOffset])
+        | (static_cast<WORD>(packet[kPortOffset + 1]) << 8u));
+
+    std::array<wchar_t, kAddressSize + 1> ip{};
+    CMultiLanguage::ConvertFromUtf8(
+        ip.data(), address.data(), static_cast<int>(ip.size()));
+
+    mu::log::Get("network")->info(
+        "S52: F4:03 redirect to {}:{}",
+        address.data(), port);
+
+    DeleteSocket();
+
+    if (CreateSocket(
+            ip.data(),
+            port,
+            ServerEndpointRole::GameServer))
+    {
+        g_bGameServerConnected = TRUE;
+
+        wchar_t text[100];
+        mu_swprintf(
+            text,
+            I18N::Game::YouAreConnectedToTheServer,
+            ip.data(),
+            port);
+        g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+    }
+}
+
 void ReceiveServerList(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPHEADER_DEFAULT_SUBCODE_WORD)ReceiveBuffer;
@@ -530,7 +693,7 @@ void ReceiveServerConnect(const BYTE* ReceiveBuffer)
         SocketClient->Close();
     }
 
-    if (CreateSocket(IP, Data->Port))
+    if (CreateSocket(IP, Data->Port, ServerEndpointRole::GameServer))
     {
         g_bGameServerConnected = TRUE;
     }
@@ -543,7 +706,16 @@ void ReceiveServerConnect(const BYTE* ReceiveBuffer)
 void ReceiveServerConnectBusy(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPRECEIVE_SERVER_BUSY)ReceiveBuffer;
-    SocketClient->ToConnectServer()->SendServerListRequest();
+    (void)Data;
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendServerList(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToConnectServer()->SendServerListRequest();
+    }
 }
 
 void ReceiveJoinServer(const BYTE* ReceiveBuffer)
@@ -676,6 +848,293 @@ void ReceiveChangePassword(const BYTE* ReceiveBuffer)
         CurrentProtocolState = RECEIVE_CHANGE_PASSWORD_FAIL_PASSWORD;
         break;
     }
+}
+
+BOOL ReceiveJoinMapServer(std::span<const BYTE> ReceiveBuffer);
+
+namespace
+{
+constexpr std::size_t kSeason52CharacterListHeaderSize = 7;
+// EX502 is built with MSVC default struct packing. PMSG_CHARACTER_LIST has
+// one alignment byte before WORD Level, therefore sizeof(...) is 34.
+constexpr std::size_t kSeason52CharacterListEntrySize = 34;
+// PMSG_CHARACTER_INFO_SEND has two padding bytes before DWORD Money.
+constexpr std::size_t kSeason52JoinMapPacketSize = 68;
+
+WORD ReadSeason52Word(const BYTE* data)
+{
+    return static_cast<WORD>(
+        static_cast<WORD>(data[0])
+        | (static_cast<WORD>(data[1]) << 8));
+}
+
+DWORD ReadSeason52Dword(const BYTE* data)
+{
+    return static_cast<DWORD>(
+        static_cast<DWORD>(data[0])
+        | (static_cast<DWORD>(data[1]) << 8)
+        | (static_cast<DWORD>(data[2]) << 16)
+        | (static_cast<DWORD>(data[3]) << 24));
+}
+
+CLASS_TYPE DecodeSeason52Class(BYTE encodedClass)
+{
+    const BYTE legacyClass =
+        static_cast<BYTE>((((encodedClass >> 4) & 0x01) << 3)
+        | (encodedClass >> 5)
+        | (((encodedClass >> 3) & 0x01) << 4));
+
+    const BYTE baseClass = legacyClass & 0x07;
+    const bool secondClass = ((legacyClass >> 3) & 0x01) != 0;
+    const bool thirdClass = ((legacyClass >> 4) & 0x01) != 0;
+
+    switch (baseClass)
+    {
+    case 0:
+        return thirdClass ? CLASS_GRANDMASTER
+                          : (secondClass ? CLASS_SOULMASTER : CLASS_WIZARD);
+    case 1:
+        return thirdClass ? CLASS_BLADEMASTER
+                          : (secondClass ? CLASS_BLADEKNIGHT : CLASS_KNIGHT);
+    case 2:
+        return thirdClass ? CLASS_HIGHELF
+                          : (secondClass ? CLASS_MUSEELF : CLASS_ELF);
+    case 3:
+        return thirdClass ? CLASS_DUELMASTER : CLASS_DARK;
+    case 4:
+        return thirdClass ? CLASS_LORDEMPEROR : CLASS_DARK_LORD;
+    case 5:
+        return thirdClass ? CLASS_DIMENSIONMASTER
+                          : (secondClass ? CLASS_BLOODYSUMMONER : CLASS_SUMMONER);
+    case 6:
+        return thirdClass ? CLASS_TEMPLENIGHT : CLASS_RAGEFIGHTER;
+    default:
+        return CLASS_WIZARD;
+    }
+}
+
+void Season52CharacterSelectionPosition(BYTE index, float& x, float& y, float& angle)
+{
+    switch (index)
+    {
+    case 0: x = 8008.0f; y = 18885.0f; angle = 115.0f; break;
+    case 1: x = 7986.0f; y = 19145.0f; angle = 90.0f; break;
+    case 2: x = 8046.0f; y = 19400.0f; angle = 75.0f; break;
+    case 3: x = 8133.0f; y = 19645.0f; angle = 60.0f; break;
+    case 4: x = 8282.0f; y = 19845.0f; angle = 35.0f; break;
+    default: x = 0.0f; y = 0.0f; angle = 0.0f; break;
+    }
+}
+bool IsSeason52ClassicPersonalShopSlot(int slot)
+{
+    constexpr int kClassicShopStart = MAX_EQUIPMENT_INDEX + MAX_INVENTORY;
+    constexpr int kClassicShopEnd = kClassicShopStart + MAX_PERSONALSHOP_INVEN;
+    return slot >= kClassicShopStart && slot < kClassicShopEnd;
+}
+
+int Season52ClassicToModernPersonalShopSlot(int classicSlot)
+{
+    constexpr int kClassicShopStart = MAX_EQUIPMENT_INDEX + MAX_INVENTORY;
+    return MAX_MY_INVENTORY_EX_INDEX + (classicSlot - kClassicShopStart);
+}
+
+bool InsertSeason52ClassicPersonalShopItem(
+    int classicSlot, std::span<const BYTE> itemData)
+{
+    if (!IsSeason52ClassicPersonalShopSlot(classicSlot)
+        || g_pMyShopInventory == nullptr)
+    {
+        return false;
+    }
+
+    auto* inventory = g_pMyShopInventory->GetInventoryCtrl();
+    if (inventory == nullptr)
+    {
+        return false;
+    }
+
+    return inventory->AddItemOld(
+        Season52ClassicToModernPersonalShopSlot(classicSlot), itemData);
+}
+
+} // namespace
+
+void ReceiveCharacterListSeason52(const BYTE* ReceiveBuffer, int Size)
+{
+    if (ReceiveBuffer == nullptr
+        || Size < static_cast<int>(kSeason52CharacterListHeaderSize))
+    {
+        g_ConsoleDebug->Write(
+            MCD_ERROR, L"S52: F3:00 character-list packet too small (%d)", Size);
+        return;
+    }
+
+    const BYTE maxClass = ReceiveBuffer[4];
+    const BYTE moveCount = ReceiveBuffer[5];
+    const BYTE characterCount = ReceiveBuffer[6];
+
+    if (characterCount > MAX_CHARACTERS_PER_ACCOUNT)
+    {
+        g_ConsoleDebug->Write(
+            MCD_ERROR, L"S52: F3:00 invalid character count %d", characterCount);
+        return;
+    }
+
+    const std::size_t required =
+        kSeason52CharacterListHeaderSize
+        + (static_cast<std::size_t>(characterCount) * kSeason52CharacterListEntrySize);
+
+    if (static_cast<std::size_t>(Size) < required)
+    {
+        g_ConsoleDebug->Write(
+            MCD_ERROR,
+            L"S52: F3:00 truncated character list: received=%d required=%u",
+            Size,
+            static_cast<unsigned>(required));
+        return;
+    }
+
+    InitGuildWar();
+    ClearCharacters();
+    SelectedCharacter = -1;
+    SelectedHero = -1;
+    CharacterAttribute->IsVaultExtended = 0;
+
+    std::size_t offset = kSeason52CharacterListHeaderSize;
+    for (BYTE i = 0; i < characterCount; ++i)
+    {
+        const BYTE* entry = ReceiveBuffer + offset;
+        const BYTE slot = entry[0];
+
+        if (slot >= MAX_CHARACTERS_PER_ACCOUNT)
+        {
+            g_ConsoleDebug->Write(
+                MCD_ERROR, L"S52: F3:00 invalid character slot %d", slot);
+            return;
+        }
+
+        const WORD level = ReadSeason52Word(entry + 12);
+        const BYTE ctlCode = entry[14];
+
+        // The original Louis/Webzen Main overlays the server's CharSet[18]
+        // as:
+        //   Class @ +15
+        //   Equipment[17] @ +16
+        //   GuildStatus @ +33
+        // Keep that exact client-side view. Passing CharSet[0] into
+        // ChangeCharacterExt() shifts every equipment byte by one.
+        const BYTE classRaw = entry[15];
+        BYTE* equipment = const_cast<BYTE*>(entry + 16);
+        const BYTE guildStatus = entry[33];
+
+        const CLASS_TYPE characterClass = DecodeSeason52Class(classRaw);
+
+        float x = 0.0f;
+        float y = 0.0f;
+        float angle = 0.0f;
+        Season52CharacterSelectionPosition(slot, x, y, angle);
+
+        CHARACTER* character =
+            CreateHero(slot, characterClass, 0, x, y, angle);
+
+        character->Level = level;
+        character->CtlCode = ctlCode;
+        character->Class = characterClass;
+        character->SkinIndex =
+            gCharacterManager.GetSkinModelIndex(characterClass);
+
+        memset(character->ID, 0, sizeof(character->ID));
+        CMultiLanguage::ConvertFromUtf8(
+            character->ID,
+            reinterpret_cast<const char*>(entry + 1),
+            MAX_USERNAME_SIZE);
+        character->ID[MAX_USERNAME_SIZE] = L'\0';
+
+        // Match Louis Main exactly: Class is separated from the 17-byte
+        // equipment preview before calling ChangeCharacterExt().
+        ChangeCharacterExt(slot, equipment);
+
+        character->GuildStatus = guildStatus;
+        offset += kSeason52CharacterListEntrySize;
+    }
+
+    CurrentProtocolState = RECEIVE_CHARACTERS_LIST;
+
+    mu::log::Get("network")->info(
+        "S52: F3:00 character list count={} maxClass={} moveCount={}",
+        characterCount, maxClass, moveCount);
+}
+
+BOOL ReceiveJoinMapServerSeason52(const BYTE* ReceiveBuffer, int Size)
+{
+    if (ReceiveBuffer == nullptr || Size < static_cast<int>(kSeason52JoinMapPacketSize))
+    {
+        g_ConsoleDebug->Write(
+            MCD_ERROR,
+            L"S52: F3:03 join-map packet too small: received=%d expected=%u",
+            Size,
+            static_cast<unsigned>(kSeason52JoinMapPacketSize));
+        return FALSE;
+    }
+
+    PRECEIVE_JOIN_MAP_SERVER_EXTENDED translated{};
+
+    translated.SubCode = 0x03;
+    translated.PositionX = ReceiveBuffer[4];
+    translated.PositionY = ReceiveBuffer[5];
+    translated.Map = ReceiveBuffer[6];
+    translated.Angle = ReceiveBuffer[7];
+
+    // EX502 carries the two experience counters as eight network-order bytes.
+    // Copy the raw bytes because ReceiveJoinMapServer() already applies ntoh64.
+    memcpy(&translated.CurrentExperience, ReceiveBuffer + 8, sizeof(uint64_t));
+    memcpy(&translated.ExperienceForNextLevel, ReceiveBuffer + 16, sizeof(uint64_t));
+
+    translated.LevelUpPoint = ReadSeason52Word(ReceiveBuffer + 24);
+    translated.Strength = ReadSeason52Word(ReceiveBuffer + 26);
+    translated.Dexterity = ReadSeason52Word(ReceiveBuffer + 28);
+    translated.Vitality = ReadSeason52Word(ReceiveBuffer + 30);
+    translated.Energy = ReadSeason52Word(ReceiveBuffer + 32);
+
+    translated.Life = ReadSeason52Word(ReceiveBuffer + 34);
+    translated.LifeMax = ReadSeason52Word(ReceiveBuffer + 36);
+    translated.Mana = ReadSeason52Word(ReceiveBuffer + 38);
+    translated.ManaMax = ReadSeason52Word(ReceiveBuffer + 40);
+    translated.Shield = ReadSeason52Word(ReceiveBuffer + 42);
+    translated.ShieldMax = ReadSeason52Word(ReceiveBuffer + 44);
+    translated.SkillMana = ReadSeason52Word(ReceiveBuffer + 46);
+    translated.SkillManaMax = ReadSeason52Word(ReceiveBuffer + 48);
+
+    // Offsets 50-51 are MSVC alignment padding before DWORD Money.
+    translated.Gold = ReadSeason52Dword(ReceiveBuffer + 52);
+    translated.PK = ReceiveBuffer[56];
+    translated.CtlCode = ReceiveBuffer[57];
+    translated.AddPoint = static_cast<short>(ReadSeason52Word(ReceiveBuffer + 58));
+    translated.MaxAddPoint = static_cast<short>(ReadSeason52Word(ReceiveBuffer + 60));
+    translated.Charisma = ReadSeason52Word(ReceiveBuffer + 62);
+    translated.wMinusPoint = ReadSeason52Word(ReceiveBuffer + 64);
+    translated.wMaxMinusPoint = ReadSeason52Word(ReceiveBuffer + 66);
+
+    // These fields do not exist in EX502's F3:03. Zero is intentional until
+    // their classic follow-up packets are ported.
+    translated.InventoryExtensions = 0;
+    translated.Resets = 0;
+    translated.AttackSpeed = 0;
+    translated.MagicSpeed = 0;
+    translated.MaxAttackSpeed = 0;
+
+    const auto* bytes = reinterpret_cast<const BYTE*>(&translated);
+    const std::span<const BYTE> translatedPacket(
+        bytes, sizeof(PRECEIVE_JOIN_MAP_SERVER_EXTENDED));
+
+    mu::log::Get("network")->info(
+        "S52: F3:03 join map={} x={} y={} gold={}",
+        translated.Map,
+        translated.PositionX,
+        translated.PositionY,
+        translated.Gold);
+
+    return ReceiveJoinMapServer(translatedPacket);
 }
 
 void ReceiveCharacterListExtended(const BYTE* ReceiveBuffer)
@@ -820,10 +1279,22 @@ void ReceiveCreateCharacter(const BYTE* ReceiveBuffer)
 
         CreateHero(Data->Index, CharacterView.Class, CharacterView.Skin, fPos[0], fPos[1], fAngle);
         CharactersClient[Data->Index].Level = Data->Level;
-        auto serverClass = (SERVER_CLASS_TYPE)(Data->Class >> 3);
-        auto iClass = gCharacterManager.ChangeServerClassTypeToClientClassType(serverClass);
-        mu::log::Get("network")->info("[CreateCharacter] success serverClass={} clientClass={}",
-                                      static_cast<int>(serverClass), static_cast<int>(iClass));
+        CLASS_TYPE iClass;
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            iClass = DecodeSeason52Class(Data->Class);
+            mu::log::Get("network")->info(
+                "[CreateCharacter] S52 classic classRaw={} clientClass={}",
+                static_cast<int>(Data->Class), static_cast<int>(iClass));
+        }
+        else
+        {
+            auto serverClass = (SERVER_CLASS_TYPE)(Data->Class >> 3);
+            iClass = gCharacterManager.ChangeServerClassTypeToClientClassType(serverClass);
+            mu::log::Get("network")->info(
+                "[CreateCharacter] success serverClass={} clientClass={}",
+                static_cast<int>(serverClass), static_cast<int>(iClass));
+        }
 
         CharactersClient[Data->Index].Class = iClass;
         CharactersClient[Data->Index].SkinIndex = gCharacterManager.GetSkinModelIndex(iClass);
@@ -896,7 +1367,14 @@ void InitGame()
 
     CheckInventory = nullptr;
 
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
 
     g_iFollowCharacter = -1;
 
@@ -975,7 +1453,16 @@ BOOL ReceiveLogOut(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 
         SceneFlag = CHARACTER_SCENE;
         CurrentProtocolState = REQUEST_CHARACTERS_LIST;
-        SocketClient->ToGameServer()->SendRequestCharacterList(g_pMultiLanguage->GetLanguage());
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCharacterList(
+                SocketClient, g_pMultiLanguage->GetLanguage());
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRequestCharacterList(
+                g_pMultiLanguage->GetLanguage());
+        }
 
         g_sceneInit.ResetForDisconnect();
         CurrentProtocolState = REQUEST_JOIN_SERVER;
@@ -1128,7 +1615,19 @@ BOOL ReceiveJoinMapServer(std::span<const BYTE> ReceiveBuffer)
 
     if (gMapManager.WorldActive == WD_34CRYWOLF_1ST)
     {
-        SocketClient->ToGameServer()->SendCrywolfInfoRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            if (SocketClient == nullptr
+                || !mu::net::s52::DirectSession::Instance().SendCrywolfInfoRequest(SocketClient))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: failed to request Crywolf state after map join");
+            }
+        }
+        else if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+        {
+            SocketClient->ToGameServer()->SendCrywolfInfoRequest();
+        }
     }
 
     matchEvent::CreateEventMatch(gMapManager.WorldActive);
@@ -1427,6 +1926,54 @@ void ReceiveRevival(const BYTE* ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x04 [ReceiveRevival]");
 }
 
+void ReceiveRevivalSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kPacketSize = 28;
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F3:04 revival: got={} expected>={}",
+            packet.size(), kPacketSize);
+        return;
+    }
+
+    PRECEIVE_REVIVAL_EXTENDED translated{};
+    translated.PositionX = packet[4];
+    translated.PositionY = packet[5];
+    translated.Map = packet[6];
+    translated.Angle = packet[7];
+    translated.Life = static_cast<DWORD>(
+        packet[8] | (static_cast<WORD>(packet[9]) << 8));
+    translated.Mana = static_cast<DWORD>(
+        packet[10] | (static_cast<WORD>(packet[11]) << 8));
+    translated.Shield = static_cast<DWORD>(
+        packet[12] | (static_cast<WORD>(packet[13]) << 8));
+    translated.SkillMana = static_cast<DWORD>(
+        packet[14] | (static_cast<WORD>(packet[15]) << 8));
+
+    std::memcpy(
+        &translated.CurrentExperience,
+        packet.data() + 16,
+        sizeof(translated.CurrentExperience));
+
+    translated.Gold =
+        static_cast<DWORD>(packet[24])
+        | (static_cast<DWORD>(packet[25]) << 8)
+        | (static_cast<DWORD>(packet[26]) << 16)
+        | (static_cast<DWORD>(packet[27]) << 24);
+
+    mu::log::Get("network")->info(
+        "S52: adapting F3:04 revival map={} x={} y={} hp={} mp={}",
+        translated.Map,
+        translated.PositionX,
+        translated.PositionY,
+        translated.Life,
+        translated.Mana);
+
+    ReceiveRevival(reinterpret_cast<const BYTE*>(&translated));
+}
+
+
 void ReceiveMagicList(const BYTE* ReceiveBuffer)
 {
     int Master_Skill_Bool = -1;
@@ -1615,6 +2162,12 @@ void ReceiveDeleteInventory(const BYTE* ReceiveBuffer)
         {
             g_pMyInventory->DeleteItem(itemindex);
         }
+        else if (mu::net::s52::DirectProtocolEnabled()
+                 && IsSeason52ClassicPersonalShopSlot(itemindex))
+        {
+            g_pMyShopInventory->DeleteItem(
+                Season52ClassicToModernPersonalShopSlot(itemindex));
+        }
         else if (IsInventoryExtensionSlot(itemindex))
         {
             g_pMyInventoryExt->DeleteItem(itemindex);
@@ -1665,6 +2218,95 @@ int CalcItemLength(std::span<const BYTE> ReceiveBuffer)
     }
 
     return size;
+}
+
+BOOL ReceiveInventorySeason52(std::span<const BYTE> ReceiveBuffer)
+{
+    constexpr std::size_t kHeaderSize = 6; // C2/C4 sizeH sizeL F3 10 count
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 1 + kItemSize;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: F3:10 inventory packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return FALSE;
+    }
+
+    const BYTE count = ReceiveBuffer[5];
+    const std::size_t required =
+        kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+
+    if (ReceiveBuffer.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F3:10 inventory: got={} expected>={} count={}",
+            ReceiveBuffer.size(), required, count);
+        return FALSE;
+    }
+
+    for (auto& item : CharacterMachine->Equipment)
+    {
+        item.Type = -1;
+        item.Number = 0;
+        item.ExcellentFlags = 0;
+    }
+
+    g_pMyInventory->UnequipAllItems();
+    g_pMyInventory->DeleteAllItems();
+    g_pMyInventoryExt->DeleteAllItems();
+    g_pMyShopInventory->DeleteAllItems();
+
+    DeleteMount(&Hero->Object);
+    giPetManager::DeletePet(Hero);
+    ThePetProcess().DeletePet(Hero);
+
+    SEASON3B::CNewUIInventoryCtrl::DeletePickedItem();
+
+    std::size_t offset = kHeaderSize;
+    for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        const int itemIndex = ReceiveBuffer[offset];
+        const auto itemData = ReceiveBuffer.subspan(offset + 1, kItemSize);
+
+        bool loaded = false;
+        if (itemIndex >= 0 && itemIndex < MAX_EQUIPMENT_INDEX)
+        {
+            loaded = g_pMyInventory->EquipItemOld(itemIndex, itemData);
+        }
+        else if (IsMainInventorySlot(itemIndex))
+        {
+            loaded = g_pMyInventory->InsertItemOld(itemIndex, itemData);
+        }
+        else if (IsSeason52ClassicPersonalShopSlot(itemIndex))
+        {
+            // EX502 starts the 8x4 personal-shop area immediately after the
+            // 12 equipment + 64 inventory slots (slot 76). MuElion reserves
+            // 128 extension slots there, so remap the classic shop range to
+            // the modern shop control which starts at MAX_MY_INVENTORY_EX_INDEX.
+            loaded = InsertSeason52ClassicPersonalShopItem(itemIndex, itemData);
+        }
+        else
+        {
+            mu::log::Get("network")->warn(
+                "S52: ignoring F3:10 item in unsupported slot {}", itemIndex);
+            continue;
+        }
+
+        if (!loaded)
+        {
+            mu::log::Get("network")->warn(
+                "S52: failed to materialize classic inventory item in slot {}",
+                itemIndex);
+        }
+    }
+
+    mu::log::Get("network")->info(
+        "S52: F3:10 loaded {} classic inventory entries", count);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x10 [ReceiveInventorySeason52 count=%d]", count);
+    return TRUE;
 }
 
 BOOL ReceiveInventoryExtended(std::span<const BYTE> ReceiveBuffer)
@@ -1734,6 +2376,97 @@ BOOL ReceiveInventoryExtended(std::span<const BYTE> ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x10 [ReceiveInventory]");
 
     return (TRUE);
+}
+
+void ReceiveTradeInventorySeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 6; // C2/C4 sizeH sizeL 31 subcode count
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 1 + kItemSize;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x31 inventory-list packet too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE subCode = packet[4];
+    const BYTE count = packet[5];
+    const std::size_t required =
+        kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+
+    if (packet.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x31 inventory-list: got={} expected>={} count={}",
+            packet.size(), required, count);
+        return;
+    }
+
+    if (subCode == 3)
+    {
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        PlayBuffer(SOUND_MIX01);
+        PlayBuffer(SOUND_BREAK01);
+        g_pMixInventory->DeleteAllItems();
+    }
+    else if (subCode == 5)
+    {
+        g_pSystemLogBox->AddText(
+            I18N::Game::ResurrectionFailed, SEASON3B::TYPE_ERROR_MESSAGE);
+        PlayBuffer(SOUND_MIX01);
+        PlayBuffer(SOUND_BREAK01);
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        g_pMixInventory->DeleteAllItems();
+    }
+    else
+    {
+        for (auto& item : ShopInventory)
+        {
+            item.Type = -1;
+            item.Number = 0;
+        }
+
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP))
+        {
+            g_pNPCShop->DeleteAllItems();
+        }
+    }
+
+    std::size_t offset = kHeaderSize;
+    for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        const int itemIndex = packet[offset];
+        const auto itemData = packet.subspan(offset + 1, kItemSize);
+        bool loaded = false;
+
+        if (subCode == 3 || subCode == 5)
+        {
+            loaded = g_pMixInventory->InsertItemOld(itemIndex, itemData);
+        }
+        else if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_NPCSHOP))
+        {
+            loaded = g_pNPCShop->InsertItemOld(itemIndex, itemData);
+        }
+        else if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE))
+        {
+            auto* storage = g_pStorageInventory != nullptr
+                ? g_pStorageInventory->GetInventoryCtrl()
+                : nullptr;
+            loaded = storage != nullptr && storage->AddItemOld(itemIndex, itemData);
+        }
+
+        if (!loaded)
+        {
+            mu::log::Get("network")->warn(
+                "S52: failed to materialize 0x31 item subcode={} slot={}",
+                subCode, itemIndex);
+        }
+    }
+
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x31 [ReceiveTradeInventorySeason52 count=%d]", count);
 }
 
 void ReceiveTradeInventoryExtended(std::span<const BYTE> ReceiveBuffer)
@@ -1826,7 +2559,14 @@ void ReceiveChat(const BYTE* ReceiveBuffer)
     if (SceneFlag == LOG_IN_SCENE)
     {
         g_ErrorReport.Write(L"Send Request Server List.\r\n");
-        SocketClient->ToConnectServer()->SendServerListRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendServerList(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToConnectServer()->SendServerListRequest();
+        }
     }
     else
     {
@@ -2210,7 +2950,14 @@ BOOL ReceiveTeleport(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 
             if (gMapManager.WorldActive == WD_34CRYWOLF_1ST)
             {
-                SocketClient->ToGameServer()->SendCrywolfInfoRequest();
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendCrywolfInfoRequest(SocketClient);
+                }
+                else if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+                {
+                    SocketClient->ToGameServer()->SendCrywolfInfoRequest();
+                }
             }
 
             if ((gMapManager.InChaosCastle(OldWorld) == true && OldWorld != gMapManager.WorldActive) ||
@@ -2263,7 +3010,14 @@ BOOL ReceiveTeleport(const BYTE* ReceiveBuffer, BOOL bEncrypted)
             }
         }
 
-        SocketClient->ToGameServer()->SendClientReadyAfterMapChange();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendFinishLoading(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendClientReadyAfterMapChange();
+        }
 
         g_dwLatestZoneMoving = GetTickCount();
         g_bWhileMovingZone = FALSE;
@@ -2330,6 +3084,40 @@ void ReceiveEquipment(std::span<const BYTE> ReceiveBuffer)
     int Key = ((int)(Data->KeyH) << 8) + Data->KeyL;
     ReadEquipmentExtended(FindCharacterIndex(Key), 0, Data->Equipment);
 }
+
+void ReceiveEquipmentSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PMSG_ITEM_EQUIPMENT_SEND:
+    // PSBMSG_HEAD(4) + index[2] + CharSet[18] = 24 bytes.
+    constexpr std::size_t kPacketSize = 24;
+    constexpr std::size_t kIndexOffset = 4;
+    constexpr std::size_t kCharSetOffset = 6;
+
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F3:13 equipment preview: got={} expected>={}",
+            packet.size(), kPacketSize);
+        return;
+    }
+
+    const WORD key = static_cast<WORD>(
+        (static_cast<WORD>(packet[kIndexOffset]) << 8)
+        | packet[kIndexOffset + 1]);
+
+    const int index = FindCharacterIndex(key);
+    if (index == MAX_CHARACTERS_CLIENT)
+    {
+        mu::log::Get("network")->warn(
+            "S52: F3:13 references unknown character key {}", key);
+        return;
+    }
+
+    ChangeCharacterExt(
+        index,
+        const_cast<BYTE*>(packet.data() + kCharSetOffset));
+}
+
 
 void ReceiveChangePlayer(std::span<const BYTE> ReceiveBuffer)
 {
@@ -2570,9 +3358,276 @@ void ReceiveChangePlayer(std::span<const BYTE> ReceiveBuffer)
     SetCharacterScale(c);
 }
 
+void ReceiveChangePlayerSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kPacketSize = 17;
+    constexpr std::size_t kItemOffset = 5;
+
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x25 character-equipment update: got={} expected>={}",
+            packet.size(), kPacketSize);
+        return;
+    }
+
+    const WORD key = static_cast<WORD>(
+        (static_cast<WORD>(packet[3]) << 8) | packet[4]);
+    const int characterIndex = FindCharacterIndex(key);
+    if (characterIndex == MAX_CHARACTERS_CLIENT)
+    {
+        mu::log::Get("network")->warn(
+            "S52: 0x25 references unknown character key {}", key);
+        return;
+    }
+
+    const auto itemData = packet.subspan(kItemOffset, 12);
+    const WORD itemType =
+        static_cast<WORD>(itemData[0])
+        + static_cast<WORD>((itemData[3] & 0x80) * 2)
+        + static_cast<WORD>((itemData[5] & 0xF0) * 32);
+
+    PCHANGE_CHARACTER_EXTENDED translated{};
+    translated.Key = key;
+    translated.ItemSlot = itemData[1] >> 4;
+
+    if (itemType == 0x1FFF)
+    {
+        translated.ItemGroup = 0xFF;
+        translated.ItemNumber = 0xFFFF;
+    }
+    else
+    {
+        translated.ItemGroup =
+            static_cast<BYTE>(itemType / MAX_ITEM_INDEX);
+        translated.ItemNumber =
+            static_cast<WORD>(itemType % MAX_ITEM_INDEX);
+    }
+
+    translated.ItemLevel =
+        static_cast<BYTE>(LevelConvert(itemData[1] & 0x0F));
+    translated.ExcellentFlags = itemData[3] & 0x3F;
+    translated.AncientDiscriminator = itemData[4];
+    translated.IsAncientSetComplete =
+        CharactersClient[characterIndex].ExtendState ? 1 : 0;
+
+    ReceiveChangePlayer(std::span<const BYTE>(
+        reinterpret_cast<const BYTE*>(&translated),
+        sizeof(translated)));
+}
+
+
 void RegisterBuff(eBuffState buff, OBJECT* o, const int bufftime = 0);
 
 void UnRegisterBuff(eBuffState buff, OBJECT* o);
+
+void ReceiveCreatePlayerViewportSeason52(std::span<const BYTE> ReceiveBuffer)
+{
+    constexpr std::size_t kHeaderSize = 5;  // C2 sizeH sizeL 12 count
+    constexpr std::size_t kBaseEntrySize = 36;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x12 player viewport packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return;
+    }
+
+    const BYTE count = ReceiveBuffer[4];
+    std::size_t offset = kHeaderSize;
+
+    for (BYTE i = 0; i < count; ++i)
+    {
+        if (offset + kBaseEntrySize > ReceiveBuffer.size())
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x12 player viewport at entry {} offset={}",
+                i, offset);
+            return;
+        }
+
+        const BYTE* entry = ReceiveBuffer.data() + offset;
+        WORD key = static_cast<WORD>(
+            (static_cast<WORD>(entry[0]) << 8) | entry[1]);
+        const bool createFlag = (key & 0x8000) != 0;
+        key &= 0x7FFF;
+
+        const BYTE positionX = entry[2];
+        const BYTE positionY = entry[3];
+        const BYTE classAndState = entry[4];
+        BYTE* equipment = const_cast<BYTE*>(entry + 5);
+        const char* rawName = reinterpret_cast<const char*>(entry + 22);
+        const BYTE targetX = entry[32];
+        const BYTE targetY = entry[33];
+        const BYTE path = entry[34];
+        const BYTE buffCount = entry[35];
+
+        const std::size_t entrySize =
+            kBaseEntrySize + static_cast<std::size_t>(buffCount);
+        if (offset + entrySize > ReceiveBuffer.size())
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x12 buffs at entry {} count={}",
+                i, buffCount);
+            return;
+        }
+
+        wchar_t characterName[MAX_USERNAME_SIZE + 1]{};
+        std::array<char, MAX_USERNAME_SIZE + 1> name{};
+        std::copy_n(rawName, MAX_USERNAME_SIZE, name.data());
+        CMultiLanguage::ConvertFromUtf8(
+            characterName, name.data(), MAX_USERNAME_SIZE);
+
+        if (FindText(characterName, L"webzen") == false)
+        {
+            const int previousIndex = FindCharacterIndex(key);
+            short guildMarkIndex = -1;
+            BYTE guildStatus = 0;
+            BYTE guildType = 0;
+            BYTE guildRelationship = 0;
+            BYTE guildMasterKillCount = 0;
+            BYTE etcPart = 0;
+            BYTE ctlCode = 0;
+
+            if (previousIndex != MAX_CHARACTERS_CLIENT)
+            {
+                const CHARACTER& previous = CharactersClient[previousIndex];
+                guildMarkIndex = previous.GuildMarkIndex;
+                guildStatus = previous.GuildStatus;
+                guildType = previous.GuildType;
+                guildRelationship = previous.GuildRelationShip;
+                guildMasterKillCount = previous.GuildMasterKillCount;
+                etcPart = previous.EtcPart;
+                ctlCode = previous.CtlCode;
+            }
+
+            CHARACTER* character =
+                CreateCharacter(key, MODEL_PLAYER, positionX, positionY, 0);
+            if (character == nullptr)
+            {
+                offset += entrySize;
+                continue;
+            }
+
+            DeleteCloth(character, &character->Object);
+
+            OBJECT* object = &character->Object;
+            character->Class = DecodeSeason52Class(classAndState);
+            character->SkinIndex =
+                gCharacterManager.GetSkinModelIndex(character->Class);
+            character->Skin = 0;
+            character->PK = path & 0x0F;
+            object->Kind = KIND_PLAYER;
+
+            switch (classAndState & 0x07)
+            {
+            case 1:
+                CreateTeleportEnd(object);
+                break;
+            case 2:
+                SetAction(
+                    object,
+                    gCharacterManager.IsFemale(character->Class)
+                        ? PLAYER_SIT_FEMALE1
+                        : PLAYER_SIT1);
+                break;
+            case 3:
+                SetAction(
+                    object,
+                    gCharacterManager.IsFemale(character->Class)
+                        ? PLAYER_POSE_FEMALE1
+                        : PLAYER_POSE1);
+                break;
+            case 4:
+                SetAction(
+                    object,
+                    gCharacterManager.IsFemale(character->Class)
+                        ? PLAYER_HEALING_FEMALE1
+                        : PLAYER_HEALING1);
+                break;
+            default:
+                break;
+            }
+
+            character->PositionX = positionX;
+            character->PositionY = positionY;
+            character->TargetX = targetX;
+            character->TargetY = targetY;
+            object->Angle[2] = (static_cast<float>(path >> 4) - 1.0f) * 45.0f;
+
+            if (createFlag)
+            {
+                object->Position[0] =
+                    (static_cast<float>(positionX) + 0.5f) * TERRAIN_SCALE;
+                object->Position[1] =
+                    (static_cast<float>(positionY) + 0.5f) * TERRAIN_SCALE;
+                CreateEffect(
+                    BITMAP_MAGIC + 2,
+                    object->Position,
+                    object->Angle,
+                    object->Light,
+                    0,
+                    object);
+                object->Alpha = 0.0f;
+            }
+            else if (PathFinding2(
+                         character->PositionX,
+                         character->PositionY,
+                         targetX,
+                         targetY,
+                         &character->Path))
+            {
+                character->Movement = true;
+            }
+
+            if (gMapManager.InHellas())
+            {
+                CreateJoint(
+                    BITMAP_FLARE + 1,
+                    object->Position,
+                    object->Position,
+                    object->Angle,
+                    8,
+                    object,
+                    20.0f);
+            }
+
+            ChangeCharacterExt(FindCharacterIndex(key), equipment);
+
+            character->GuildMarkIndex = guildMarkIndex;
+            character->GuildStatus = guildStatus;
+            character->GuildType = guildType;
+            character->GuildRelationShip = guildRelationship;
+            character->GuildMasterKillCount = guildMasterKillCount;
+            character->EtcPart = etcPart;
+            character->CtlCode = ctlCode;
+
+            std::copy(
+                characterName,
+                characterName + MAX_USERNAME_SIZE,
+                character->ID);
+            character->ID[MAX_USERNAME_SIZE] = L'\0';
+
+            for (BYTE buffIndex = 0; buffIndex < buffCount; ++buffIndex)
+            {
+                const auto buff = static_cast<eBuffState>(
+                    entry[kBaseEntrySize + buffIndex]);
+                RegisterBuff(buff, object);
+                battleCastle::SettingBattleFormation(character, buff);
+            }
+        }
+
+        offset += entrySize;
+    }
+
+    mu::log::Get("network")->info(
+        "S52: 0x12 materialized {} classic player viewport entries", count);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0x12 [ReceiveCreatePlayerViewportSeason52(%d)]",
+        count);
+}
 
 void ReceiveCreatePlayerViewportExtended(std::span<const BYTE> ReceiveBuffer)
 {
@@ -2704,6 +3759,203 @@ void ReceiveCreatePlayerViewportExtended(std::span<const BYTE> ReceiveBuffer)
     }
 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x12 [ReceiveCreatePlayerViewportExtended]");
+}
+
+void ReceiveCreateTransformViewportSeason52(std::span<const BYTE> ReceiveBuffer)
+{
+    constexpr std::size_t kHeaderSize = 5; // C2 sizeH sizeL 45 count
+    constexpr std::size_t kBaseEntrySize = 38;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x45 transform viewport packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return;
+    }
+
+    const BYTE count = ReceiveBuffer[4];
+    std::size_t offset = kHeaderSize;
+
+    for (BYTE i = 0; i < count; ++i)
+    {
+        if (offset + kBaseEntrySize > ReceiveBuffer.size())
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x45 transform viewport at entry {}",
+                i);
+            return;
+        }
+
+        const BYTE* entry = ReceiveBuffer.data() + offset;
+        WORD key = static_cast<WORD>(
+            (static_cast<WORD>(entry[0]) << 8) | entry[1]);
+        const bool createFlag = (key & 0x8000) != 0;
+        key &= 0x7FFF;
+
+        const BYTE positionX = entry[2];
+        const BYTE positionY = entry[3];
+        const WORD type = static_cast<WORD>(
+            (static_cast<WORD>(entry[4]) << 8) | entry[5]);
+
+        std::array<char, MAX_USERNAME_SIZE + 1> name{};
+        std::copy_n(
+            reinterpret_cast<const char*>(entry + 6),
+            MAX_USERNAME_SIZE,
+            name.data());
+
+        const BYTE targetX = entry[16];
+        const BYTE targetY = entry[17];
+        const BYTE path = entry[18];
+        const BYTE classRaw = entry[19];
+        BYTE* equipment = const_cast<BYTE*>(entry + 20);
+        const BYTE buffCount = entry[37];
+
+        const std::size_t entrySize =
+            kBaseEntrySize + static_cast<std::size_t>(buffCount);
+        if (offset + entrySize > ReceiveBuffer.size())
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x45 buffs at entry {} count={}",
+                i, buffCount);
+            return;
+        }
+
+        wchar_t characterName[MAX_USERNAME_SIZE + 1]{};
+        CMultiLanguage::ConvertFromUtf8(
+            characterName, name.data(), MAX_USERNAME_SIZE);
+
+        const int previousIndex = FindCharacterIndex(key);
+        short guildMarkIndex = -1;
+        BYTE guildStatus = 0;
+        BYTE guildType = 0;
+        BYTE guildRelationship = 0;
+        BYTE guildMasterKillCount = 0;
+        BYTE etcPart = 0;
+        BYTE ctlCode = 0;
+
+        if (previousIndex != MAX_CHARACTERS_CLIENT)
+        {
+            const CHARACTER& previous = CharactersClient[previousIndex];
+            guildMarkIndex = previous.GuildMarkIndex;
+            guildStatus = previous.GuildStatus;
+            guildType = previous.GuildType;
+            guildRelationship = previous.GuildRelationShip;
+            guildMasterKillCount = previous.GuildMasterKillCount;
+            etcPart = previous.EtcPart;
+            ctlCode = previous.CtlCode;
+        }
+
+        if (FindText(characterName, L"webzen") == false)
+        {
+            CHARACTER* character = CreateMonster(
+                static_cast<EMonsterType>(type),
+                positionX,
+                positionY,
+                key);
+
+            if (character == nullptr)
+            {
+                offset += entrySize;
+                continue;
+            }
+
+            OBJECT* object = &character->Object;
+
+            if (character->MonsterIndex == MONSTER_GIANT)
+            {
+                object->Scale = 0.8f;
+            }
+
+            if (type == MONSTER_JACK_OLANTERN
+                || type == MONSTER_MU_ALLIES
+                || type == MONSTER_ILLUSION_SORCERER)
+            {
+                DeleteCloth(character, object);
+            }
+
+            DeleteCloth(character, object);
+
+            character->GuildMarkIndex = guildMarkIndex;
+            character->GuildStatus = guildStatus;
+            character->GuildType = guildType;
+            character->GuildRelationShip = guildRelationship;
+            character->GuildMasterKillCount = guildMasterKillCount;
+            character->EtcPart = etcPart;
+            character->CtlCode = ctlCode;
+            character->Class = DecodeSeason52Class(classRaw);
+            character->SkinIndex =
+                gCharacterManager.GetSkinModelIndex(character->Class);
+            character->PK = path & 0x0F;
+            object->Kind = KIND_PLAYER;
+            character->Change = true;
+
+            for (BYTE buffIndex = 0; buffIndex < buffCount; ++buffIndex)
+            {
+                const auto buff = static_cast<eBuffState>(
+                    entry[kBaseEntrySize + buffIndex]);
+                RegisterBuff(buff, object);
+                battleCastle::SettingBattleFormation(character, buff);
+            }
+
+            character->PositionX = positionX;
+            character->PositionY = positionY;
+            character->TargetX = targetX;
+            character->TargetY = targetY;
+            object->Angle[2] =
+                (static_cast<float>(path >> 4) - 1.0f) * 45.0f;
+
+            if (createFlag)
+            {
+                object->Position[0] =
+                    (static_cast<float>(positionX) + 0.5f) * TERRAIN_SCALE;
+                object->Position[1] =
+                    (static_cast<float>(positionY) + 0.5f) * TERRAIN_SCALE;
+                object->Alpha = 0.0f;
+                CreateEffect(
+                    MODEL_MAGIC_CIRCLE1,
+                    object->Position,
+                    object->Angle,
+                    object->Light,
+                    0,
+                    object);
+                CreateParticle(
+                    BITMAP_LIGHTNING + 1,
+                    object->Position,
+                    object->Angle,
+                    object->Light,
+                    2,
+                    1.0f,
+                    object);
+            }
+            else if (PathFinding2(
+                         positionX,
+                         positionY,
+                         targetX,
+                         targetY,
+                         &character->Path))
+            {
+                character->Movement = true;
+            }
+
+            std::copy(
+                characterName,
+                characterName + MAX_USERNAME_SIZE,
+                character->ID);
+            character->ID[MAX_USERNAME_SIZE] = L'\0';
+
+            ChangeCharacterExt(FindCharacterIndex(key), equipment);
+        }
+
+        offset += entrySize;
+    }
+
+    mu::log::Get("network")->info(
+        "S52: 0x45 materialized {} classic transform entries", count);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0x45 [ReceiveCreateTransformViewportSeason52(%d)]",
+        count);
 }
 
 void ReceiveCreateTransformViewport(std::span<const BYTE> ReceiveBuffer)
@@ -3493,6 +4745,56 @@ void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int 
     c->Hit = damage;
 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x15 [ReceiveAttackDamage(%d %d)]", AttackPlayer, damage);
+}
+
+void ReceiveAttackDamageSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PRECEIVE_ATTACK:
+    // C1 size 15 keyH keyL damageH damageL type shieldH shieldL
+    constexpr std::size_t kPacketSize = 10;
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x15 attack-damage packet ({} bytes)", packet.size());
+        return;
+    }
+
+    int key = (static_cast<int>(packet[3]) << 8) | packet[4];
+    const bool success = (key >> 15) != 0;
+    key &= 0x7FFF;
+
+    const int index = FindCharacterIndex(key);
+    CHARACTER* character = &CharactersClient[index];
+    OBJECT* object = &character->Object;
+
+    const int damage =
+        (static_cast<int>(packet[5]) << 8) | packet[6];
+    const BYTE damageFlags = packet[7];
+    const int damageType = damageFlags & 0x0F;
+    const bool repeatedly = ((damageFlags >> 4) & 0x01) != 0;
+    const bool endRepeatedly = ((damageFlags >> 5) & 0x01) != 0;
+    const bool doubleDamage = ((damageFlags >> 6) & 0x01) != 0;
+    const bool comboDamage = ((damageFlags >> 7) & 0x01) != 0;
+    const int shieldDamage =
+        (static_cast<int>(packet[8]) << 8) | packet[9];
+
+    if (IsMonster(character))
+    {
+        MUHelper::g_MuHelper.AddTarget(key, true);
+    }
+
+    if (gMapManager.InChaosCastle())
+    {
+        ReceiveAttackDamageCastle(
+            character, object, success, key, damage, shieldDamage, damageType,
+            repeatedly, endRepeatedly, doubleDamage, comboDamage);
+    }
+    else
+    {
+        ReceiveAttackDamage(
+            character, object, success, key, damage, shieldDamage, damageType,
+            repeatedly, endRepeatedly, doubleDamage, comboDamage);
+    }
 }
 
 void ReceiveAttackDamageExtended(const BYTE* ReceiveBuffer)
@@ -6006,6 +7308,69 @@ void ReceiveCreateMoney(std::span<const BYTE> ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x20 [ReceiveCreateMoney]");
 }
 
+void ReceiveCreateItemViewportSeason52(std::span<const BYTE> ReceiveBuffer)
+{
+    constexpr std::size_t kHeaderSize = 5; // C2 sizeH sizeL 20 count
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 2 + 2 + kItemSize;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x20 item viewport packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return;
+    }
+
+    const BYTE count = ReceiveBuffer[4];
+    const std::size_t required =
+        kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+    if (ReceiveBuffer.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x20 item viewport: got={} expected>={} count={}",
+            ReceiveBuffer.size(), required, count);
+        return;
+    }
+
+    std::size_t offset = kHeaderSize;
+    for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        const BYTE* entry = ReceiveBuffer.data() + offset;
+        int key = (static_cast<int>(entry[0]) << 8) + entry[1];
+        const bool createFlag = (key & 0x8000) != 0;
+        key &= 0x7FFF;
+
+        if (key < 0 || key >= MAX_ITEMS)
+        {
+            mu::log::Get("network")->warn(
+                "S52: ignoring 0x20 item with invalid key {}", key);
+            continue;
+        }
+
+        const BYTE positionX = entry[2];
+        const BYTE positionY = entry[3];
+        const auto itemData = ReceiveBuffer.subspan(offset + 4, kItemSize);
+        const auto params = ParseItemDataOld(itemData);
+
+        vec3_t position{};
+        position[0] =
+            (static_cast<float>(positionX) + 0.5f) * TERRAIN_SCALE;
+        position[1] =
+            (static_cast<float>(positionY) + 0.5f) * TERRAIN_SCALE;
+
+        CreateItemDrop(&Items[key], params, position, createFlag);
+        MUHelper::g_MuHelper.AddItem(key, {positionX, positionY});
+    }
+
+    mu::log::Get("network")->info(
+        "S52: 0x20 materialized {} classic ground items", count);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0x20 [ReceiveCreateItemViewportSeason52(%d)]",
+        count);
+}
+
 void ReceiveCreateItemViewportExtended(std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PWHEADER_DEFAULT_WORD>(ReceiveBuffer);
@@ -6077,7 +7442,16 @@ namespace
 {
 void RequestInventorySync()
 {
-    if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+    if (SocketClient == nullptr)
+    {
+        return;
+    }
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendInventoryRequest(SocketClient);
+    }
+    else if (SocketClient->ToGameServer() != nullptr)
     {
         SocketClient->ToGameServer()->SendInventoryRequest();
     }
@@ -6193,6 +7567,129 @@ void ReceiveGetItem(std::span<const BYTE> ReceiveBuffer)
 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x22 [ReceiveGetItem(%d)]", Data->Value);
 }
+
+void ReceiveGetItemSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 4;
+    constexpr std::size_t kItemSize = 12;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x22 get-item packet too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE result = packet[3];
+
+    if (result == NOT_GET_ITEM)
+    {
+        SendGetItem = -1;
+        return;
+    }
+
+    if (packet.size() < kHeaderSize + kItemSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x22 get-item payload ({} bytes)", packet.size());
+        SendGetItem = -1;
+        return;
+    }
+
+    const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+
+    if (result == GET_ITEM_ZEN)
+    {
+        wchar_t message[128]{};
+        const int previousGold = CharacterMachine->Gold;
+        CharacterMachine->Gold =
+            (static_cast<int>(itemData[0]) << 24)
+            | (static_cast<int>(itemData[1]) << 16)
+            | (static_cast<int>(itemData[2]) << 8)
+            | static_cast<int>(itemData[3]);
+
+        const int receivedGold = CharacterMachine->Gold - previousGold;
+        if (receivedGold > 0)
+        {
+            mu_swprintf(
+                message,
+                L"%d %ls %ls",
+                receivedGold,
+                I18N::Game::Zen,
+                I18N::Game::Obtained);
+            g_pSystemLogBox->AddText(
+                message, SEASON3B::TYPE_SYSTEM_MESSAGE);
+        }
+
+        SendGetItem = -1;
+        return;
+    }
+
+    ITEM* pickedItem = nullptr;
+    if (ItemKey >= 0 && ItemKey < MAX_ITEMS)
+    {
+        pickedItem = &Items[ItemKey].Item;
+    }
+
+    if (result != GET_ITEM_MULTI)
+    {
+        if (IsMainInventorySlot(result))
+        {
+            if (!g_pMyInventory->InsertItemOld(result, itemData))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: failed to insert picked item into slot {}", result);
+                SendGetItem = -1;
+                return;
+            }
+
+            pickedItem = g_pMyInventory->FindItem(result);
+        }
+        else
+        {
+            mu::log::Get("network")->warn(
+                "S52: picked item returned unsupported slot {}", result);
+        }
+    }
+
+    if (pickedItem != nullptr)
+    {
+        wchar_t itemName[64]{};
+        GetItemName(pickedItem->Type, pickedItem->Level, itemName);
+
+        wchar_t message[128]{};
+        mu_swprintf(
+            message, L"%ls %ls", itemName, I18N::Game::Obtained);
+        g_pSystemLogBox->AddText(
+            message, SEASON3B::TYPE_SYSTEM_MESSAGE);
+
+        const int type = pickedItem->Type;
+        if (type == ITEM_JEWEL_OF_BLESS
+            || type == ITEM_JEWEL_OF_SOUL
+            || type == ITEM_JEWEL_OF_LIFE
+            || type == ITEM_JEWEL_OF_CHAOS
+            || type == ITEM_JEWEL_OF_CREATION
+            || type == INDEX_COMPILED_CELE
+            || type == INDEX_COMPILED_SOUL
+            || type == ITEM_JEWEL_OF_GUARDIAN)
+        {
+            PlayBuffer(SOUND_JEWEL01, &Hero->Object);
+        }
+        else if (type == ITEM_GEMSTONE)
+        {
+            PlayBuffer(SOUND_JEWEL02, &Hero->Object);
+        }
+        else
+        {
+            PlayBuffer(SOUND_GET_ITEM01, &Hero->Object);
+        }
+    }
+
+    SendGetItem = -1;
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x22 [ReceiveGetItemSeason52(%d)]", result);
+}
+
 
 void ReceiveDropItem(const BYTE* ReceiveBuffer)
 {
@@ -6348,6 +7845,101 @@ BOOL ReceiveEquipmentItemExtended(std::span<const BYTE> ReceiveBuffer)
     return (TRUE);
 }
 
+BOOL ReceiveEquipmentItemSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 5;
+    constexpr std::size_t kItemSize = 12;
+
+    EquipmentItem = false;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x24 equipment-item packet too small ({} bytes)",
+            packet.size());
+        return FALSE;
+    }
+
+    const BYTE subCode = packet[3];
+    const BYTE itemIndex = packet[4];
+
+    if (subCode == 0xFF)
+    {
+        SEASON3B::CNewUIInventoryCtrl::BackupPickedItem();
+        g_pStorageInventory->ProcessStorageItemAutoMoveFailure();
+
+        if (g_bPacketAfter_EquipmentItem)
+        {
+            ReceiveTradeExit(g_byPacketAfter_EquipmentItem);
+            g_bPacketAfter_EquipmentItem = FALSE;
+        }
+
+        return TRUE;
+    }
+
+    if (packet.size() < kHeaderSize + kItemSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x24 equipment-item payload ({} bytes)",
+            packet.size());
+        return FALSE;
+    }
+
+    const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+
+    if (subCode == 0)
+    {
+        SEASON3B::CNewUIInventoryCtrl::DeletePickedItem();
+
+        bool loaded = false;
+        if (itemIndex < MAX_EQUIPMENT_INDEX)
+        {
+            loaded = g_pMyInventory->EquipItemOld(itemIndex, itemData);
+        }
+        else if (IsMainInventorySlot(itemIndex))
+        {
+            g_pStorageInventory->ProcessStorageItemAutoMoveSuccess();
+            loaded = g_pMyInventory->InsertItemOld(itemIndex, itemData);
+        }
+        else if (IsSeason52ClassicPersonalShopSlot(itemIndex))
+        {
+            loaded = InsertSeason52ClassicPersonalShopItem(itemIndex, itemData);
+        }
+
+        if (!loaded)
+        {
+            mu::log::Get("network")->warn(
+                "S52: unsupported/failed 0x24 inventory destination slot {}",
+                itemIndex);
+        }
+    }
+    else
+    {
+        // Trade, vault and mix windows still use their extended item readers.
+        // Keep the packet visible in logs instead of feeding incompatible
+        // 12-byte EX502 item data into those readers.
+        mu::log::Get("network")->warn(
+            "S52: 0x24 subcode {} not migrated yet (slot {})",
+            subCode,
+            itemIndex);
+    }
+
+    if (g_bPacketAfter_EquipmentItem)
+    {
+        ReceiveTradeExit(g_byPacketAfter_EquipmentItem);
+        g_bPacketAfter_EquipmentItem = FALSE;
+    }
+
+    PlayBuffer(SOUND_GET_ITEM01);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0x24 [ReceiveEquipmentItemSeason52(%d %d)]",
+        subCode,
+        itemIndex);
+    return TRUE;
+}
+
+
 void ReceiveModifyItemExtended(std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PHEADER_DEFAULT_SUBCODE_ITEM_EXTENDED>(ReceiveBuffer);
@@ -6406,6 +7998,61 @@ void ReceiveModifyItemExtended(std::span<const BYTE> ReceiveBuffer)
     }
 }
 
+void ReceiveModifyItemSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 5;
+    constexpr std::size_t kItemSize = 12;
+
+    if (packet.size() < kHeaderSize + kItemSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F3:14 modify-item packet ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    if (SEASON3B::CNewUIInventoryCtrl::GetPickedItem())
+    {
+        SEASON3B::CNewUIInventoryCtrl::DeletePickedItem();
+    }
+
+    const int itemIndex = packet[4];
+    const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+
+    if (IsMainInventorySlot(itemIndex))
+    {
+        if (g_pMyInventory->FindItem(itemIndex))
+        {
+            g_pMyInventory->DeleteItem(itemIndex);
+        }
+
+        if (!g_pMyInventory->InsertItemOld(itemIndex, itemData))
+        {
+            mu::log::Get("network")->warn(
+                "S52: failed to apply F3:14 item update in slot {}", itemIndex);
+            return;
+        }
+    }
+    else
+    {
+        mu::log::Get("network")->warn(
+            "S52: F3:14 unsupported item slot {}", itemIndex);
+        return;
+    }
+
+    const auto params = ParseItemDataOld(itemData);
+    const int itemType = params.Group * MAX_ITEM_INDEX + params.Number;
+    if (itemType == ITEM_LOST_MAP || itemType == ITEM_POTION + 111)
+    {
+        PlayBuffer(SOUND_KUNDUN_ITEM_SOUND);
+    }
+    else if (!GambleSystem::Instance().IsGambleShop())
+    {
+        PlayBuffer(SOUND_JEWEL01);
+    }
+}
+
+
 BOOL ReceiveTalk(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 {
     auto Data = (LPPHEADER_DEFAULT)ReceiveBuffer;
@@ -6458,7 +8105,14 @@ BOOL ReceiveTalk(const BYTE* ReceiveBuffer, BOOL bEncrypted)
         break;
 
     case 0x0D:
-        SocketClient->ToGameServer()->SendCastleSiegeStatusRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCastleSiegeStatusRequest(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCastleSiegeStatusRequest();
+        }
         break;
     case 0x11:
     {
@@ -6610,6 +8264,62 @@ void ReceiveBuy(const BYTE* ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x32 [ReceiveBuy(%d)]", Data->Index);
 }*/
 
+void ReceiveBuySeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 4; // C1/C3 size 32 index
+    constexpr std::size_t kItemSize = 12;
+    constexpr BYTE kBuyFailed = 0xFE;
+    constexpr BYTE kBuyFailedSilent = 0xFF;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x32 buy packet too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE itemIndex = packet[3];
+
+    if (itemIndex == kBuyFailed)
+    {
+        g_pNewUISystem->HideAll();
+        g_pChatListBox->AddText(
+            Hero->ID, I18N::Game::CannotBeTraded, SEASON3B::TYPE_ERROR_MESSAGE);
+    }
+    else if (itemIndex != kBuyFailedSilent)
+    {
+        if (packet.size() < kHeaderSize + kItemSize)
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 0x32 buy item: got={} expected>={}",
+                packet.size(), kHeaderSize + kItemSize);
+            BuyCost = 0;
+            return;
+        }
+
+        const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+        if (IsMainInventorySlot(itemIndex))
+        {
+            if (!g_pMyInventory->InsertItemOld(itemIndex, itemData))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: failed to materialize bought item in slot {}", itemIndex);
+            }
+        }
+        else
+        {
+            mu::log::Get("network")->warn(
+                "S52: 0x32 returned unsupported inventory slot {}", itemIndex);
+        }
+
+        PlayBuffer(SOUND_GET_ITEM01);
+    }
+
+    BuyCost = 0;
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x32 [ReceiveBuySeason52(%d)]", itemIndex);
+}
+
 void ReceiveBuyExtended(const std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PHEADER_DEFAULT_ITEM_EXTENDED_HEAD>(ReceiveBuffer);
@@ -6658,6 +8368,24 @@ void ReceiveBuyExtended(const std::span<const BYTE> ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x32 [ReceiveBuy(%d)]", Data->Index);
 }
 
+void ReceiveTradeYourInventorySeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 4; // C1/C3 size 39 index
+    constexpr std::size_t kItemSize = 12;
+
+    if (packet.size() < kHeaderSize + kItemSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x39 trade item: got={} expected>={}",
+            packet.size(), kHeaderSize + kItemSize);
+        return;
+    }
+
+    const BYTE itemIndex = packet[3];
+    const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+    g_pTrade->ProcessToReceiveYourItemAddOld(itemIndex, itemData);
+}
+
 void ReceiveTradeYourInventoryExtended(std::span<const BYTE> ReceiveBuffer)
 {
     auto Data = safe_cast<PHEADER_DEFAULT_ITEM_EXTENDED>(ReceiveBuffer);
@@ -6673,6 +8401,179 @@ void ReceiveTradeYourInventoryExtended(std::span<const BYTE> ReceiveBuffer)
     itemData = itemData.subspan(0, length);
 
     g_pTrade->ProcessToReceiveYourItemAdd(Data->Index, itemData);
+}
+
+void ReceiveMixSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 4; // C1/C3 size 86 result
+    constexpr std::size_t kItemSize = 12;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x86 mix packet too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE result = packet[3];
+    std::span<const BYTE> itemData{};
+    if (packet.size() >= kHeaderSize + kItemSize)
+    {
+        itemData = packet.subspan(kHeaderSize, kItemSize);
+    }
+
+    switch (result)
+    {
+    case 0:
+    {
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_LUCKYITEMWND)
+            && g_pLuckyItemWnd->GetAct())
+        {
+            std::span<const BYTE> empty{};
+            g_pLuckyItemWnd->GetResult(0, result, empty);
+            break;
+        }
+
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        wchar_t text[256]{};
+        switch (g_MixRecipeMgr.GetMixInventoryType())
+        {
+        case SEASON3A::MIXTYPE_GOBLIN_NORMAL:
+        case SEASON3A::MIXTYPE_GOBLIN_CHAOSITEM:
+        case SEASON3A::MIXTYPE_GOBLIN_ADD380:
+        case SEASON3A::MIXTYPE_EXTRACT_SEED:
+        case SEASON3A::MIXTYPE_SEED_SPHERE:
+            mu_swprintf(text, I18N::Game::ChaosCombinationHasFailed);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_OSBOURNE:
+            mu_swprintf(text, I18N::Game::SHasFailed, I18N::Game::Refine);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_JERRIDON:
+            mu_swprintf(text, I18N::Game::SHasFailed, I18N::Game::Restore);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_ELPIS:
+            mu_swprintf(text, I18N::Game::SHasFailed2112, I18N::Game::Refine);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_CHAOS_CARD:
+            mu_swprintf(text, I18N::Game::SHasFailed2112, I18N::Game::ChaosCardCombination);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_CHERRYBLOSSOM:
+            mu_swprintf(text, I18N::Game::SHasFailed2112, I18N::Game::CherryBlossomsBranchesAssembly);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        default:
+            break;
+        }
+        break;
+    }
+    case 1:
+    {
+        if (itemData.size() < kItemSize)
+        {
+            mu::log::Get("network")->error(
+                "S52: successful 0x86 mix result missing 12-byte item");
+            return;
+        }
+
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_LUCKYITEMWND)
+            && g_pLuckyItemWnd->GetAct())
+        {
+            g_pLuckyItemWnd->GetResult(1, 0, itemData);
+            break;
+        }
+
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        wchar_t text[256]{};
+        switch (g_MixRecipeMgr.GetMixInventoryType())
+        {
+        case SEASON3A::MIXTYPE_GOBLIN_NORMAL:
+        case SEASON3A::MIXTYPE_GOBLIN_CHAOSITEM:
+        case SEASON3A::MIXTYPE_GOBLIN_ADD380:
+        case SEASON3A::MIXTYPE_EXTRACT_SEED:
+        case SEASON3A::MIXTYPE_SEED_SPHERE:
+            mu_swprintf(text, I18N::Game::ChaosCombinationHasSucceeded);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_OSBOURNE:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::Refine);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_JERRIDON:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::Restore);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_ELPIS:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::Refine);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_CHAOS_CARD:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::ChaosCardCombination);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        case SEASON3A::MIXTYPE_CHERRYBLOSSOM:
+            mu_swprintf(text, I18N::Game::SWasSuccessful, I18N::Game::CherryBlossomsBranchesAssembly);
+            g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+            break;
+        default:
+            break;
+        }
+
+        g_pMixInventory->DeleteAllItems();
+        g_pMixInventory->InsertItemOld(0, itemData);
+        PlayBuffer(SOUND_MIX01);
+        PlayBuffer(SOUND_JEWEL01);
+        break;
+    }
+    case 2:
+    case 0x0B:
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_READY);
+        g_pSystemLogBox->AddText(
+            I18N::Game::NotEnoughZenToCombineItems, SEASON3B::TYPE_ERROR_MESSAGE);
+        break;
+    case 4:
+        SEASON3B::CreateOkMessageBox(
+            I18N::Game::MustBeOverLevel10ToCombineTheInvitationToDevilSquare);
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        break;
+    case 9:
+        SEASON3B::CreateOkMessageBox(
+            I18N::Game::MustBeOverLevel15ToCombineACloakOfInvisibility);
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        break;
+    case 100:
+        if (itemData.size() < kItemSize)
+        {
+            mu::log::Get("network")->error(
+                "S52: 0x86 result 100 missing 12-byte item");
+            return;
+        }
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        g_pMixInventory->DeleteAllItems();
+        g_pMixInventory->InsertItemOld(0, itemData);
+        break;
+    case 0x20:
+        if (g_pLuckyItemWnd->GetAct())
+        {
+            g_pLuckyItemWnd->GetResult(0, result, itemData);
+        }
+        break;
+    case 3:
+    case 5:
+    case 7:
+    case 8:
+    case 0x0A:
+    default:
+        g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_FINISHED);
+        break;
+    }
+
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x86 [ReceiveMixSeason52(%d)]", result);
 }
 
 void ReceiveMixExtended(std::span<const BYTE> ReceiveBuffer)
@@ -7036,6 +8937,161 @@ void ReceiveSetPointsExtended(const BYTE* ReceiveBuffer)
     gSkillManager.InvalidateSkillAttributeRequirementsCache();
 }
 
+void ReceiveLifeSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PMSG_LIFE_SEND:
+    // C1 size 26 type lifeH lifeL flag shieldH shieldL
+    constexpr std::size_t kPacketSize = 9;
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x26 life packet ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE type = packet[3];
+    const WORD life = static_cast<WORD>(
+        (static_cast<WORD>(packet[4]) << 8) | packet[5]);
+    const WORD shield = static_cast<WORD>(
+        (static_cast<WORD>(packet[7]) << 8) | packet[8]);
+
+    switch (type)
+    {
+    case 0xFF:
+        CharacterAttribute->Life = life;
+        CharacterAttribute->Shield = shield;
+        break;
+    case 0xFE:
+        if (gCharacterManager.IsMasterLevel(Hero->Class))
+        {
+            Master_Level_Data.wMaxLife = life;
+            Master_Level_Data.wMaxShield = shield;
+        }
+        else
+        {
+            CharacterAttribute->LifeMax = life;
+            CharacterAttribute->ShieldMax = shield;
+        }
+        break;
+    case 0xFD:
+        EnableUse = 0;
+        break;
+    default:
+    {
+        ITEM* item = nullptr;
+        int modernIndex = type;
+        if (IsMainInventorySlot(type))
+        {
+            item = g_pMyInventory->FindItem(type);
+        }
+        else if (IsSeason52ClassicPersonalShopSlot(type)
+                 && g_pMyShopInventory != nullptr)
+        {
+            modernIndex = Season52ClassicToModernPersonalShopSlot(type);
+            item = g_pMyShopInventory->FindItem(modernIndex);
+        }
+
+        if (item != nullptr)
+        {
+            if (item->Durability > 0)
+            {
+                --item->Durability;
+            }
+
+            if (item->Durability <= 0)
+            {
+                if (IsMainInventorySlot(type))
+                {
+                    g_pMyInventory->DeleteItem(type);
+                }
+                else
+                {
+                    g_pMyShopInventory->DeleteItem(modernIndex);
+                }
+            }
+        }
+        break;
+    }
+    }
+}
+
+void ReceiveManaSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PMSG_MANA_SEND:
+    // C1 size 27 type manaH manaL bpH bpL
+    constexpr std::size_t kPacketSize = 8;
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x27 mana packet ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE type = packet[3];
+    const WORD mana = static_cast<WORD>(
+        (static_cast<WORD>(packet[4]) << 8) | packet[5]);
+    const WORD bp = static_cast<WORD>(
+        (static_cast<WORD>(packet[6]) << 8) | packet[7]);
+
+    switch (type)
+    {
+    case 0xFF:
+        CharacterAttribute->Mana = mana;
+        CharacterAttribute->SkillMana = bp;
+        break;
+    case 0xFE:
+        if (gCharacterManager.IsMasterLevel(Hero->Class))
+        {
+            Master_Level_Data.wMaxMana = mana;
+            Master_Level_Data.wMaxBP = bp;
+        }
+        else
+        {
+            CharacterAttribute->ManaMax = mana;
+            CharacterAttribute->SkillManaMax = bp;
+        }
+        break;
+    default:
+    {
+        CharacterAttribute->Mana = mana;
+
+        ITEM* item = nullptr;
+        int modernIndex = type;
+        if (IsMainInventorySlot(type))
+        {
+            item = g_pMyInventory->FindItem(type);
+        }
+        else if (IsSeason52ClassicPersonalShopSlot(type)
+                 && g_pMyShopInventory != nullptr)
+        {
+            modernIndex = Season52ClassicToModernPersonalShopSlot(type);
+            item = g_pMyShopInventory->FindItem(modernIndex);
+        }
+
+        if (item != nullptr)
+        {
+            if (item->Durability > 0)
+            {
+                --item->Durability;
+            }
+
+            if (item->Durability <= 0)
+            {
+                if (IsMainInventorySlot(type))
+                {
+                    g_pMyInventory->DeleteItem(type);
+                }
+                else
+                {
+                    g_pMyShopInventory->DeleteItem(modernIndex);
+                }
+            }
+        }
+        break;
+    }
+    }
+}
+
 void ReceiveStatsExtended(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPRECEIVE_STATS_EXTENDED)ReceiveBuffer;
@@ -7150,7 +9206,14 @@ void ReceiveDurability(const BYTE* ReceiveBuffer)
     else
     {
         ITEM* pItem = g_pMyInventory->FindItem(Data->Value);
-        if (pItem == nullptr && IsInventoryExtensionSlot(Data->Value))
+        if (pItem == nullptr
+            && mu::net::s52::DirectProtocolEnabled()
+            && IsSeason52ClassicPersonalShopSlot(Data->Value))
+        {
+            pItem = g_pMyShopInventory->FindItem(
+                Season52ClassicToModernPersonalShopSlot(Data->Value));
+        }
+        else if (pItem == nullptr && IsInventoryExtensionSlot(Data->Value))
         {
             pItem = g_pMyInventoryExt->FindItem(Data->Value);
         }
@@ -7292,7 +9355,16 @@ void ReceiveTradeExit(const BYTE* ReceiveBuffer)
 
 void ReceivePing(const BYTE* ReceiveBuffer)
 {
-    SocketClient->ToGameServer()->SendPingResponse();
+    (void)ReceiveBuffer;
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendPing(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendPingResponse();
+    }
 }
 
 void ReceiveStorageGold(const BYTE* ReceiveBuffer)
@@ -7610,7 +9682,14 @@ void ReceiveGuildLeave(const BYTE* ReceiveBuffer)
     }
     else if (Data->Value == 5)
     {
-        SocketClient->ToGameServer()->SendGuildListRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildListRequest(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildListRequest();
+        }
     }
 }
 
@@ -7895,7 +9974,15 @@ void ReceiveGuildIDViewport(const BYTE* ReceiveBuffer)
             c->GuildMarkIndex = g_GuildCache.GetGuildMarkIndex(GuildKey);
         else
         {
-            SocketClient->ToGameServer()->SendGuildInfoRequest(GuildKey);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendGuildInfoRequest(
+                    SocketClient, static_cast<std::uint32_t>(GuildKey));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendGuildInfoRequest(GuildKey);
+            }
             c->GuildMarkIndex = g_GuildCache.MakeGuildMarkIndex(GuildKey);
         }
 
@@ -7969,6 +10056,35 @@ void ReceiveGuildAssign(const BYTE* ReceiveBuffer)
         }
     }
     g_pSystemLogBox->AddText(szTemp, SEASON3B::TYPE_SYSTEM_MESSAGE);
+}
+
+void ReceiveGuildRelationShipSeason52(std::span<const BYTE> receiveBuffer)
+{
+    // Louis 5.2 PMSG_GUILD_RELATIONSHIP:
+    // C1 size E5 relationshipType requestType targetH targetL
+    constexpr std::size_t kPacketSize = 7;
+    if (receiveBuffer.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated E5 guild relationship packet: got={} expected>={}",
+            receiveBuffer.size(), kPacketSize);
+        return;
+    }
+
+    const auto relationshipType =
+        static_cast<GuildRelationshipType>(receiveBuffer[3]);
+    const auto requestType =
+        static_cast<GuildRequestType>(receiveBuffer[4]);
+
+    g_pGuildInfoWindow->ReceiveGuildRelationShip(
+        relationshipType,
+        requestType,
+        receiveBuffer[5],
+        receiveBuffer[6]);
+
+    mu::log::Get("network")->info(
+        "S52: E5 guild relationship type={} request={} target={:02X}{:02X}",
+        receiveBuffer[3], receiveBuffer[4], receiveBuffer[5], receiveBuffer[6]);
 }
 
 void ReceiveGuildRelationShip(const BYTE* ReceiveBuffer)
@@ -8086,7 +10202,14 @@ void ReceiveBanUnionGuildResult(const BYTE* ReceiveBuffer)
     {
         if (g_pGuildInfoWindow->GetUnionCount() > 2)
         {
-            SocketClient->ToGameServer()->SendRequestAllianceList();
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendAllianceListRequest(SocketClient);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendRequestAllianceList();
+            }
         }
         g_pGuildInfoWindow->UnionGuildClear();
     }
@@ -9301,7 +11424,7 @@ void ReceiveSetPriceResult(const BYTE* ReceiveBuffer)
 
         RemovePersonalItemPrice(g_pMyShopInventory->GetTargetIndex(), PSHOPWNDTYPE_SALE);
 
-        SocketClient->ToGameServer()->SendInventoryRequest();
+        RequestInventorySync();
 
         g_ErrorReport.Write(L"@ [Fault] ReceiveSetPriceResult (result : %d)\n", Header->byResult);
     }
@@ -9341,6 +11464,284 @@ void ReceiveDestroyPersonalShop(const BYTE* ReceiveBuffer)
     else
     {
         g_ErrorReport.Write(L"@ [Fault] ReceiveDestroyPersonalShop (result : %d)\n", Header->byResult);
+    }
+}
+
+void ReceivePersonalShopItemListSeason52(std::span<const BYTE> packet)
+{
+    // EX502 GETPSHOPITEMLIST_HEADERINFO:
+    // C2 sizeH sizeL 3F sub result indexH indexL id[10] title[36] count
+    constexpr std::size_t kHeaderSize = 55;
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 1 + kItemSize + 4; // slot + item + INT price
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 3F:05 personal-shop list too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE result = packet[5];
+    const BYTE indexH = packet[6];
+    const BYTE indexL = packet[7];
+    const BYTE count = packet[54];
+
+    if (result == 0x01)
+    {
+        const std::size_t required =
+            kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+        if (packet.size() < required)
+        {
+            mu::log::Get("network")->error(
+                "S52: truncated 3F:05 shop list: got={} expected>={} count={}",
+                packet.size(), required, count);
+            return;
+        }
+
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE))
+        {
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_STORAGE);
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_STORAGE_EXT);
+        }
+
+        if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_INVENTORY))
+        {
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);
+        }
+
+        g_PersonalShopSeller.Initialize();
+
+        std::array<char, MAX_SHOPTITLE + 1> shopTitleUtf8{};
+        memcpy(shopTitleUtf8.data(), packet.data() + 18, MAX_SHOPTITLE);
+
+        wchar_t shopName[MAX_SHOPTITLE + 1]{};
+        CMultiLanguage::ConvertFromUtf8(
+            shopName, shopTitleUtf8.data(), MAX_SHOPTITLE);
+        g_pPurchaseShopInventory->ChangeTitleText(shopName);
+        g_pPurchaseShopInventory->GetInventoryCtrl()->RemoveAllItems();
+
+        g_pNewUISystem->Show(SEASON3B::INTERFACE_PURCHASESHOP_INVENTORY);
+        g_pNewUISystem->Show(SEASON3B::INTERFACE_INVENTORY);
+        g_pMyInventory->ChangeMyShopButtonStateOpen();
+
+        RemoveAllPerosnalItemPrice(PSHOPWNDTYPE_PURCHASE);
+
+        std::size_t offset = kHeaderSize;
+        for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+        {
+            const int classicSlot = packet[offset];
+            const auto itemData = packet.subspan(offset + 1, kItemSize);
+            const auto price = static_cast<std::int32_t>(
+                ReadSeason52Dword(packet.data() + offset + 1 + kItemSize));
+
+            if (!IsSeason52ClassicPersonalShopSlot(classicSlot))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: 3F:05 invalid classic shop slot {}", classicSlot);
+                continue;
+            }
+
+            const int modernSlot =
+                Season52ClassicToModernPersonalShopSlot(classicSlot);
+
+            if (price > 0)
+            {
+                if (!g_pPurchaseShopInventory->InsertItemOld(modernSlot, itemData))
+                {
+                    mu::log::Get("network")->warn(
+                        "S52: failed to materialize shop item slot {} -> {}",
+                        classicSlot, modernSlot);
+                    continue;
+                }
+
+                AddPersonalItemPrice(
+                    modernSlot, price, PSHOPWNDTYPE_PURCHASE);
+            }
+            else
+            {
+                mu::log::Get("network")->error(
+                    "S52: 3F:05 shop item has invalid price {} in slot {}",
+                    price, classicSlot);
+
+                g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);
+                g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYSHOP_INVENTORY);
+                g_pNewUISystem->Hide(SEASON3B::INTERFACE_PURCHASESHOP_INVENTORY);
+                return;
+            }
+        }
+
+        const int key =
+            (static_cast<int>(indexH) << 8) | static_cast<int>(indexL);
+        g_pPurchaseShopInventory->ChangeShopCharacterIndex(
+            FindCharacterIndex(key));
+    }
+    else if (result == 0x03)
+    {
+        g_pSystemLogBox->AddText(
+            I18N::Game::StoreIsNotOpenAtTheMoment,
+            SEASON3B::TYPE_ERROR_MESSAGE);
+    }
+    else
+    {
+        mu::log::Get("network")->warn(
+            "S52: 3F:05 personal-shop list failed result={}", result);
+    }
+
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x05 [ReceivePersonalShopItemListSeason52]");
+}
+
+void ReceiveRefreshItemListSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 55;
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kEntrySize = 1 + kItemSize + 4;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 3F:13 personal-shop refresh too small ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    const BYTE result = packet[5];
+    const BYTE count = packet[54];
+
+    if (result != 0x01)
+    {
+        mu::log::Get("network")->warn(
+            "S52: 3F:13 personal-shop refresh failed result={}", result);
+        return;
+    }
+
+    const std::size_t required =
+        kHeaderSize + static_cast<std::size_t>(count) * kEntrySize;
+    if (packet.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 3F:13 shop refresh: got={} expected>={} count={}",
+            packet.size(), required, count);
+        return;
+    }
+
+    // Louis EX502 refreshes the currently viewed purchase shop here.
+    if (g_IsPurchaseShop != PSHOPWNDTYPE_PURCHASE)
+    {
+        return;
+    }
+
+    g_pPurchaseShopInventory->GetInventoryCtrl()->RemoveAllItems();
+
+    std::size_t offset = kHeaderSize;
+    for (BYTE i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        const int classicSlot = packet[offset];
+        const auto itemData = packet.subspan(offset + 1, kItemSize);
+        const auto price = static_cast<std::int32_t>(
+            ReadSeason52Dword(packet.data() + offset + 1 + kItemSize));
+
+        if (!IsSeason52ClassicPersonalShopSlot(classicSlot))
+        {
+            mu::log::Get("network")->warn(
+                "S52: 3F:13 invalid classic shop slot {}", classicSlot);
+            continue;
+        }
+
+        const int modernSlot =
+            Season52ClassicToModernPersonalShopSlot(classicSlot);
+
+        if (g_pPurchaseShopInventory->InsertItemOld(modernSlot, itemData))
+        {
+            AddPersonalItemPrice(
+                modernSlot, price, PSHOPWNDTYPE_PURCHASE);
+        }
+    }
+}
+
+void ReceivePurchaseItemSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PURCHASEITEM_RESULTINFO:
+    // C1 size 3F sub result sellerH sellerL item[12] destinationSlot
+    constexpr std::size_t kPacketSize = 20;
+    constexpr std::size_t kItemOffset = 7;
+    constexpr std::size_t kItemSize = 12;
+    constexpr std::size_t kDestinationOffset = 19;
+
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 3F:06 purchase result ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE result = packet[4];
+
+    if (result == 0x01)
+    {
+        if (g_pNewUISystem->IsVisible(
+                SEASON3B::INTERFACE_PURCHASESHOP_INVENTORY))
+        {
+            const int selectedSlot =
+                g_pPurchaseShopInventory->GetSourceIndex();
+            RemovePersonalItemPrice(
+                selectedSlot, PSHOPWNDTYPE_PURCHASE);
+            g_pPurchaseShopInventory->DeleteItem(selectedSlot);
+        }
+        else
+        {
+            RemoveAllPerosnalItemPrice(PSHOPWNDTYPE_PURCHASE);
+        }
+
+        const int itemIndex = packet[kDestinationOffset];
+        const auto itemData = packet.subspan(kItemOffset, kItemSize);
+
+        if (IsMainInventorySlot(itemIndex))
+        {
+            if (!g_pMyInventory->InsertItemOld(itemIndex, itemData))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: failed to insert purchased item into slot {}",
+                    itemIndex);
+            }
+        }
+        else
+        {
+            mu::log::Get("network")->warn(
+                "S52: 3F:06 returned unsupported inventory slot {}",
+                itemIndex);
+        }
+    }
+    else if (result == 0x06)
+    {
+        g_pSystemLogBox->AddText(
+            I18N::Game::FailedToPurchasePleaseTryAgain,
+            SEASON3B::TYPE_ERROR_MESSAGE);
+        g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYSHOP_INVENTORY);
+        g_pNewUISystem->Hide(SEASON3B::INTERFACE_PURCHASESHOP_INVENTORY);
+    }
+    else
+    {
+        switch (result)
+        {
+        case 0x07:
+            g_pSystemLogBox->AddText(
+                I18N::Game::YouAreShortOfZen,
+                SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        case 0x08:
+            g_pSystemLogBox->AddText(
+                I18N::Game::InventoryIsFull,
+                SEASON3B::TYPE_ERROR_MESSAGE);
+            break;
+        default:
+            mu::log::Get("network")->warn(
+                "S52: 3F:06 purchase failed result={}", result);
+            break;
+        }
+
+        SEASON3B::CNewUIInventoryCtrl::BackupPickedItem();
     }
 }
 
@@ -9697,7 +12098,15 @@ void ReceiveFriendList(const BYTE* ReceiveBuffer)
     g_pWindowMgr->SetServerEnable(TRUE);
     if (g_iChatInputType == 0)
     {
-        SocketClient->ToGameServer()->SendSetFriendOnlineState(2);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendSetFriendOnlineState(
+                SocketClient, 2);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendSetFriendOnlineState(2);
+        }
     }
 
     g_iMaxLetterCount = Header->MaxMemo;
@@ -9947,6 +12356,136 @@ void ReceiveLetter(const BYTE* ReceiveBuffer)
 }
 
 extern int g_iLetterReadNextPos_x, g_iLetterReadNextPos_y;
+
+void ReceiveLetterTextSeason52(
+    std::span<const BYTE> ReceiveBuffer, bool isCached)
+{
+    // EX502 FS_LETTER_TEXT:
+    // C2 sizeH sizeL C7 | WORD index | WORD memoSize | BYTE class
+    // | Equipment[17] | photoDir | photoAction | memo[memoSize]
+    constexpr std::size_t kHeaderSize = 28;
+    constexpr std::size_t kEquipmentOffset = 9;
+    constexpr std::size_t kEquipmentSize = 17;
+    constexpr std::size_t kPhotoDirOffset = 26;
+    constexpr std::size_t kPhotoActionOffset = 27;
+    constexpr std::size_t kMemoOffset = 28;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: C7 letter-text packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return;
+    }
+
+    const WORD index = ReadSeason52Word(ReceiveBuffer.data() + 4);
+    const WORD memoSize = ReadSeason52Word(ReceiveBuffer.data() + 6);
+    const BYTE serverClass = ReceiveBuffer[8];
+    const BYTE photoDir = ReceiveBuffer[kPhotoDirOffset];
+    const BYTE photoAction = ReceiveBuffer[kPhotoActionOffset];
+
+    const std::size_t required =
+        kMemoOffset + static_cast<std::size_t>(memoSize);
+    if (ReceiveBuffer.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated C7 letter text: got={} expected>={} memoSize={}",
+            ReceiveBuffer.size(), required, memoSize);
+        return;
+    }
+
+    if (!isCached)
+    {
+        g_pLetterList->CacheLetterTextSeason52(
+            index, ReceiveBuffer.data(), required);
+    }
+
+    auto* pLetterHead = g_pLetterList->GetLetter(index);
+    if (pLetterHead == nullptr)
+    {
+        return;
+    }
+
+    pLetterHead->m_bIsRead = TRUE;
+    g_pWindowMgr->RefreshMainWndLetterList();
+
+    wchar_t tempTxt[MAX_TEXT_LENGTH + 1]{};
+    mu_swprintf(tempTxt, I18N::Game::ReadLetterS, pLetterHead->m_szText);
+
+    DWORD dwUIID = 0;
+    if (g_iLetterReadNextPos_x == UIWND_DEFAULT)
+    {
+        dwUIID = g_pWindowMgr->AddWindow(
+            UIWNDTYPE_READLETTER, 100, 100, tempTxt);
+    }
+    else
+    {
+        dwUIID = g_pWindowMgr->AddWindow(
+            UIWNDTYPE_READLETTER,
+            g_iLetterReadNextPos_x,
+            g_iLetterReadNextPos_y,
+            tempTxt,
+            0,
+            UIADDWND_FORCEPOSITION);
+        g_iLetterReadNextPos_x = UIWND_DEFAULT;
+    }
+
+    auto* pWindow =
+        (CUILetterReadWindow*)g_pWindowMgr->GetWindow(dwUIID);
+    if (pWindow == nullptr)
+    {
+        return;
+    }
+
+    std::vector<char> memoUtf8(
+        static_cast<std::size_t>(memoSize) + 1u, '\0');
+    if (memoSize > 0)
+    {
+        memcpy(
+            memoUtf8.data(),
+            ReceiveBuffer.data() + kMemoOffset,
+            memoSize);
+    }
+
+    wchar_t letterText[MAX_LETTERTEXT_LENGTH + 1]{};
+    CMultiLanguage::ConvertFromUtf8(
+        letterText,
+        memoUtf8.data(),
+        std::min<int>(memoSize, MAX_LETTERTEXT_LENGTH));
+    letterText[MAX_LETTERTEXT_LENGTH] = '\0';
+
+    pWindow->SetLetter(pLetterHead, letterText);
+    g_pWindowMgr->SetLetterReadWindow(
+        pLetterHead->m_dwLetterID, dwUIID);
+
+    if (wcsnicmp(
+            pLetterHead->m_szID, L"webzen", MAX_USERNAME_SIZE) == 0)
+    {
+        pWindow->m_Photo.SetWebzenMail(TRUE);
+    }
+    else
+    {
+        pWindow->m_Photo.SetClass(
+            gCharacterManager.ChangeServerClassTypeToClientClassType(
+                static_cast<SERVER_CLASS_TYPE>(serverClass)));
+
+        std::array<BYTE, kEquipmentSize> equipment{};
+        memcpy(
+            equipment.data(),
+            ReceiveBuffer.data() + kEquipmentOffset,
+            kEquipmentSize);
+        pWindow->m_Photo.SetEquipmentPacketOld(equipment.data());
+
+        pWindow->m_Photo.SetAnimation(photoAction + AT_ATTACK1);
+        const int iAngle = photoDir & 0x3F;
+        const int iZoom = (photoDir & 0xC0) >> 6;
+        pWindow->m_Photo.SetAngle(iAngle * 6);
+        pWindow->m_Photo.SetZoom((iZoom * 10 + 80) / 100.0f);
+    }
+
+    pWindow->SendUIMessageDirect(
+        UI_MESSAGE_LISTSCRLTOP, 0, 0);
+}
 
 void ReceiveLetterText(std::span<const BYTE> ReceiveBuffer, bool isCached)
 {
@@ -10648,8 +13187,18 @@ void ReceiveProgressQuestRequestReward(const BYTE* ReceiveBuffer)
 void ReceiveProgressQuestListReady(const BYTE* ReceiveBuffer)
 {
     g_QuestMng.SetQuestIndexByEtcList(nullptr, 0);
-    SocketClient->ToGameServer()->SendActiveQuestListRequest();
-    SocketClient->ToGameServer()->SendEventQuestStateListRequest();
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        auto& direct = mu::net::s52::DirectSession::Instance();
+        direct.SendProgressQuestListRequest(SocketClient);
+        direct.SendQuestByEtcEPListRequest(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendActiveQuestListRequest();
+        SocketClient->ToGameServer()->SendEventQuestStateListRequest();
+    }
 }
 
 void ReceiveGensJoining(const BYTE* ReceiveBuffer)
@@ -10977,6 +13526,99 @@ void ReceiveWTBattleSoccerGoalIn(const BYTE* ReceiveBuffer)
         CreateEffect(BITMAP_FIRECRACKERRISE,Position,Angle,Light);*/
 }
 
+void ReceiveChangeMapServerInfoSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PMSG_MAP_SERVER_MOVE_SEND:
+    // PSBMSG_HEAD(4) + IP[16] + port[2] + serverCode[2] + 4 auth DWORDs.
+    constexpr std::size_t kPacketSize = 40;
+    constexpr std::size_t kIpOffset = 4;
+    constexpr std::size_t kIpSize = 16;
+    constexpr std::size_t kPortOffset = 20;
+    constexpr std::size_t kServerCodeOffset = 22;
+    constexpr std::size_t kAuth1Offset = 24;
+    constexpr std::size_t kAuth2Offset = 28;
+    constexpr std::size_t kAuth3Offset = 32;
+    constexpr std::size_t kAuth4Offset = 36;
+
+    if (packet.size() < kPacketSize
+        || packet[0] != 0xC1
+        || packet[2] != 0xB1
+        || packet[3] != 0x00)
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid B1:00 map-server redirect ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    MServerInfo info{};
+    std::copy_n(
+        reinterpret_cast<const char*>(packet.data() + kIpOffset),
+        kIpSize,
+        info.m_szMapSvrIpAddress.begin());
+
+    info.m_wMapSvrPort = ReadSeason52Word(packet.data() + kPortOffset);
+    info.m_wMapSvrCode = ReadSeason52Word(packet.data() + kServerCodeOffset);
+    info.m_iJoinAuthCode1 = static_cast<std::int32_t>(
+        ReadSeason52Dword(packet.data() + kAuth1Offset));
+    info.m_iJoinAuthCode2 = static_cast<std::int32_t>(
+        ReadSeason52Dword(packet.data() + kAuth2Offset));
+    info.m_iJoinAuthCode3 = static_cast<std::int32_t>(
+        ReadSeason52Dword(packet.data() + kAuth3Offset));
+    info.m_iJoinAuthCode4 = static_cast<std::int32_t>(
+        ReadSeason52Dword(packet.data() + kAuth4Offset));
+
+    if (info.m_wMapSvrPort == 0)
+    {
+        LoadingWorld = 0;
+        mu::log::Get("network")->error(
+            "S52: B1:00 returned map-server port 0");
+        return;
+    }
+
+    std::array<char, kIpSize + 1> ipLog{};
+    std::copy(
+        info.m_szMapSvrIpAddress.begin(),
+        info.m_szMapSvrIpAddress.end(),
+        ipLog.begin());
+
+    mu::log::Get("network")->info(
+        "S52: B1:00 map-server redirect {}:{} code={}",
+        ipLog.data(), info.m_wMapSvrPort, info.m_wMapSvrCode);
+
+    g_PortalMgr.Reset();
+    g_csMapServer.ConnectChangeMapServer(info);
+}
+
+void ReceiveChangeMapServerResultSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kPacketSize = 5;
+
+    if (packet.size() < kPacketSize
+        || packet[0] != 0xC1
+        || packet[2] != 0xB1
+        || packet[3] != 0x01)
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid B1:01 map-server auth result ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    const BYTE result = packet[4];
+    if (result == 1)
+    {
+        mu::log::Get("network")->info(
+            "S52: B1:01 map-server authentication accepted");
+    }
+    else
+    {
+        mu::log::Get("network")->error(
+            "S52: B1:01 map-server authentication rejected result={}",
+            result);
+    }
+}
+
 void ReceiveChangeMapServerInfo(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPHEADER_MAP_CHANGESERVER_INFO)ReceiveBuffer;
@@ -11072,8 +13714,17 @@ void ReceiveBCGiveUp(const BYTE* ReceiveBuffer)
         g_pSystemLogBox->AddText(I18N::Game::SurrenderingCastleSiegeHasFailed, SEASON3B::TYPE_SYSTEM_MESSAGE);
         break;
     case 0x01:
-        SocketClient->ToGameServer()->SendCastleSiegeRegistrationStateRequest();
-        SocketClient->ToGameServer()->SendCastleSiegeRegisteredGuildsListRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            auto& direct = mu::net::s52::DirectSession::Instance();
+            direct.SendCastleSiegeRegistrationStateRequest(SocketClient);
+            direct.SendCastleSiegeRegisteredGuildsListRequest(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCastleSiegeRegistrationStateRequest();
+            SocketClient->ToGameServer()->SendCastleSiegeRegisteredGuildsListRequest();
+        }
         g_GuardsMan.SetRegStatus(0);
         g_pSystemLogBox->AddText(I18N::Game::SurrenderingCastleSiegeIsSuccessful, SEASON3B::TYPE_SYSTEM_MESSAGE);
         break;
@@ -12372,7 +15023,20 @@ void ReceiveCheckSumRequest(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPHEADER_DEFAULT_WORD)ReceiveBuffer;
     DWORD dwCheckSum = GetCheckSum(Data->Value);
-    SocketClient->ToGameServer()->SendChecksumResponse(dwCheckSum);
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        if (!mu::net::s52::DirectSession::Instance().SendChecksumResponse(
+                SocketClient, static_cast<std::uint32_t>(dwCheckSum)))
+        {
+            mu::log::Get("network")->warn(
+                "S52: failed to send checksum response");
+        }
+    }
+    else if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+    {
+        SocketClient->ToGameServer()->SendChecksumResponse(dwCheckSum);
+    }
 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x03 [ReceiveCheckSumRequest]");
 }
@@ -13598,36 +16262,72 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         switch (subcode)
         {
         case 0x00: // receive characters list
-            ReceiveCharacterListExtended(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveCharacterListSeason52(ReceiveBuffer, Size);
+            }
+            else
+            {
+                ReceiveCharacterListExtended(ReceiveBuffer);
+            }
             break;
         case 0x01: // receive create character
+            if (mu::net::s52::DirectProtocolEnabled() && Size < 19)
+            {
+                mu::log::Get("network")->error(
+                    "S52: truncated F3:01 create-character response: got={} expected>=19",
+                    Size);
+                break;
+            }
+
             ReceiveCreateCharacter(ReceiveBuffer);
             break;
         case 0x02: // receive delete character
             ReceiveDeleteCharacter(ReceiveBuffer);
             break;
         case 0x03: // receive join map server
-            if (!ReceiveJoinMapServer(received_span))
+        {
+            const BOOL joined = mu::net::s52::DirectProtocolEnabled()
+                ? ReceiveJoinMapServerSeason52(ReceiveBuffer, Size)
+                : ReceiveJoinMapServer(received_span);
+
+            if (!joined)
             {
-                // safe_cast logged the size mismatch; reiterate the user-visible
-                // symptom so the cause is obvious in the console.
                 g_ConsoleDebug->Write(
                     MCD_ERROR, L"[ReceiveJoinMapServer] dropped -- protocol state stays REQUEST_JOIN_MAP_SERVER, "
                                L"main render will not be enabled (loading screen will appear frozen).");
-                // return ( FALSE);
             }
             break;
+        }
         case 0x04: // receive revival
-            ReceiveRevival(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveRevivalSeason52(received_span);
+            }
+            else
+            {
+                ReceiveRevival(ReceiveBuffer);
+            }
             break;
         case 0x10: // receive inventory
-            ReceiveInventoryExtended(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveInventorySeason52(received_span);
+            }
+            else
+            {
+                ReceiveInventoryExtended(received_span);
+            }
             break;
         case 0x05: // receive level up
             ReceiveLevelUp(ReceiveBuffer, Size);
             break;
         case 0x06: // receive Add Point
-            if (Size >= sizeof(PRECEIVE_ADD_POINT_EXTENDED))
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveAddPoint(ReceiveBuffer);
+            }
+            else if (Size >= sizeof(PRECEIVE_ADD_POINT_EXTENDED))
             {
                 ReceiveAddPointExtended(ReceiveBuffer);
             }
@@ -13647,11 +16347,25 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             ReceiveMagicList(ReceiveBuffer);
             break;
         case 0x13:
-            // not really in use in OpenMU
-            ReceiveEquipment(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveEquipmentSeason52(received_span);
+            }
+            else
+            {
+                // not really in use in OpenMU
+                ReceiveEquipment(received_span);
+            }
             break;
         case 0x14:
-            ReceiveModifyItemExtended(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveModifyItemSeason52(received_span);
+            }
+            else
+            {
+                ReceiveModifyItemExtended(received_span);
+            }
             break;
         case 0x20:
             ReceiveSummonLife(ReceiveBuffer);
@@ -13710,10 +16424,24 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         switch (subcode)
         {
         case 0x06:
-            ReceiveServerList(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveServerListSeason52(received_span);
+            }
+            else
+            {
+                ReceiveServerList(ReceiveBuffer);
+            }
             break;
         case 0x03:
-            ReceiveServerConnect(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveServerConnectSeason52(received_span);
+            }
+            else
+            {
+                ReceiveServerConnect(ReceiveBuffer);
+            }
             break;
         case 0x05:
             ReceiveServerConnectBusy(ReceiveBuffer);
@@ -13755,7 +16483,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         break;
     case 0x12: // create characters
         AddDebugText(ReceiveBuffer, Size);
-        ReceiveCreatePlayerViewportExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveCreatePlayerViewportSeason52(received_span);
+        }
+        else
+        {
+            ReceiveCreatePlayerViewportExtended(received_span);
+        }
         break;
     case 0x13: // create monsters
         // AddDebugText(ReceiveBuffer,Size);
@@ -13765,16 +16500,30 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         // AddDebugText(ReceiveBuffer,Size);
         ReceiveCreateSummonViewport(ReceiveBuffer);
         break;
-    case 0x45: // create monsters
+    case 0x45: // transformed characters
         // AddDebugText(ReceiveBuffer,Size);
-        ReceiveCreateTransformViewport(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveCreateTransformViewportSeason52(received_span);
+        }
+        else
+        {
+            ReceiveCreateTransformViewport(received_span);
+        }
         break;
     case 0x14: // delete characters & monsters
         // AddDebugText(ReceiveBuffer,Size);
         ReceiveDeleteCharacterViewport(ReceiveBuffer);
         break;
     case 0x20: // create item
-        ReceiveCreateItemViewportExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveCreateItemViewportSeason52(received_span);
+        }
+        else
+        {
+            ReceiveCreateItemViewportExtended(received_span);
+        }
         break;
     case 0x2F:
         ReceiveCreateMoney(received_span);
@@ -13783,20 +16532,48 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveDeleteItemViewport(ReceiveBuffer);
         break;
     case 0x22: // get item
-        ReceiveGetItem(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveGetItemSeason52(received_span);
+        }
+        else
+        {
+            ReceiveGetItem(received_span);
+        }
         break;
     case 0x23: // drop item
         ReceiveDropItem(ReceiveBuffer);
         break;
     case 0x24: // equipment item
         AddDebugText(ReceiveBuffer, Size);
-        ReceiveEquipmentItemExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveEquipmentItemSeason52(received_span);
+        }
+        else
+        {
+            ReceiveEquipmentItemExtended(received_span);
+        }
         break;
     case 0x25: // change character
-        ReceiveChangePlayer(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveChangePlayerSeason52(received_span);
+        }
+        else
+        {
+            ReceiveChangePlayer(received_span);
+        }
         break;
     case PACKET_ATTACK: // attack character
-        ReceiveAttackDamageExtended(ReceiveBuffer);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveAttackDamageSeason52(received_span);
+        }
+        else
+        {
+            ReceiveAttackDamageExtended(ReceiveBuffer);
+        }
         break;
     case 0x18: // action character
         ReceiveAction(ReceiveBuffer, Size);
@@ -13852,7 +16629,20 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveDurability(ReceiveBuffer);
         break;
     case 0x26:
-        ReceiveStatsExtended(ReceiveBuffer);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveLifeSeason52(received_span);
+        }
+        else
+        {
+            ReceiveStatsExtended(ReceiveBuffer);
+        }
+        break;
+    case 0x27:
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveManaSeason52(received_span);
+        }
         break;
     case 0x28:
         ReceiveDeleteInventory(ReceiveBuffer);
@@ -13875,10 +16665,24 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         break;
     case 0x31:
         // AddDebugText(ReceiveBuffer,Size);
-        ReceiveTradeInventoryExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveTradeInventorySeason52(received_span);
+        }
+        else
+        {
+            ReceiveTradeInventoryExtended(received_span);
+        }
         break;
     case 0x32:
-        ReceiveBuyExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveBuySeason52(received_span);
+        }
+        else
+        {
+            ReceiveBuyExtended(received_span);
+        }
         break;
     case 0x33:
         ReceiveSell(ReceiveBuffer);
@@ -13902,7 +16706,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         break;
     case 0x39:
         // AddDebugText(ReceiveBuffer,Size);
-        ReceiveTradeYourInventoryExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveTradeYourInventorySeason52(received_span);
+        }
+        else
+        {
+            ReceiveTradeYourInventoryExtended(received_span);
+        }
         break;
     case 0x3A:
         // AddDebugText(ReceiveBuffer,Size);
@@ -14000,7 +16811,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveGuildAssign(ReceiveBuffer);
         break;
     case 0xE5:
-        ReceiveGuildRelationShip(ReceiveBuffer);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveGuildRelationShipSeason52(received_span);
+        }
+        else
+        {
+            ReceiveGuildRelationShip(ReceiveBuffer);
+        }
         break;
     case 0xE6:
         ReceiveGuildRelationShipResult(ReceiveBuffer);
@@ -14053,7 +16871,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveStorageStatus(ReceiveBuffer);
         break;
     case 0x86:
-        ReceiveMixExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveMixSeason52(received_span);
+        }
+        else
+        {
+            ReceiveMixExtended(received_span);
+        }
         break;
     case 0x87:
         ReceiveMixExit(ReceiveBuffer);
@@ -14352,10 +17177,24 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             ReceiveDestroyPersonalShop(ReceiveBuffer);
             break;
         case 0x05:
-            ReceivePersonalShopItemList(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceivePersonalShopItemListSeason52(received_span);
+            }
+            else
+            {
+                ReceivePersonalShopItemList(received_span);
+            }
             break;
         case 0x06:
-            ReceivePurchaseItem(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceivePurchaseItemSeason52(received_span);
+            }
+            else
+            {
+                ReceivePurchaseItem(received_span);
+            }
             break;
         case 0x08:
             NotifySoldItem(ReceiveBuffer);
@@ -14367,7 +17206,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
             NotifyClosePersonalShop(ReceiveBuffer);
             break;
         case 0x13:
-            ReceiveRefreshItemList(received_span);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveRefreshItemListSeason52(received_span);
+            }
+            else
+            {
+                ReceiveRefreshItemList(received_span);
+            }
             break;
         }
     }
@@ -14399,11 +17245,25 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         switch (subcode)
         {
         case 0x00:
-            ReceiveChangeMapServerInfo(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveChangeMapServerInfoSeason52(received_span);
+            }
+            else
+            {
+                ReceiveChangeMapServerInfo(ReceiveBuffer);
+            }
             break;
 
         case 0x01:
-            ReceiveChangeMapServerResult(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveChangeMapServerResultSeason52(received_span);
+            }
+            else
+            {
+                ReceiveChangeMapServerResult(ReceiveBuffer);
+            }
             break;
         }
     }
@@ -14695,7 +17555,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveLetter(ReceiveBuffer);
         break;
     case 0xC7:
-        ReceiveLetterText(received_span, false);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveLetterTextSeason52(received_span, false);
+        }
+        else
+        {
+            ReceiveLetterText(received_span, false);
+        }
         break;
     case 0xC8:
         ReceiveLetterDeleteResult(ReceiveBuffer);
@@ -14992,16 +17859,34 @@ void ProcessPacketCallback(const PacketInfo* Packet)
 
 static void HandleIncomingPacket(int32_t Handle, const BYTE* ReceiveBuffer, int32_t Size)
 {
-    auto Packet = std::make_unique<PacketInfo>();
-    Packet->ReceiveBuffer = std::make_unique<BYTE[]>(Size);
-    std::copy(ReceiveBuffer, ReceiveBuffer + Size, Packet->ReceiveBuffer.get());
-    Packet->ConnectionHandle = Handle;
-    Packet->Size = Size;
+    const auto enqueue = [Handle](const BYTE* data, int32_t size)
+    {
+        auto packet = std::make_unique<PacketInfo>();
+        packet->ReceiveBuffer = std::make_unique<BYTE[]>(size);
+        std::copy(data, data + size, packet->ReceiveBuffer.get());
+        packet->ConnectionHandle = Handle;
+        packet->Size = size;
+        Network::IncomingPacketQueue::Instance().Push(std::move(packet));
+    };
 
-    // Hand the packet to the main thread for processing. The main loop drains
-    // this queue every frame and calls ProcessPacketCallback. Replaces the old
-    // PostMessage(WM_RECEIVE_BUFFER) round-trip through the Win32 message queue.
-    Network::IncomingPacketQueue::Instance().Push(std::move(Packet));
+    if (!mu::net::s52::DirectProtocolEnabled())
+    {
+        enqueue(ReceiveBuffer, Size);
+        return;
+    }
+
+    std::vector<std::vector<std::uint8_t>> packets;
+    if (!mu::net::s52::DirectSession::Instance().ProcessIncoming(
+            ReceiveBuffer, static_cast<std::size_t>(Size), packets))
+    {
+        return;
+    }
+
+    for (const auto& packet : packets)
+    {
+        enqueue(reinterpret_cast<const BYTE*>(packet.data()),
+                static_cast<int32_t>(packet.size()));
+    }
 }
 
 bool CheckExceptionBuff(eBuffState buff, OBJECT* o, bool iserase)

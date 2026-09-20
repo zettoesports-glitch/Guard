@@ -18,6 +18,7 @@
 #include "Engine/Object/ZzzInterface.h"
 #include "Audio/DSPlaySound.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 
 #include "Core/Utilities/ReadScript.h"
@@ -5555,9 +5556,21 @@ BOOL CUICurQuestListBox::DoLineMouseAction(int iLineNumber)
             g_pMyQuestInfoWindow->QuestGiveUpBtnEnable(true);
             g_pMyQuestInfoWindow->SetSelQuestSummary();
 
-            const auto questNumber = static_cast<uint16_t>(LOWORD(m_TextListIter->m_dwIndex));
-            const auto questGroup = static_cast<uint16_t>(HIWORD(m_TextListIter->m_dwIndex));
-            SocketClient->ToGameServer()->SendQuestStateRequest(questNumber, questGroup);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendProgressQuestRequestReward(
+                    SocketClient,
+                    static_cast<std::uint32_t>(m_TextListIter->m_dwIndex));
+            }
+            else
+            {
+                const auto questNumber =
+                    static_cast<uint16_t>(LOWORD(m_TextListIter->m_dwIndex));
+                const auto questGroup =
+                    static_cast<uint16_t>(HIWORD(m_TextListIter->m_dwIndex));
+                SocketClient->ToGameServer()->SendQuestStateRequest(
+                    questNumber, questGroup);
+            }
         }
     }
 

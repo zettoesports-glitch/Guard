@@ -2,6 +2,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "NewUIGuildMakeWindow.h"
 #include "UI/NewUI/NewUIManager.h"
 #include "UI/NewUI/Dialogs/NewUICommonMessageBox.h"
@@ -266,7 +267,14 @@ void CNewUIGuildMakeWindow::ClosingProcess()
     ChangeWindowState(GUILDMAKE_INFO);
     ChangeEditBox(UISTATE_HIDE);
 
-    SocketClient->ToGameServer()->SendGuildMasterAnswer(false);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildMasterAnswer(SocketClient, 0);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildMasterAnswer(false);
+    }
 }
 
 void CNewUIGuildMakeWindow::ChangeWindowState(const GUILDMAKE_STATE state)
@@ -304,7 +312,14 @@ bool CNewUIGuildMakeWindow::UpdateGMInfo()
 
     if (m_Button[GUILDMAKEBUTTON_INFO_MAKE].UpdateMouseEvent())
     {
+        if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildMasterAnswer(SocketClient, 1);
+    }
+    else
+    {
         SocketClient->ToGameServer()->SendGuildMasterAnswer(true);
+    }
         ChangeWindowState(GUILDMAKE_MARK);
         ChangeEditBox(UISTATE_NORMAL);
         return true;
@@ -418,7 +433,16 @@ bool CNewUIGuildMakeWindow::UpdateGMResultInfo()
                 Mark[i / 2] += GuildMark[MARK_EDIT].Mark[i];
         }
 
-        SocketClient->ToGameServer()->SendGuildCreateRequest(MU_C16(GuildMark[MARK_EDIT].GuildName), Mark, sizeof Mark);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildCreate(
+                SocketClient, 0, GuildMark[MARK_EDIT].GuildName, Mark, sizeof Mark);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildCreateRequest(
+                MU_C16(GuildMark[MARK_EDIT].GuildName), Mark, sizeof Mark);
+        }
         g_pNewUISystem->Hide(SEASON3B::INTERFACE_NPCGUILDMASTER);
         return true;
     }

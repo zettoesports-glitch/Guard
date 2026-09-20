@@ -10,6 +10,7 @@
 #include "Engine/Object/ZzzOpenData.h"
 #include "World/MapInfra/MapManager.h"
 #include "Engine/Object/ZzzInterface.h"
+#include "Network/Season52/Season52Direct.h"
 
 #ifdef _EDITOR
 #include "imgui.h"
@@ -539,7 +540,16 @@ bool SEASON3B::CNewUIChatInputBox::UpdateKeyEvent()
 
                     if (m_pWhsprIDInputBox->GetState() == UISTATE_NORMAL && wcslen(szChatText) && wcslen(szWhisperID) > 0)
                     {
-                        SocketClient->ToGameServer()->SendWhisperMessage(MU_C16(szWhisperID), MU_C16(wstrText.c_str()));
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendWhisper(
+                                SocketClient, szWhisperID, wstrText.c_str());
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendWhisperMessage(
+                                MU_C16(szWhisperID), MU_C16(wstrText.c_str()));
+                        }
                         g_pChatListBox->AddText(Hero->ID, szChatText, SEASON3B::TYPE_WHISPER_MESSAGE);
                         AddWhsprIDHistory(szWhisperID);
                     }
@@ -562,7 +572,16 @@ bool SEASON3B::CNewUIChatInputBox::UpdateKeyEvent()
                             UI::Chat::CheckChatText(szChatText);
                         }
 
-                        SocketClient->ToGameServer()->SendPublicChatMessage(MU_C16(Hero->ID), MU_C16(wstrText.c_str()));
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendPublicChat(
+                                SocketClient, Hero->ID, wstrText.c_str());
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendPublicChatMessage(
+                                MU_C16(Hero->ID), MU_C16(wstrText.c_str()));
+                        }
                         AddChatHistory(wstrText);
                     }
                 }

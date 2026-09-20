@@ -12,6 +12,7 @@
 #include "Engine/Object/ZzzCharacter.h"
 #include "Engine/Object/ZzzInterface.h"
 #include "Network/Reconnect/ReconnectManager.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/Legacy/UIControls.h"
 #include "Scenes/SceneCore.h"
 #include "I18N/All.h"
@@ -401,7 +402,16 @@ void CLoginWin::RequestLogin()
             wcscpy(LogInID, (m_Username));
             CurrentProtocolState = REQUEST_LOG_IN;
 
-            SocketClient->ToGameServer()->SendLogin(m_Username, m_Password, Version, Serial);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendLogin(
+                    SocketClient, m_Username, m_Password, Version, Serial);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendLogin(
+                    m_Username, m_Password, Version, Serial);
+            }
 
             // Keep the credentials in memory so auto-reconnect can re-login
             // without prompting after an in-game disconnect.

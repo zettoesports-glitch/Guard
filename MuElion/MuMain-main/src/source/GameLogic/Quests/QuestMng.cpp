@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "QuestMng.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 
 
@@ -828,9 +829,20 @@ void CQuestMng::SendQuestIndexByEtcSelection()
         return;
 
     auto iter = m_listQuestIndexByEtc.begin();
-    const auto questNumber = static_cast<uint16_t>(LOWORD(*iter));
-    const auto questGroup = static_cast<uint16_t>(HIWORD(*iter));
-    SocketClient->ToGameServer()->SendQuestSelectRequest(questNumber, questGroup, 0);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendQuestSelection(
+            SocketClient,
+            static_cast<std::uint32_t>(*iter),
+            0);
+    }
+    else
+    {
+        const auto questNumber = static_cast<uint16_t>(LOWORD(*iter));
+        const auto questGroup = static_cast<uint16_t>(HIWORD(*iter));
+        SocketClient->ToGameServer()->SendQuestSelectRequest(
+            questNumber, questGroup, 0);
+    }
 }
 
 void CQuestMng::DelQuestIndexByEtcList(DWORD dwQuestIndex)

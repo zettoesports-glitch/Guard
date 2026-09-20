@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "GameLogic/Combat/SkillCast.h"
 #include "Character/CharacterManager.h" // gCharacterManager
 #include "GameLogic/Social/MonkSystem.h" // g_CMonkSystem
@@ -458,7 +459,16 @@ void UseSkillWarrior(CHARACTER* c, OBJECT* o)
                 && Skill != AT_SKILL_SPACE_SPLIT
                 )
             {
-                SocketClient->ToGameServer()->SendInstantMoveRequest(positionX, positionY);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendInstantMove(
+                        SocketClient, positionX, positionY);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendInstantMoveRequest(
+                        positionX, positionY);
+                }
             }
         }
 #endif
@@ -824,7 +834,16 @@ void UseSkillRagefighter(CHARACTER* pCha, OBJECT* pObj)
 #ifdef SEND_POSITION_TO_SERVER
         if ((TerrainWall[TargetIndex] & TW_NOMOVE) != TW_NOMOVE && (TerrainWall[TargetIndex] & TW_NOGROUND) != TW_NOGROUND)
         {
-            SocketClient->ToGameServer()->SendInstantMoveRequest(CharPosX, CharPosY);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendInstantMove(
+                    SocketClient, CharPosX, CharPosY);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendInstantMoveRequest(
+                    CharPosX, CharPosY);
+            }
         }
 #endif
         

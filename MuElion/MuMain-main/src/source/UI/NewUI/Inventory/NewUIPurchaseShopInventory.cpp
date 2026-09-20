@@ -96,6 +96,17 @@ bool SEASON3B::CNewUIPurchaseShopInventory::InsertItem(int iIndex, std::span<con
     return false;
 }
 
+bool SEASON3B::CNewUIPurchaseShopInventory::InsertItemOld(
+    int iIndex, std::span<const BYTE> pbyItemPacket)
+{
+    if (m_pNewInventoryCtrl)
+    {
+        return m_pNewInventoryCtrl->AddItemOld(iIndex, pbyItemPacket);
+    }
+
+    return false;
+}
+
 void SEASON3B::CNewUIPurchaseShopInventory::DeleteItem(int iIndex)
 {
     if (m_pNewInventoryCtrl)

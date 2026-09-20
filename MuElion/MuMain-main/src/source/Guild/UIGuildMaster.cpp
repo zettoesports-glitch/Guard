@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UIGuildInfo.h"
 #include "Engine/Object/ZzzInventory.h"
 #include "Render/Textures/ZzzOpenglUtil.h"
@@ -106,7 +107,14 @@ int DoEditGuildMarkConfirmAction(POPUP_RESULT Result)
     {
         m_nCurrMode = MODE_EDIT_GUILDMARK;
         m_eCurrStep = STEP_EDIT_GUILD_MARK;
-        SocketClient->ToGameServer()->SendGuildMasterAnswer(true);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildMasterAnswer(SocketClient, 1);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildMasterAnswer(true);
+        }
 
         if (Hero->GuildStatus != G_NONE)
             memcpy(&GuildMark[MARK_EDIT], &GuildMark[Hero->GuildMarkIndex], sizeof(MARK_t));
@@ -116,11 +124,23 @@ int DoEditGuildMarkConfirmAction(POPUP_RESULT Result)
 
 int DoGuildRelationReplyAction(POPUP_RESULT Result)
 {
-    SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
-        m_byRelationShipType,
-        m_byRelationShipRequestType,
-        Result == POPUP_RESULT_YES,
-        MAKEWORD(m_byTargetUserIndexL, m_byTargetUserIndexH));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRelationshipResponse(
+            SocketClient,
+            static_cast<std::uint8_t>(m_byRelationShipType),
+            static_cast<std::uint8_t>(m_byRelationShipRequestType),
+            Result == POPUP_RESULT_YES ? 1 : 0,
+            MAKEWORD(m_byTargetUserIndexL, m_byTargetUserIndexH));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
+            m_byRelationShipType,
+            m_byRelationShipRequestType,
+            Result == POPUP_RESULT_YES,
+            MAKEWORD(m_byTargetUserIndexL, m_byTargetUserIndexH));
+    }
 
     return 1;
 }
@@ -363,14 +383,34 @@ void CUIGuildMaster::DoCreateInfoAction()
 
         if (m_nCurrMode == MODE_CREATE_GUILD)
         {
-            SocketClient->ToGameServer()->SendGuildCreateRequest(MU_C16(GuildMark[MARK_EDIT].GuildName), Mark, sizeof Mark);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendGuildCreate(
+                    SocketClient,
+                    0,
+                    GuildMark[MARK_EDIT].GuildName,
+                    Mark,
+                    sizeof Mark);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendGuildCreateRequest(
+                    MU_C16(GuildMark[MARK_EDIT].GuildName), Mark, sizeof Mark);
+            }
         }
         //		else if( m_nCurrMode == MODE_EDIT_GUILDMARK )
         //		{
         //			SendRequestEditGuildMark( (BYTE*)GuildMark[MARK_EDIT].GuildName, Mark );
         //		}
 
-        SocketClient->ToGameServer()->SendGuildMasterAnswer(false);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildMasterAnswer(SocketClient, 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildMasterAnswer(false);
+        }
         Close();
 
         g_pNewUISystem->Hide(SEASON3B::INTERFACE_NPCGUILDMASTER);
@@ -456,7 +496,14 @@ void CUIGuildMaster::DoGuildMasterMainAction()
         m_nCurrMode = MODE_CREATE_GUILD;
         m_eCurrStep = STEP_CREATE_GUILDINFO;
         GuildInputEnable = TRUE;
-        SocketClient->ToGameServer()->SendGuildMasterAnswer(true);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildMasterAnswer(SocketClient, 1);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildMasterAnswer(true);
+        }
     }
     if (m_EditGuildMarkButton.DoMouseAction())
     {
@@ -476,7 +523,14 @@ void CUIGuildMaster::DoGuildMasterMainAction()
         MouseLButtonPush = FALSE;
         MouseUpdateTime = 0;
         MouseUpdateTimeMax = 6;
-        SocketClient->ToGameServer()->SendGuildMasterAnswer(false);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildMasterAnswer(SocketClient, 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildMasterAnswer(false);
+        }
         PlayBuffer(SOUND_CLICK01);
         Close();
         g_pNewUIMng->ShowInterface(SEASON3B::INTERFACE_NPCGUILDMASTER, false);
@@ -530,11 +584,23 @@ void CUIGuildMaster::ReceiveGuildRelationShip(GuildRelationshipType byRelationSh
 {
     if (g_pUIPopup->GetPopupID() != 0)
     {
-        SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
-            byRelationShipType,
-            byRequestType,
-            0x00,
-            MAKEWORD(byTargetUserIndexH, byTargetUserIndexL));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildRelationshipResponse(
+                SocketClient,
+                static_cast<std::uint8_t>(byRelationShipType),
+                static_cast<std::uint8_t>(byRequestType),
+                0x00,
+                MAKEWORD(byTargetUserIndexL, byTargetUserIndexH));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
+                byRelationShipType,
+                byRequestType,
+                0x00,
+                MAKEWORD(byTargetUserIndexH, byTargetUserIndexL));
+        }
         return;
     }
 
@@ -674,7 +740,14 @@ void CUIGuildMaster::Close()
     GuildInputEnable = FALSE;
     CloseMyPopup();
 
-    SocketClient->ToGameServer()->SendGuildMasterAnswer(false);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildMasterAnswer(SocketClient, 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildMasterAnswer(false);
+        }
 
     if (g_pSingleTextInputBox)
     {

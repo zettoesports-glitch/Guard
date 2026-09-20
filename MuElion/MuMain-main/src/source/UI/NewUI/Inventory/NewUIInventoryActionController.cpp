@@ -12,6 +12,7 @@
 #include "GameLogic/Items/CSItemOption.h"
 #include "World/MapInfra/MapManager.h"
 #include "Network/Server/SocketSystem.h"
+#include "Network/Season52/Season52Direct.h"
 #include "GameLogic/Social/MonkSystem.h"
 #include "Character/CharacterManager.h"
 #include "Audio/DSPlaySound.h"
@@ -24,6 +25,25 @@
 
 namespace SEASON3B
 {
+namespace
+{
+void SendMiniGameOpeningStateRequestCompat(
+    MiniGameType eventType, BYTE eventLevel)
+{
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendMiniGameOpeningStateRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(eventType),
+            static_cast<std::uint8_t>(eventLevel));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(
+            eventType, eventLevel);
+    }
+}
+} // namespace
 
 CNewUIInventoryActionController::CNewUIInventoryActionController() : m_pContext(nullptr) {}
 
@@ -265,7 +285,15 @@ bool CNewUIInventoryActionController::HandleSellToNPC(CNewUIInventoryCtrl* targe
         return true;
     }
 
-    SocketClient->ToGameServer()->SendSellItemToNpcRequest(sourceIndex);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendSellItem(
+            SocketClient, static_cast<std::uint8_t>(sourceIndex));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendSellItemToNpcRequest(sourceIndex);
+    }
     g_pNPCShop->SetSellingItem(true);
     return true;
 }
@@ -449,7 +477,19 @@ bool CNewUIInventoryActionController::TryDropItem(CNewUIInventoryCtrl* targetCon
     const int ty = Hero->PositionY;
     const int sourceIndex = pPickedItem->GetSourceLinealPos();
 
-    SocketClient->ToGameServer()->SendDropItemRequest(tx, ty, sourceIndex);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendDropItem(
+            SocketClient,
+            static_cast<std::uint8_t>(tx),
+            static_cast<std::uint8_t>(ty),
+            static_cast<std::uint8_t>(sourceIndex));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendDropItemRequest(
+            tx, ty, sourceIndex);
+    }
     SendDropItem = sourceIndex;
 
     return true;
@@ -472,11 +512,27 @@ bool CNewUIInventoryActionController::RepairItemAtMousePoint(CNewUIInventoryCtrl
 
     if (g_pNewUISystem->IsVisible(INTERFACE_NPCSHOP) && g_pNPCShop->IsRepairShop())
     {
-        SocketClient->ToGameServer()->SendRepairItemRequest(iIndex, 0);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendRepairItem(
+                SocketClient, static_cast<std::uint8_t>(iIndex), 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRepairItemRequest(iIndex, 0);
+        }
     }
     else
     {
-        SocketClient->ToGameServer()->SendRepairItemRequest(iIndex, 1);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendRepairItem(
+                SocketClient, static_cast<std::uint8_t>(iIndex), 1);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRepairItemRequest(iIndex, 1);
+        }
     }
 
     return true;
@@ -728,7 +784,7 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
             return false;
         }
 
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::ChaosCastle, pItem->Level);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::ChaosCastle, pItem->Level);
         g_pMyInventory->SetStandbyItemKey(pItem->Key);
         return true;
     }
@@ -736,14 +792,14 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
     if (pItem->Type == ITEM_HELPER + 46)
     {
         const BYTE byPossibleLevel = CaculateFreeTicketLevel(FREETICKET_TYPE_DEVILSQUARE);
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::DevilSquare, byPossibleLevel);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::DevilSquare, byPossibleLevel);
         return false;
     }
 
     if (pItem->Type == ITEM_HELPER + 47)
     {
         const BYTE byPossibleLevel = CaculateFreeTicketLevel(FREETICKET_TYPE_BLOODCASTLE);
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::BloodCastle, byPossibleLevel);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::BloodCastle, byPossibleLevel);
         return false;
     }
 
@@ -762,7 +818,7 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
     if (pItem->Type == ITEM_HELPER + 61)
     {
         const BYTE byPossibleLevel = CaculateFreeTicketLevel(FREETICKET_TYPE_CURSEDTEMPLE);
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::CursedTemple, byPossibleLevel);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::CursedTemple, byPossibleLevel);
         return true;
     }
 
@@ -774,20 +830,20 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
             return false;
         }
 
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::ChaosCastle, pItem->Level);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::ChaosCastle, pItem->Level);
         g_pMyInventory->SetStandbyItemKey(pItem->Key);
         return true;
     }
 
     if (pItem->Type == ITEM_SCROLL_OF_BLOOD)
     {
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::CursedTemple, pItem->Level);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::CursedTemple, pItem->Level);
         return true;
     }
 
     if (pItem->Type == ITEM_DEVILS_INVITATION)
     {
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::DevilSquare, pItem->Level);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::DevilSquare, pItem->Level);
         return true;
     }
 
@@ -799,7 +855,7 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
         }
         else
         {
-            SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::BloodCastle, pItem->Level - 1);
+            SendMiniGameOpeningStateRequestCompat(MiniGameType::BloodCastle, pItem->Level - 1);
         }
 
         return true;

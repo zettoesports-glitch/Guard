@@ -25,6 +25,7 @@
 #include "Core/Utilities/Log/MuLogger.h"
 #include "Core/Utilities/FrameProfiler.h"
 #include "Network/Server/WSclient.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Network/Reconnect/ReconnectManager.h"
 #include "Engine/AI/GOBoid.h"
 #include "GameLogic/Items/PersonalShopTitleImp.h"
@@ -136,7 +137,16 @@ static void InitializeMainScene()
     MU_LOG_DEBUG(mu::log::Get("network"), "SendRequestJoinMapServer");
 
     CurrentProtocolState = REQUEST_JOIN_MAP_SERVER;
-    SocketClient->ToGameServer()->SendSelectCharacter(MU_C16(CharactersClient[SelectedHero].ID));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendSelectCharacter(
+            SocketClient, CharactersClient[SelectedHero].ID);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendSelectCharacter(
+            MU_C16(CharactersClient[SelectedHero].ID));
+    }
 
     // Remember which character is in play so auto-reconnect can re-select it.
     ReconnectManager::Instance().CacheCharacter(CharactersClient[SelectedHero].ID);

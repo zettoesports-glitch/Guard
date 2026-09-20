@@ -11,6 +11,7 @@
 #include "GameLogic/Pets/GIPetManager.h"
 #include "GameLogic/Items/CSItemOption.h"
 #include "Network/Server/SocketSystem.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/Scaling/UITransform.h"
 #include "World/MapInfra/MapManager.h"
 #include "GameLogic/Items/MixMgr.h"
@@ -475,6 +476,30 @@ bool SEASON3B::CNewUIInventoryCtrl::AddItem(int iLinealPos, std::span<const BYTE
     return AddItem(iColumnX, iRowY, itemData);
 }
 
+bool SEASON3B::CNewUIInventoryCtrl::AddItemOld(
+    int iLinealPos, std::span<const BYTE> itemData)
+{
+    iLinealPos -= m_nIndexOffset;
+    if (iLinealPos < 0 || iLinealPos >= m_nColumn * m_nRow
+        || itemData.size() < 12 || m_pNewItemMng == nullptr)
+    {
+        return false;
+    }
+
+    const int iColumnX = iLinealPos % m_nColumn;
+    const int iRowY = iLinealPos / m_nColumn;
+
+    ITEM* item = m_pNewItemMng->CreateItemOld(itemData.first(12));
+    if (item == nullptr)
+    {
+        return false;
+    }
+
+    const bool added = AddItem(iColumnX, iRowY, item);
+    m_pNewItemMng->DeleteItem(item);
+    return added;
+}
+
 bool SEASON3B::CNewUIInventoryCtrl::AddItem(int iColumnX, int iRowY, std::span<const BYTE> itemData)
 {
     if (iColumnX < 0 || iRowY < 0 || iColumnX >= m_nColumn || iRowY >= m_nRow)
@@ -666,7 +691,12 @@ void SEASON3B::CNewUIInventoryCtrl::RequestInventoryRefresh() const
 
     lastRefreshRequestTick = currentTick;
 
-    if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendInventoryRequest(
+            SocketClient);
+    }
+    else if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
     {
         SocketClient->ToGameServer()->SendInventoryRequest();
     }

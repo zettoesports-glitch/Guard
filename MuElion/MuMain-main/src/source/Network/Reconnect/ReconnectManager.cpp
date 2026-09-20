@@ -6,7 +6,8 @@
 #include <cmath>
 #include <cwchar>
 
-#include "Network/Server/WSclient.h"   // SocketClient, CreateSocket, DeleteSocket,
+#include "Network/Server/WSclient.h"
+#include "Network/Season52/Season52Direct.h"   // SocketClient, CreateSocket, DeleteSocket,
                                        // ResetClientToLoginScene, protocol states
 #include "Scenes/SceneCore.h"          // SceneFlag, szServerIpAddress, g_ServerPort
 #include "Scenes/SceneCommon.h"        // SelectedHero, MAX_CHARACTERS_PER_ACCOUNT
@@ -332,7 +333,16 @@ void ReconnectManager::UpdateConnecting()
         LogIn = 1;
         wcscpy_s(LogInID, _countof(LogInID), m_username);
         CurrentProtocolState = REQUEST_LOG_IN;
-        SocketClient->ToGameServer()->SendLogin(m_username, m_password, Version, Serial);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendLogin(
+                SocketClient, m_username, m_password, Version, Serial);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendLogin(
+                m_username, m_password, Version, Serial);
+        }
 
         EnterPhase(Phase::LoggingIn);
         return;
@@ -428,7 +438,7 @@ void ReconnectManager::UpdateRetrying()
     LogIn = 0;
     CurrentProtocolState = REQUEST_JOIN_SERVER;
     DeleteSocket();
-    CreateSocket(m_serverIp, m_serverPort);
+    CreateSocket(m_serverIp, m_serverPort, ServerEndpointRole::GameServer);
 
     if (IsSocketAlive())
     {

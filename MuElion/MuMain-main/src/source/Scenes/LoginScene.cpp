@@ -21,6 +21,7 @@
 #include "UI/Legacy/UIMng.h"
 #include "Core/Input/Input.h"
 #include "Network/Server/WSclient.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Core/Utilities/Log/muConsoleDebug.h"
 #include "I18N/All.h"
 #include "Engine/Object/ZzzCharacter.h"
@@ -119,7 +120,19 @@ void DeleteCharacter()
     }
 
     CurrentProtocolState = REQUEST_DELETE_CHARACTER;
-    SocketClient->ToGameServer()->SendDeleteCharacter(MU_C16(CharactersClient[characterToDelete].ID), MU_C16(InputText[0]));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendDeleteCharacter(
+            SocketClient,
+            CharactersClient[characterToDelete].ID,
+            InputText[0]);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendDeleteCharacter(
+            MU_C16(CharactersClient[characterToDelete].ID),
+            MU_C16(InputText[0]));
+    }
 
     PlayBuffer(SOUND_MENU01);
 
@@ -285,7 +298,7 @@ void CreateLogInScene()
     CUIMng::Instance().CreateLoginScene();
 
     CurrentProtocolState = REQUEST_JOIN_SERVER;
-    CreateSocket(szServerIpAddress, g_ServerPort);
+    CreateSocket(szServerIpAddress, g_ServerPort, ServerEndpointRole::ConnectServer);
 
     GuildInputEnable = false;
     TabInputEnable = false;
@@ -360,7 +373,16 @@ void NewMoveLogInScene()
 
         SceneFlag = CHARACTER_SCENE;
         CurrentProtocolState = REQUEST_CHARACTERS_LIST;
-        SocketClient->ToGameServer()->SendRequestCharacterList(g_pMultiLanguage->GetLanguage());
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCharacterList(
+                SocketClient, g_pMultiLanguage->GetLanguage());
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRequestCharacterList(
+                g_pMultiLanguage->GetLanguage());
+        }
     }
 
     g_ConsoleDebug->UpdateMainScene();

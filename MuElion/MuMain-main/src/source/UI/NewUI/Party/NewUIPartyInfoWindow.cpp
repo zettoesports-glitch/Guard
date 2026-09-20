@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "UI/NewUI/Party/NewUIPartyInfoWindow.h"
 #include "UI/NewUI/NewUISystem.h"
@@ -71,7 +72,14 @@ void CNewUIPartyInfoWindow::InitButtons()
 
 void CNewUIPartyInfoWindow::OpenningProcess()
 {
-    SocketClient->ToGameServer()->SendPartyListRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendPartyList(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendPartyListRequest();
+    }
 }
 
 void CNewUIPartyInfoWindow::ClosingProcess()
@@ -281,7 +289,15 @@ bool CNewUIPartyInfoWindow::LeaveParty(const int iIndex)
     if (!gMapManager.IsCursedTemple())
     {
         PlayBuffer(SOUND_CLICK01);
-        SocketClient->ToGameServer()->SendPartyPlayerKickRequest(Party[iIndex].Number);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPartyLeave(
+                SocketClient, static_cast<std::uint8_t>(Party[iIndex].Number));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPartyPlayerKickRequest(Party[iIndex].Number);
+        }
     }
 
     SetParty(false);

@@ -11,6 +11,7 @@
 
 #include "Data/Translation/MultiLanguage.h"
 #include "Network/Server/WSclient.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Engine/Object/ZzzCharacter.h"
 #include "Engine/Object/ZzzOpenData.h"
 
@@ -114,7 +115,7 @@ void CSMServer::ConnectChangeMapServer(MServerInfo sInfo)
     CMultiLanguage::ConvertFromUtf8(ipAddress.data(), m_serverInfo.m_szMapSvrIpAddress.data(),
                                     static_cast<int>(kIpAddressLength));
 
-    if (CreateSocket(ipAddress.data(), m_serverInfo.m_wMapSvrPort))
+    if (CreateSocket(ipAddress.data(), m_serverInfo.m_wMapSvrPort, ServerEndpointRole::GameServer))
     {
         g_bGameServerConnected = TRUE;
     }
@@ -144,8 +145,30 @@ void CSMServer::SendChangeMapServer(void)
     ClearCharacters(-1);
     InitGame();
 
-    // TODO: Populate loginId with LogInID if credentials are required again.
-    // The map change re-authenticates via the auth codes, so it is left empty.
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        // EX502 B1:01 uses 12-byte account/name fields. The direct builder
+        // applies BUX only to the account, exactly like Louis' Main 5.2.
+        if (!mu::net::s52::DirectSession::Instance().SendMapServerMoveAuth(
+                SocketClient,
+                LogInID,
+                m_heroId.c_str(),
+                m_serverInfo.m_iJoinAuthCode1,
+                m_serverInfo.m_iJoinAuthCode2,
+                m_serverInfo.m_iJoinAuthCode3,
+                m_serverInfo.m_iJoinAuthCode4,
+                GetCurrentTickMilliseconds(),
+                Version,
+                Serial))
+        {
+            mu::log::Get("network")->error(
+                "S52: failed to send B1:01 map-server authentication");
+        }
+        return;
+    }
+
+    // Legacy managed-protocol path remains untouched while the direct Season
+    // 5.2 migration is still optional.
     std::array<char, kNameFieldLength> loginId {};
 
     BuxConvert(reinterpret_cast<BYTE*>(loginId.data()), MAX_USERNAME_SIZE);

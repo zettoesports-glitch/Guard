@@ -251,6 +251,7 @@ public:
     virtual void Init(int iInitType);
     virtual void SetClass(CLASS_TYPE byClass);
     virtual void SetEquipmentPacket(BYTE* pbyEquip);
+    virtual void SetEquipmentPacketOld(BYTE* pbyEquip);
     virtual void CopyPlayer();
     virtual void SetAngle(float fDegree);
     virtual void SetZoom(float fZoom);
@@ -537,6 +538,8 @@ public:
 
     void CacheLetterText(DWORD dwIndex, LPFS_LETTER_TEXT pLetterText);
     LPFS_LETTER_TEXT GetLetterText(DWORD dwIndex);
+    void CacheLetterTextSeason52(DWORD dwIndex, const BYTE* data, std::size_t size);
+    const std::vector<BYTE>* GetLetterTextSeason52(DWORD dwIndex) const;
     void RemoveLetterTextCache(DWORD dwIndex);
     void ClearLetterTextCache();
 
@@ -553,6 +556,7 @@ private:
 
     std::map<DWORD, FS_LETTER_TEXT, std::less<DWORD>> m_LetterCache;
     std::map<DWORD, FS_LETTER_TEXT, std::less<DWORD>>::iterator m_LetterCacheIter;
+    std::map<DWORD, std::vector<BYTE>, std::less<DWORD>> m_LetterCacheSeason52;
 };
 
 class CUILetterBoxTabWindow : public CUITabWindow

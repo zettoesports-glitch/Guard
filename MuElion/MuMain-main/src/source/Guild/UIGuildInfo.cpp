@@ -15,6 +15,7 @@
 #include "Audio/DSPlaySound.h"
 #include "Engine/Object/ZzzInventory.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 
 
@@ -48,8 +49,18 @@ int DoDisbandAction(POPUP_RESULT Result)
 {
     if (Result == POPUP_RESULT_YES)
     {
-        SocketClient->ToGameServer()->SendGuildRoleAssignRequest(G_PERSON, MU_C16(s_szTargetID), 0x03);
-        SocketClient->ToGameServer()->SendGuildListRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildRoleAssign(
+                SocketClient, 0x03, static_cast<std::uint8_t>(G_PERSON), s_szTargetID);
+            mu::net::s52::DirectSession::Instance().SendGuildListRequest(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildRoleAssignRequest(
+                G_PERSON, MU_C16(s_szTargetID), 0x03);
+            SocketClient->ToGameServer()->SendGuildListRequest();
+        }
     }
     return 1;
 }
@@ -86,9 +97,23 @@ void DoAppointAction()
 
     if (s_PopupAppointOkButton.DoMouseAction())
     {
-        SocketClient->ToGameServer()->SendGuildRoleAssignRequest(s_eAppointStatus, MU_C16(s_szTargetID), s_eAppointStatus == G_PERSON ? 0x01 : 0x02);
-
-        SocketClient->ToGameServer()->SendGuildListRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildRoleAssign(
+                SocketClient,
+                s_eAppointStatus == G_PERSON ? 0x01 : 0x02,
+                static_cast<std::uint8_t>(s_eAppointStatus),
+                s_szTargetID);
+            mu::net::s52::DirectSession::Instance().SendGuildListRequest(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildRoleAssignRequest(
+                s_eAppointStatus,
+                MU_C16(s_szTargetID),
+                s_eAppointStatus == G_PERSON ? 0x01 : 0x02);
+            SocketClient->ToGameServer()->SendGuildListRequest();
+        }
 
         g_pUIPopup->CancelPopup();
     }
@@ -419,7 +444,16 @@ int DoBanUnionGuildAction(POPUP_RESULT Result)
 {
     if (Result == POPUP_RESULT_YES)
     {
-        SocketClient->ToGameServer()->SendRemoveAllianceGuildRequest(MU_C16(s_szTargetID));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendAllianceGuildBan(
+                SocketClient, s_szTargetID);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRemoveAllianceGuildRequest(
+                MU_C16(s_szTargetID));
+        }
     }
     return 1;
 }
@@ -444,7 +478,21 @@ void CUIGuildInfo::DoGuildUnionMouseAction()
                 }
                 else
                 {
-                    SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Alliance, GuildRequestType::Leave, Hero->Key);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                            SocketClient,
+                            static_cast<std::uint8_t>(GuildRelationshipType::Alliance),
+                            static_cast<std::uint8_t>(GuildRequestType::Leave),
+                            Hero->Key);
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                            GuildRelationshipType::Alliance,
+                            GuildRequestType::Leave,
+                            Hero->Key);
+                    }
                 }
             }
 
@@ -611,7 +659,14 @@ BOOL CUIGuildInfo::DoMouseAction()
         {
             if (!m_bRequestUnionList && GuildMark[Hero->GuildMarkIndex].UnionName[0])
             {
+                if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendAllianceListRequest(SocketClient);
+            }
+            else
+            {
                 SocketClient->ToGameServer()->SendRequestAllianceList();
+            }
                 m_bRequestUnionList = TRUE;
             }
             CloseMyPopup();

@@ -25,6 +25,7 @@
 #include "Scenes/SceneCore.h"
 #include "Engine/Object/ZzzInterface.h"
 #include "Engine/Object/ZzzInventory.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "CSQuest.h"
 #include "GameLogic/Quests/DialogStructure.h"
@@ -744,7 +745,18 @@ bool CSQuest::ProcessNextProgress()
     }
     else
     {
-        SocketClient->ToGameServer()->SendLegacyQuestStateSetRequest(m_byCurrQuestIndex, LegacyQuestState::Active);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendQuestState(
+                SocketClient,
+                m_byCurrQuestIndex,
+                static_cast<std::uint8_t>(LegacyQuestState::Active));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendLegacyQuestStateSetRequest(
+                m_byCurrQuestIndex, LegacyQuestState::Active);
+        }
         return false;
     }
 }

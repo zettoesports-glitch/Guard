@@ -8,6 +8,7 @@
 #include "GameLogic/Quests/CSQuest.h"
 #include "GameLogic/Quests/DialogStructure.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "Character/CharacterManager.h"
 #include "Audio/DSPlaySound.h"
@@ -136,7 +137,20 @@ bool CNewUINPCQuest::UpdateSelTextMouseEvent()
                 else if (2 == nAnswer)
                     g_pNewUISystem->Hide(SEASON3B::INTERFACE_NPCQUEST);
                 else if (3 == nAnswer)
-                    SocketClient->ToGameServer()->SendLegacyQuestStateSetRequest(byCurQuestIndex, LegacyQuestState::Active);
+                {
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendQuestState(
+                            SocketClient,
+                            byCurQuestIndex,
+                            static_cast<std::uint8_t>(LegacyQuestState::Active));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendLegacyQuestStateSetRequest(
+                            byCurQuestIndex, LegacyQuestState::Active);
+                    }
+                }
 
                 ::PlayBuffer(SOUND_INTERFACE01);
 
@@ -465,7 +479,14 @@ void CNewUINPCQuest::ProcessOpening()
 
 bool CNewUINPCQuest::ProcessClosing()
 {
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
     return true;
 }
 
@@ -483,7 +504,18 @@ bool CNewUINPCQuest::ProcessBtns()
     {
         if (m_btnComplete.UpdateMouseEvent())
         {
-            SocketClient->ToGameServer()->SendLegacyQuestStateSetRequest(g_csQuest.GetCurrQuestIndex(), LegacyQuestState::Active);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendQuestState(
+                    SocketClient,
+                    g_csQuest.GetCurrQuestIndex(),
+                    static_cast<std::uint8_t>(LegacyQuestState::Active));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendLegacyQuestStateSetRequest(
+                    g_csQuest.GetCurrQuestIndex(), LegacyQuestState::Active);
+            }
             PlayBuffer(SOUND_INTERFACE01);
             return true;
         }

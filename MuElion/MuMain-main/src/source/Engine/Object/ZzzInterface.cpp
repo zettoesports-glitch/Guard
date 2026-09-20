@@ -26,6 +26,7 @@
 #include "Engine/Object/ZzzOpenData.h"
 #include "Render/Effects/ZzzEffect.h"
 #include "Scenes/SceneCore.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Engine/Pathing/ZzzPath.h"
 #include "Audio/DSPlaySound.h"
 #include "I18N/All.h"
@@ -1057,14 +1058,45 @@ void SendCharacterMove(unsigned short Key, float Angle, unsigned char PathNum, u
         }
     }
 
+    BYTE TargetDir = 0;
     if (PathNum == 1)
     {
-        // For example, it's 1 when the character stops walking by starting a skill.
-        // Then we just send the direction of the character and no steps.
-        Dir = ((BYTE)((Angle + 22.5f) / 360.f * 8.f + 1.f) % 8);
+        // Original Louis Main: when the character stops, the high nibble of
+        // Path[0] is the current facing direction and the low nibble is zero.
+        TargetDir = ((BYTE)((Angle + 22.5f) / 360.f * 8.f + 1.f) % 8);
+    }
+    else
+    {
+        // Original Louis Main calculates the metadata direction from the last
+        // path node to the requested cursor/target tile. It is not simply the
+        // direction of the last path segment.
+        for (int j = 0; j < 8; ++j)
+        {
+            if (DirTable[j * 2] == (TargetX - PathX[PathNum - 1])
+                && DirTable[j * 2 + 1] == (TargetY - PathY[PathNum - 1]))
+            {
+                TargetDir = static_cast<BYTE>(j);
+                break;
+            }
+        }
     }
 
-    SocketClient->ToGameServer()->SendWalkRequest(PathX[0], PathY[0], PathNum - 1, Dir, PathNew, PathNum / 2);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendWalk(
+            SocketClient,
+            PathX[0],
+            PathY[0],
+            PathNum - 1,
+            TargetDir,
+            PathNew,
+            PathNum / 2);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendWalkRequest(
+            PathX[0], PathY[0], PathNum - 1, Dir, PathNew, PathNum / 2);
+    }
 }
 
 void LetHeroStop(CHARACTER* c, BOOL bSetMovementFalse)
@@ -1106,7 +1138,17 @@ void SendRequestMagic(int Type, int Key)
     if (Type == 40 || Type == 263 || Type == 261 || abs((int)(GetTickCount() - g_dwLatestMagicTick)) > 300)
     {
         g_dwLatestMagicTick = GetTickCount();
-        SocketClient->ToGameServer()->SendTargetedSkill(Type, Key);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendTargetedSkill(
+                SocketClient,
+                static_cast<std::uint16_t>(Type),
+                static_cast<std::uint16_t>(Key));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendTargetedSkill(Type, Key);
+        }
         g_ConsoleDebug->Write(MCD_SEND, L"0x19 [SendRequestMagic(%d %d)]", Type, Key);
     }
 }
@@ -1129,7 +1171,25 @@ void SendRequestMagicContinue(int Type, int x, int y, int Angle, BYTE Dest, BYTE
 {
     CurrentSkill = Type;
 
-    SocketClient->ToGameServer()->SendAreaSkill(Type, x, y, Angle, TKey, MakeSkillSerialNumber(pSkillSerial));
+    const auto skillSerial = MakeSkillSerialNumber(pSkillSerial);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendAreaSkill(
+            SocketClient,
+            static_cast<std::uint16_t>(Type),
+            static_cast<std::uint8_t>(x),
+            static_cast<std::uint8_t>(y),
+            static_cast<std::uint8_t>(Angle),
+            Dest,
+            Tpos,
+            TKey,
+            skillSerial);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendAreaSkill(
+            Type, x, y, Angle, TKey, skillSerial);
+    }
 
     g_ConsoleDebug->Write(MCD_SEND, L"0x1E [SendRequestMagicContinue]");
 }
@@ -1227,10 +1287,30 @@ bool CheckArrow()
     return true;
 }
 
+void SendTalkToNpcProtocolAware(std::uint16_t npcId)
+{
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendTalkNpc(SocketClient, npcId);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendTalkToNpcRequest(npcId);
+    }
+}
+
 void SendRequestAction(OBJECT& obj, BYTE action)
 {
     BYTE rotation = (BYTE)((obj.Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8;
-    SocketClient->ToGameServer()->SendAnimationRequest(rotation, action);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendAnimation(
+            SocketClient, rotation, action);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendAnimationRequest(rotation, action);
+    }
 }
 
 int ItemKey = 0;
@@ -1305,7 +1385,19 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
         c->TargetCharacter = ActionTarget;
         int Dir = ((BYTE)((Hero->Object.Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8);
         c->Skill = 0;
-        SocketClient->ToGameServer()->SendHitRequest(CharactersClient[ActionTarget].Key, AT_ATTACK1, Dir);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendHit(
+                SocketClient,
+                static_cast<std::uint16_t>(CharactersClient[ActionTarget].Key),
+                AT_ATTACK1,
+                static_cast<std::uint8_t>(Dir));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendHitRequest(
+                CharactersClient[ActionTarget].Key, AT_ATTACK1, Dir);
+        }
     }
     break;
     case MOVEMENT_SKILL:
@@ -1507,7 +1599,15 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
         if (Items[ItemKey].Item.Type == ITEM_ZEN && SendGetItem == -1)
         {
             SendGetItem = ItemKey;
-            SocketClient->ToGameServer()->SendPickupItemRequest(ItemKey);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPickupItem(
+                    SocketClient, static_cast<std::uint16_t>(ItemKey));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPickupItemRequest(ItemKey);
+            }
         }
         else if (g_pMyInventory->FindEmptySlotIncludingExtensions(&Items[ItemKey].Item) == -1)
         {
@@ -1523,7 +1623,15 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
         else if (SendGetItem == -1)
         {
             SendGetItem = ItemKey;
-            SocketClient->ToGameServer()->SendPickupItemRequest(ItemKey);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPickupItem(
+                    SocketClient, static_cast<std::uint16_t>(ItemKey));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPickupItemRequest(ItemKey);
+            }
         }
         break;
 	case MOVEMENT_TALK :
@@ -1570,7 +1678,16 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 					g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYQUEST);
 
 				if (g_csQuest.IsInit())
-					SocketClient->ToGameServer()->SendLegacyQuestStateRequest();
+				{
+					if (mu::net::s52::DirectProtocolEnabled())
+					{
+						mu::net::s52::DirectSession::Instance().SendQuestHistory(SocketClient);
+					}
+					else
+					{
+						SocketClient->ToGameServer()->SendLegacyQuestStateRequest();
+					}
+				}
 
 				// === Specjalne rozmowy ===
 				const int objectType = CharactersClient[TargetNpc].Object.Type;
@@ -1596,12 +1713,12 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 						}
 						else
 						{
-							SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+							SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 						}
 					}
 					else
 					{
-						SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+						SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					}
 				}
 				else if (M34CryWolf1st::IsCyrWolf1st())
@@ -1611,17 +1728,17 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 						if (objectType == MODEL_NPC_QUARREL)
 							SEASON3B::CreateMessageBox(MSGBOX_LAYOUT_CLASS(SEASON3B::CMapEnterWerwolfMsgBoxLayout));
 
-						SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+						SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					}
 				}
 				else if (SEASON3A::CGM3rdChangeUp::Instance().IsBalgasBarrackMap())
 				{
-					SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+					SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					SEASON3B::CreateMessageBox(MSGBOX_LAYOUT_CLASS(SEASON3B::CMapEnterGateKeeperMsgBoxLayout));
 				}
 				else if (monsterIndex >= MONSTER_LITTLE_SANTA_YELLOW && monsterIndex <= MONSTER_LITTLE_SANTA_PINK)
 				{
-					SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+					SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 
 					wchar_t temp[32] = { 0 };
 					if (monsterIndex == MONSTER_LITTLE_SANTA_RED)
@@ -1634,14 +1751,14 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 				else if (monsterIndex == MONSTER_DELGADO || monsterIndex == MONSTER_LUGARD ||
 					monsterIndex == MONSTER_MARKET_UNION_MEMBER_JULIA || monsterIndex == MONSTER_DAVID)
 				{
-					SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+					SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 				}
 				else
 				{
 					if (M38Kanturu2nd::Is_Kanturu2nd())
 					{
 						if (!g_pKanturu2ndEnterNpc->IsNpcAnimation())
-							SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+							SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					}
 					else if (gMapManager.IsCursedTemple())
 					{
@@ -1661,7 +1778,7 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 					}
 					else
 					{
-						SocketClient->ToGameServer()->SendTalkToNpcRequest(CharactersClient[TargetNpc].Key);
+						SendTalkToNpcProtocolAware(static_cast<std::uint16_t>(CharactersClient[TargetNpc].Key));
 					}
 				}
 
@@ -1671,11 +1788,19 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 				{
 					ITEM* pItem = &CharacterMachine->Equipment[EQUIPMENT_HELPER];
 					if (pItem->Type == ITEM_DARK_HORSE_ITEM)
-						SocketClient->ToGameServer()->SendPetInfoRequest(PetType::DarkHorse, StorageType::Inventory, EQUIPMENT_HELPER);
+						if (!mu::net::s52::DirectProtocolEnabled())
+						{
+							SocketClient->ToGameServer()->SendPetInfoRequest(
+								PetType::DarkHorse, StorageType::Inventory, EQUIPMENT_HELPER);
+						}
 
 					pItem = &CharacterMachine->Equipment[EQUIPMENT_WEAPON_LEFT];
 					if (pItem->Type == ITEM_DARK_RAVEN_ITEM)
-						SocketClient->ToGameServer()->SendPetInfoRequest(PetType::DarkRaven, StorageType::Inventory, EQUIPMENT_WEAPON_LEFT);
+						if (!mu::net::s52::DirectProtocolEnabled())
+						{
+							SocketClient->ToGameServer()->SendPetInfoRequest(
+								PetType::DarkRaven, StorageType::Inventory, EQUIPMENT_WEAPON_LEFT);
+						}
 				}
 			}
 
@@ -2002,7 +2127,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                             return true;
                         }
 
-                        SocketClient->ToGameServer()->SendTradeRequest(c->Key);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendTradeRequest(
+                                SocketClient, static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendTradeRequest(c->Key);
+                        }
                         wchar_t message[100]{};
                         mu_swprintf(message, I18N::Game::YouHaveRequestedSToTrade, c->ID);
                         g_pSystemLogBox->AddText(message, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2026,7 +2159,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                         BYTE Dir1 = (BYTE)((o->Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8;
                         BYTE Dir2 = (BYTE)((Hero->Object.Angle[2] + 22.5f) / 360.f * 8.f + 1.f) % 8;
                         if (abs(Dir1 - Dir2) == 4) {
+                            if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendTradeRequest(
+                                SocketClient, static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
                             SocketClient->ToGameServer()->SendTradeRequest(c->Key);
+                        }
                             wchar_t message[100]{};
                             mu_swprintf(message, I18N::Game::YouHaveRequestedSToTrade, c->ID);
                             g_pSystemLogBox->AddText(message, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2235,7 +2376,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                     abs((c->PositionY) - (Hero->PositionY)) <= 1)
                 {
                     GuildPlayerKey = c->Key;
-                    SocketClient->ToGameServer()->SendGuildJoinRequest(c->Key);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendGuildJoinRequest(
+                            SocketClient, static_cast<std::uint16_t>(c->Key));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendGuildJoinRequest(c->Key);
+                    }
                     wchar_t Text[100];
                     mu_swprintf(Text, I18N::Game::YouHaveRequestedSToJoinYourGuild, c->ID);
                     g_pSystemLogBox->AddText(Text, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2255,7 +2404,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                     if (abs(Dir1 - Dir2) == 4)
                     {
                         GuildPlayerKey = c->Key;
+                        if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendGuildJoinRequest(
+                            SocketClient, static_cast<std::uint16_t>(c->Key));
+                    }
+                    else
+                    {
                         SocketClient->ToGameServer()->SendGuildJoinRequest(c->Key);
+                    }
                         wchar_t Text[100];
                         mu_swprintf(Text, I18N::Game::YouHaveRequestedSToJoinYourGuild, c->ID);
                         g_pSystemLogBox->AddText(Text, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2291,19 +2448,55 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                     if (!wcscmp(Text, I18N::Game::Alliance1354) || !wcsicmp(Text, L"/union"))
                     {
                         //SendRequestGuildRelationShip(0x01, 0x01, HIBYTE(CharactersClient[SelectedCharacter].Key), LOBYTE(CharactersClient[SelectedCharacter].Key));
-                        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Alliance, GuildRequestType::Join, CharactersClient[SelectedCharacter].Key);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Alliance),
+                                static_cast<std::uint8_t>(GuildRequestType::Join),
+                                static_cast<std::uint16_t>(CharactersClient[SelectedCharacter].Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Alliance, GuildRequestType::Join, CharactersClient[SelectedCharacter].Key);
+                        }
                     }
                     else if (!wcscmp(Text, I18N::Game::Hostilities) || !wcsicmp(Text, L"/rival"))
                     {
                         //SendRequestGuildRelationShip(0x02, 0x01, HIBYTE(CharactersClient[SelectedCharacter].Key), LOBYTE(CharactersClient[SelectedCharacter].Key));
-                        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Join, CharactersClient[SelectedCharacter].Key);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+                                static_cast<std::uint8_t>(GuildRequestType::Join),
+                                static_cast<std::uint16_t>(CharactersClient[SelectedCharacter].Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Hostility, GuildRequestType::Join, CharactersClient[SelectedCharacter].Key);
+                        }
                     }
                     else
                     {
                         SetAction(&Hero->Object, PLAYER_RESPECT1);
                         SendRequestAction(Hero->Object, AT_RESPECT1);
                         //SendRequestGuildRelationShip(0x02, 0x02, HIBYTE(CharactersClient[SelectedCharacter].Key), LOBYTE(CharactersClient[SelectedCharacter].Key));
-                        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Leave, CharactersClient[SelectedCharacter].Key);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+                                static_cast<std::uint8_t>(GuildRequestType::Leave),
+                                static_cast<std::uint16_t>(CharactersClient[SelectedCharacter].Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Hostility, GuildRequestType::Leave, CharactersClient[SelectedCharacter].Key);
+                        }
                     }
                 }
             }
@@ -2322,19 +2515,55 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                         if (!wcscmp(Text, I18N::Game::Alliance1354) || !wcsicmp(Text, L"/union"))
                         {
                             //SendRequestGuildRelationShip(0x01, 0x01, HIBYTE(c->Key), LOBYTE(c->Key));
-                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Alliance, GuildRequestType::Join, c->Key);
+                            if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Alliance),
+                                static_cast<std::uint8_t>(GuildRequestType::Join),
+                                static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Alliance, GuildRequestType::Join, c->Key);
+                        }
                         }
                         else if (!wcscmp(Text, I18N::Game::Hostilities) || !wcsicmp(Text, L"/rival"))
                         {
                             //SendRequestGuildRelationShip(0x02, 0x01, HIBYTE(c->Key), LOBYTE(c->Key));
-                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Join, c->Key);
+                            if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+                                static_cast<std::uint8_t>(GuildRequestType::Join),
+                                static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Hostility, GuildRequestType::Join, c->Key);
+                        }
                         }
                         else
                         {
                             SetAction(&Hero->Object, PLAYER_RESPECT1);
                             SendRequestAction(Hero->Object, AT_RESPECT1);
                             //SendRequestGuildRelationShip(0x02, 0x02, HIBYTE(c->Key), LOBYTE(c->Key));
-                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Leave, c->Key);
+                            if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                                SocketClient,
+                                static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+                                static_cast<std::uint8_t>(GuildRequestType::Leave),
+                                static_cast<std::uint16_t>(c->Key));
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                                GuildRelationshipType::Hostility, GuildRequestType::Leave, c->Key);
+                        }
                         }
                         break;
                     }
@@ -2362,7 +2591,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                 if (o->Kind == KIND_PLAYER && c != Hero && (o->Type == MODEL_PLAYER || c->Change) && abs((c->PositionX) - (Hero->PositionX)) <= 1 && abs((c->PositionY) - (Hero->PositionY)) <= 1)
                 {
                     PartyKey = c->Key;
-                    SocketClient->ToGameServer()->SendPartyInviteRequest(c->Key);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendPartyInvite(
+                            SocketClient, static_cast<std::uint16_t>(c->Key));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendPartyInviteRequest(c->Key);
+                    }
                     wchar_t Text[100];
                     mu_swprintf(Text, I18N::Game::YouHaveRequestedSToJoinYourParty, c->ID);
                     g_pSystemLogBox->AddText(Text, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2379,7 +2616,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
                     if (abs(Dir1 - Dir2) == 4)
                     {
                         PartyKey = c->Key;
+                        if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendPartyInvite(
+                            SocketClient, static_cast<std::uint16_t>(c->Key));
+                    }
+                    else
+                    {
                         SocketClient->ToGameServer()->SendPartyInviteRequest(c->Key);
+                    }
                         wchar_t Text[100];
                         mu_swprintf(Text, I18N::Game::YouHaveRequestedSToJoinYourParty, c->ID);
                         g_pSystemLogBox->AddText(Text, SEASON3B::TYPE_SYSTEM_MESSAGE);
@@ -2745,8 +2990,19 @@ void CheckGate()
                                 }
                                 else
                                 {
-                                    SocketClient->ToGameServer()->SendEnterGateRequest(i, 0, 0);
-                                    bResult = true;
+                                    if (mu::net::s52::DirectProtocolEnabled())
+                                    {
+                                        bResult = mu::net::s52::DirectSession::Instance().SendEnterGate(
+                                            SocketClient,
+                                            static_cast<std::uint16_t>(i),
+                                            0,
+                                            0);
+                                    }
+                                    else
+                                    {
+                                        SocketClient->ToGameServer()->SendEnterGateRequest(i, 0, 0);
+                                        bResult = true;
+                                    }
                                 }
                             }
 
@@ -3126,7 +3382,16 @@ void MoveHero()
                 {
                     if (gCharacterManager.GetEquipedBowType(CharacterMachine->Equipment) != BOWTYPE_NONE)
                     {
-                        SocketClient->ToGameServer()->SendInstantMoveRequest(c->PositionX, c->PositionY);
+                        if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendInstantMove(
+                        SocketClient, c->PositionX, c->PositionY);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendInstantMoveRequest(
+                        c->PositionX, c->PositionY);
+                }
                     }
                 }
 #endif
@@ -3358,7 +3623,16 @@ void SendMacroChat(wchar_t* Text)
         //    SendChat(Text);
         //}
 
-        SocketClient->ToGameServer()->SendPublicChatMessage(MU_C16(Hero->ID), MU_C16(Text));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPublicChat(
+                SocketClient, Hero->ID, Text);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPublicChatMessage(
+                MU_C16(Hero->ID), MU_C16(Text));
+        }
 
         LastMacroTime = GetTickCount64();
     }

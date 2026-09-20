@@ -8,6 +8,7 @@
 #include "UI/NewUI/Dialogs/NewUICustomMessageBox.h"
 #include "GameLogic/Items/PersonalShopTitleImp.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 const int iMAX_SHOPTITLE_MULTI = 26;
 
@@ -438,7 +439,15 @@ bool SEASON3B::CNewUIMyShopInventory::UpdateMouseEvent()
                     else
                     {
                         wcscpy(g_szPersonalShopTitle, shopTitle);
-                        SocketClient->ToGameServer()->SendPlayerShopOpen(MU_C16(shopTitle));
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendPlayerShopOpen(
+                                SocketClient, shopTitle);
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendPlayerShopOpen(MU_C16(shopTitle));
+                        }
 
                         g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYSHOP_INVENTORY);
                         g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);
@@ -453,7 +462,14 @@ bool SEASON3B::CNewUIMyShopInventory::UpdateMouseEvent()
             return false;
             case 2:
             {
-                SocketClient->ToGameServer()->SendPlayerShopClose();
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendPlayerShopClose(SocketClient);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendPlayerShopClose();
+                }
 
                 g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYSHOP_INVENTORY);
                 g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);

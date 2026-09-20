@@ -17,6 +17,7 @@
 
 #include "Audio/DSPlaySound.h"
 #include "GameLogic/Items/MixMgr.h"
+#include "Network/Season52/Season52Direct.h"
 
 using namespace SEASON3B;
 CNewUILuckyItemWnd::CNewUILuckyItemWnd()
@@ -382,7 +383,15 @@ bool CNewUILuckyItemWnd::ClosingProcess(void)
         return false;
     }
 
-    SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCraftingDialogClose(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCraftingDialogCloseRequest();
+    }
     m_eType = eLuckyItemType_None;
     return true;
 }

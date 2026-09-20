@@ -3,6 +3,7 @@
 //*****************************************************************************
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/NewUI/Inventory/NewUIStorageInventory.h"
 #include "I18N/All.h"
 
@@ -300,7 +301,14 @@ bool CNewUIStorageInventory::ProcessClosing()
 
     CNewUIInventoryCtrl::BackupPickedItem();
     DeleteAllItems();
-    SocketClient->ToGameServer()->SendVaultClosed();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendVaultClosed(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendVaultClosed();
+    }
     return true;
 }
 
@@ -599,7 +607,19 @@ void CNewUIStorageInventory::ProcessToReceiveStorageStatus(BYTE byStatus)
         {
             if (m_bTakeZen)
             {
-                SocketClient->ToGameServer()->SendVaultMoveMoneyRequest(VaultMoneyMoveDirection::VaultToInventory, GetBackupTakeZen());
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendVaultMoveMoney(
+                        SocketClient,
+                        static_cast<std::uint8_t>(VaultMoneyMoveDirection::VaultToInventory),
+                        static_cast<std::uint32_t>(GetBackupTakeZen()));
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendVaultMoveMoneyRequest(
+                        VaultMoneyMoveDirection::VaultToInventory,
+                        GetBackupTakeZen());
+                }
                 InitBackupItemInfo();
             }
             else
@@ -667,6 +687,49 @@ void CNewUIStorageInventory::ProcessToReceiveStorageItems(int nIndex, std::span<
 
         InsertItem(nIndex, pbyItemPacket);
     }
+}
+
+void CNewUIStorageInventory::ProcessToReceiveStorageItemsOld(
+    int nIndex, std::span<const BYTE> pbyItemPacket)
+{
+    CNewUIInventoryCtrl::DeletePickedItem();
+
+    if (m_pNewInventoryCtrl == nullptr
+        || nIndex < 0
+        || nIndex >= (m_pNewInventoryCtrl->GetNumberOfColumn()
+            * m_pNewInventoryCtrl->GetNumberOfRow()))
+    {
+        return;
+    }
+
+    if (IsItemAutoMove())
+    {
+        if (m_nBackupSourceInvenIndex >= MAX_EQUIPMENT_INDEX
+            && m_nBackupSourceInvenIndex < MAX_MY_INVENTORY_INDEX)
+        {
+            g_pMyInventory->DeleteItem(m_nBackupSourceInvenIndex);
+        }
+        else if (m_nBackupSourceInvenIndex >= MAX_MY_INVENTORY_INDEX
+            && m_nBackupSourceInvenIndex < MAX_MY_INVENTORY_EX_INDEX)
+        {
+            g_pMyInventoryExt->DeleteItem(m_nBackupSourceInvenIndex);
+        }
+        else
+        {
+            CNewUIInventoryCtrl* pMyInvenCtrl = g_pMyInventory->GetInventoryCtrl();
+            ITEM* pItemObj = pMyInvenCtrl != nullptr
+                ? pMyInvenCtrl->FindItemAtPt(m_nBackupMouseX, m_nBackupMouseY)
+                : nullptr;
+            if (pMyInvenCtrl != nullptr && pItemObj != nullptr)
+            {
+                pMyInvenCtrl->RemoveItem(pItemObj);
+            }
+        }
+
+        SetItemAutoMove(false);
+    }
+
+    m_pNewInventoryCtrl->AddItemOld(nIndex, pbyItemPacket);
 }
 
 void CNewUIStorageInventory::ProcessStorageItemAutoMoveSuccess()

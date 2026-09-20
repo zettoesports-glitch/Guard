@@ -25,6 +25,7 @@ extern bool SelectFlag;
 #include "GameLogic/Items/CSItemOption.h"
 #include "World/MapInfra/MapManager.h"
 #include "Network/Server/SocketSystem.h"
+#include "Network/Season52/Season52Direct.h"
 #include "World/MapInfra/PortalMgr.h"
 #ifdef CSK_FIX_BLUELUCKYBAG_MOVECOMMAND
 #include "GameLogic/Events/Event.h"
@@ -135,13 +136,37 @@ bool CNewUIMyInventory::EquipItem(int iIndex, std::span<const BYTE> pbyItemPacke
 
     if (pTempItem->Type == ITEM_DARK_HORSE_ITEM)
     {
-        SocketClient->ToGameServer()->SendPetInfoRequest(PetType::DarkHorse, StorageType::Inventory, iIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPetInfoRequest(
+                SocketClient,
+                static_cast<std::uint8_t>(PetType::DarkHorse),
+                static_cast<std::uint8_t>(StorageType::Inventory),
+                static_cast<std::uint8_t>(iIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPetInfoRequest(
+                PetType::DarkHorse, StorageType::Inventory, iIndex);
+        }
     }
 
     if (pTempItem->Type == ITEM_DARK_RAVEN_ITEM)
     {
         CreatePetDarkSpirit(Hero);
-        SocketClient->ToGameServer()->SendPetInfoRequest(PetType::DarkRaven, StorageType::Inventory, iIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPetInfoRequest(
+                SocketClient,
+                static_cast<std::uint8_t>(PetType::DarkRaven),
+                static_cast<std::uint8_t>(StorageType::Inventory),
+                static_cast<std::uint8_t>(iIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPetInfoRequest(
+                PetType::DarkRaven, StorageType::Inventory, iIndex);
+        }
     }
 
     pTempItem->lineal_pos = iIndex;
@@ -151,6 +176,45 @@ bool CNewUIMyInventory::EquipItem(int iIndex, std::span<const BYTE> pbyItemPacke
 
     CreateEquippingEffect(pTargetItemSlot);
 
+    return true;
+}
+
+bool CNewUIMyInventory::EquipItemOld(
+    int iIndex, std::span<const BYTE> pbyItemPacket)
+{
+    if (iIndex < 0 || iIndex >= MAX_EQUIPMENT_INDEX
+        || !g_pNewItemMng || !CharacterMachine || pbyItemPacket.size() < 12)
+    {
+        return false;
+    }
+
+    ITEM* pTargetItemSlot = &CharacterMachine->Equipment[iIndex];
+    if (pTargetItemSlot->Type > 0)
+    {
+        UnequipItem(iIndex);
+    }
+
+    ITEM* pTempItem = g_pNewItemMng->CreateItemOld(pbyItemPacket.first(12));
+    if (pTempItem == nullptr)
+    {
+        return false;
+    }
+
+    // The EX502 initial inventory packet contains the item itself but not the
+    // separate pet-detail response used by the managed/OpenMU path. Build the
+    // visible raven immediately; pet stats can be filled when the classic pet
+    // protocol is ported.
+    if (pTempItem->Type == ITEM_DARK_RAVEN_ITEM)
+    {
+        CreatePetDarkSpirit(Hero);
+    }
+
+    pTempItem->lineal_pos = iIndex;
+    pTempItem->ex_src_type = ITEM_EX_SRC_EQUIPMENT;
+    memcpy(pTargetItemSlot, pTempItem, sizeof(ITEM));
+    g_pNewItemMng->DeleteItem(pTempItem);
+
+    CreateEquippingEffect(pTargetItemSlot);
     return true;
 }
 
@@ -382,6 +446,17 @@ bool CNewUIMyInventory::InsertItem(int iIndex, std::span<const BYTE> pbyItemPack
     return false;
 }
 
+bool CNewUIMyInventory::InsertItemOld(
+    int iIndex, std::span<const BYTE> pbyItemPacket) const
+{
+    if (m_pNewInventoryCtrl)
+    {
+        return m_pNewInventoryCtrl->AddItemOld(iIndex, pbyItemPacket);
+    }
+
+    return false;
+}
+
 void CNewUIMyInventory::DeleteItem(int iIndex) const
 {
     if (m_pNewInventoryCtrl)
@@ -537,13 +612,37 @@ bool CNewUIMyInventory::UpdateMouseEvent()
             {
                 if (Hero->Dead == 0)
                 {
-                    SocketClient->ToGameServer()->SendDropItemRequest(tx, ty, iSourceIndex);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendDropItem(
+                            SocketClient,
+                            static_cast<std::uint8_t>(tx),
+                            static_cast<std::uint8_t>(ty),
+                            static_cast<std::uint8_t>(iSourceIndex));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendDropItemRequest(
+                            tx, ty, iSourceIndex);
+                    }
                     SendDropItem = iSourceIndex;
                 }
             }
             else if (pItemObj && pItemObj->ex_src_type == ITEM_EX_SRC_EQUIPMENT)
             {
-                SocketClient->ToGameServer()->SendDropItemRequest(tx, ty, iSourceIndex);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendDropItem(
+                        SocketClient,
+                        static_cast<std::uint8_t>(tx),
+                        static_cast<std::uint8_t>(ty),
+                        static_cast<std::uint8_t>(iSourceIndex));
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendDropItemRequest(
+                        tx, ty, iSourceIndex);
+                }
                 SendDropItem = iSourceIndex;
             }
             MouseUpdateTime = 0;
@@ -822,7 +921,16 @@ void CNewUIMyInventory::OpenningProcess()
     {
         if (g_QuestMng.IsEPRequestRewardState(0x1000F))
         {
-            SocketClient->ToGameServer()->SendQuestClientActionRequest(1, 0x0F);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendQuestClientActionRequest(
+                    SocketClient, 0x0001000Fu);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendQuestClientActionRequest(
+                    1, 0x0F);
+            }
             g_QuestMng.SetEPRequestRewardState(0x1000F, false);
         }
     }
@@ -1465,11 +1573,33 @@ bool CNewUIMyInventory::EquipmentWindowProcess()
 
                 if (g_pNewUISystem->IsVisible(INTERFACE_NPCSHOP) && g_pNPCShop->IsRepairShop())
                 {
-                    SocketClient->ToGameServer()->SendRepairItemRequest(m_iPointedSlot, 0);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendRepairItem(
+                            SocketClient,
+                            static_cast<std::uint8_t>(m_iPointedSlot),
+                            0);
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendRepairItemRequest(
+                            m_iPointedSlot, 0);
+                    }
                 }
                 else if (m_bRepairEnableLevel == true)
                 {
-                    SocketClient->ToGameServer()->SendRepairItemRequest(m_iPointedSlot, 1);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendRepairItem(
+                            SocketClient,
+                            static_cast<std::uint8_t>(m_iPointedSlot),
+                            1);
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendRepairItemRequest(
+                            m_iPointedSlot, 1);
+                    }
                 }
 
                 return true;

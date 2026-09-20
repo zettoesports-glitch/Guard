@@ -69,6 +69,63 @@ ItemCreationParams ParseItemData(std::span<const BYTE> itemData)
     return params;
 }
 
+ItemCreationParams ParseItemDataOld(std::span<const BYTE> itemData)
+{
+    ItemCreationParams params{};
+
+    if (itemData.size() < 12)
+    {
+        return params;
+    }
+
+    const WORD type =
+        static_cast<WORD>(itemData[0])
+        + static_cast<WORD>((itemData[3] & 0x80) * 2)
+        + static_cast<WORD>((itemData[5] & 0xF0) * 32);
+
+    params.Group = type / MAX_ITEM_INDEX;
+    params.Number = type % MAX_ITEM_INDEX;
+    params.Level = static_cast<BYTE>((itemData[1] >> 3) & 0x0F);
+    params.Durability = itemData[2];
+    params.WithSkill = (itemData[1] & 0x80) != 0;
+    params.WithLuck = (itemData[1] & 0x04) != 0;
+
+    params.OptionLevel = static_cast<BYTE>(
+        (itemData[1] & 0x03) + ((itemData[3] & 0x40) >> 4));
+    params.OptionType = 0;
+    params.WithOption = params.OptionLevel > 0;
+
+    params.ExcellentFlags = itemData[3] & 0x3F;
+    params.HasExcellentOption = params.ExcellentFlags != 0;
+
+    params.AncientDiscriminator = itemData[4] & 0x03;
+    params.AncientBonusOption = (itemData[4] & 0x0C) >> 2;
+    params.IsAncient =
+        params.AncientDiscriminator != 0 || params.AncientBonusOption != 0;
+
+    params.HasGuardianOption = (itemData[5] & 0x08) != 0;
+    params.WithExpiration = (itemData[5] & 0x02) != 0;
+    params.IsExpired = (itemData[5] & 0x04) != 0;
+
+    params.HarmonyOptionType = (itemData[6] >> 4) & 0x0F;
+    params.HarmonyOptionLevel = itemData[6] & 0x0F;
+    params.HasHarmonyOption = itemData[6] != 0;
+
+    params.SocketBonusOption = itemData[6];
+    params.SocketCount = MAX_SOCKETS;
+    for (int i = 0; i < MAX_SOCKETS; ++i)
+    {
+        params.SocketOptions[i] = itemData[7 + i];
+        if (itemData[7 + i] == 0xFF)
+        {
+            params.SocketCount = static_cast<BYTE>(i);
+            break;
+        }
+    }
+
+    return params;
+}
+
 SEASON3B::CNewUIItemMng::CNewUIItemMng()
 {
     m_dwAlternate = 0;
@@ -125,19 +182,34 @@ ITEM* SEASON3B::CNewUIItemMng::CreateItemExtended(std::span<const BYTE> itemData
     return item;
 }
 
-ITEM* SEASON3B::CNewUIItemMng::CreateItemOld(std::span<const BYTE> pbyItemPacket)
+ITEM* SEASON3B::CNewUIItemMng::CreateItemOld(
+    std::span<const BYTE> itemData)
 {
-    WORD wType = ExtractItemType(pbyItemPacket);
-    BYTE byOption380 = 0, byOptionHarmony = 0;
+    if (itemData.size() < 12)
+    {
+        return nullptr;
+    }
 
-    byOption380 = pbyItemPacket[5];
-    byOptionHarmony = pbyItemPacket[6];
+    ItemCreationParams params = ParseItemDataOld(itemData.first(12));
+    ITEM* item = CreateItemByParameters(&params);
+    if (item == nullptr)
+    {
+        return nullptr;
+    }
 
-    BYTE bySocketOption[5] = {pbyItemPacket[7], pbyItemPacket[8], pbyItemPacket[9], pbyItemPacket[10],
-                              pbyItemPacket[11]};
+    if (g_SocketItemMgr.IsSocketItem(item))
+    {
+        item->SocketSeedSetOption = itemData[6];
+        item->Jewel_Of_Harmony_Option = 0;
+        item->Jewel_Of_Harmony_OptionLevel = 0;
+    }
+    else
+    {
+        item->SocketSeedSetOption = SOCKET_EMPTY;
+        item->SocketCount = 0;
+    }
 
-    return CNewUIItemMng::CreateItem(wType / MAX_ITEM_INDEX, wType % MAX_ITEM_INDEX, pbyItemPacket[1], pbyItemPacket[2],
-                                     pbyItemPacket[3], pbyItemPacket[4], byOption380, byOptionHarmony, bySocketOption);
+    return item;
 }
 
 ITEM* SEASON3B::CNewUIItemMng::CreateItemByParameters(const ItemCreationParams* parameters)

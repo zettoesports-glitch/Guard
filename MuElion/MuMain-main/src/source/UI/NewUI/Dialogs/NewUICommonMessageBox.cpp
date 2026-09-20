@@ -24,6 +24,7 @@
 #include "GameLogic/Skills/SkillManager.h"
 #include "Engine/Object/ZzzInterface.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 #include "Core/Text/TextLineWrap.h"
 
 using namespace SEASON3B;
@@ -1047,7 +1048,15 @@ bool SEASON3B::CGuildRequestMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CGuildRequestMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildJoinResponse(true, GuildPlayerKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildJoinResponse(
+            SocketClient, 1, GuildPlayerKey);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildJoinResponse(true, GuildPlayerKey);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1057,7 +1066,15 @@ CALLBACK_RESULT SEASON3B::CGuildRequestMsgBoxLayout::OkBtnDown(class CNewUIMessa
 
 CALLBACK_RESULT SEASON3B::CGuildRequestMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildJoinResponse(false, GuildPlayerKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildJoinResponse(
+            SocketClient, 0, GuildPlayerKey);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildJoinResponse(false, GuildPlayerKey);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1125,7 +1142,15 @@ CALLBACK_RESULT SEASON3B::CMapEnterWerwolfMsgBoxLayout::OkBtnDown(class CNewUIMe
 
     if (dwGold >= 3000000)
     {
-        SocketClient->ToGameServer()->SendEnterOnWerewolfRequest();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendEnterWerewolfRequest(
+                SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendEnterOnWerewolfRequest();
+        }
     }
     else
     {
@@ -1168,7 +1193,15 @@ bool CMapEnterGateKeeperMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT CMapEnterGateKeeperMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendEnterOnGatekeeperRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendEnterGatekeeperRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendEnterOnGatekeeperRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1195,7 +1228,15 @@ bool SEASON3B::CPartyMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CPartyMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendPartyInviteResponse(true, PartyKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPartyResponse(
+                SocketClient, 1, static_cast<std::uint16_t>(PartyKey));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPartyInviteResponse(true, PartyKey);
+        }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1204,7 +1245,15 @@ CALLBACK_RESULT SEASON3B::CPartyMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBa
 
 CALLBACK_RESULT SEASON3B::CPartyMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendPartyInviteResponse(false, PartyKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPartyResponse(
+                SocketClient, 0, static_cast<std::uint16_t>(PartyKey));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPartyInviteResponse(false, PartyKey);
+        }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1232,7 +1281,14 @@ bool SEASON3B::CTradeMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CTradeMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendTradeRequestResponse(true);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendTradeResponse(SocketClient, 1);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendTradeRequestResponse(true);
+        }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1241,7 +1297,14 @@ CALLBACK_RESULT SEASON3B::CTradeMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBa
 
 CALLBACK_RESULT SEASON3B::CTradeMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendTradeRequestResponse(false);
+    if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendTradeResponse(SocketClient, 0);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendTradeRequestResponse(false);
+        }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1313,7 +1376,14 @@ bool SEASON3B::CGuildWarMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CGuildWarMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildWarResponse(true);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildWarResponse(SocketClient, 1);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildWarResponse(true);
+    }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1322,7 +1392,14 @@ CALLBACK_RESULT SEASON3B::CGuildWarMsgBoxLayout::OkBtnDown(class CNewUIMessageBo
 
 CALLBACK_RESULT SEASON3B::CGuildWarMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildWarResponse(false);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildWarResponse(SocketClient, 0);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildWarResponse(false);
+    }
     InitGuildWar();
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1353,7 +1430,14 @@ bool SEASON3B::CBattleSoccerMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CBattleSoccerMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildWarResponse(true);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildWarResponse(SocketClient, 1);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildWarResponse(true);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1363,7 +1447,14 @@ CALLBACK_RESULT SEASON3B::CBattleSoccerMsgBoxLayout::OkBtnDown(class CNewUIMessa
 
 CALLBACK_RESULT SEASON3B::CBattleSoccerMsgBoxLayout::CancelBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildWarResponse(false);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildWarResponse(SocketClient, 0);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildWarResponse(false);
+    }
     InitGuildWar();
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1417,7 +1508,15 @@ CALLBACK_RESULT SEASON3B::CPersonalshopCreateMsgBoxLayout::OkBtnDown(class CNewU
     wchar_t shopTitle[MAX_SHOPTITLE]{};
     g_pMyShopInventory->GetTitle(shopTitle);
     wcscpy(g_szPersonalShopTitle, shopTitle);
-    SocketClient->ToGameServer()->SendPlayerShopOpen(MU_C16(shopTitle));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendPlayerShopOpen(
+            SocketClient, shopTitle);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendPlayerShopOpen(MU_C16(shopTitle));
+    }
 
     g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYSHOP_INVENTORY);
     g_pNewUISystem->Hide(SEASON3B::INTERFACE_INVENTORY);
@@ -1524,7 +1623,18 @@ bool SEASON3B::CInfinityArrowCancelMsgBoxLayout::SetLayout()
 CALLBACK_RESULT SEASON3B::CInfinityArrowCancelMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     extern int g_iCancelSkillTarget;
-    SocketClient->ToGameServer()->SendMagicEffectCancelRequest(g_iCancelSkillTarget, HeroKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendMagicEffectCancelRequest(
+            SocketClient,
+            static_cast<std::uint16_t>(g_iCancelSkillTarget),
+            static_cast<std::uint16_t>(HeroKey));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendMagicEffectCancelRequest(
+            g_iCancelSkillTarget, HeroKey);
+    }
     g_iCancelSkillTarget = 0;
 
     PlayBuffer(SOUND_CLICK01);
@@ -1570,7 +1680,18 @@ bool SEASON3B::CBuffSwellOfMPCancelMsgBoxLayOut::SetLayout()
 CALLBACK_RESULT SEASON3B::CBuffSwellOfMPCancelMsgBoxLayOut::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     extern int g_iCancelSkillTarget;
-    SocketClient->ToGameServer()->SendMagicEffectCancelRequest(g_iCancelSkillTarget, HeroKey);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendMagicEffectCancelRequest(
+            SocketClient,
+            static_cast<std::uint16_t>(g_iCancelSkillTarget),
+            static_cast<std::uint16_t>(HeroKey));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendMagicEffectCancelRequest(
+            g_iCancelSkillTarget, HeroKey);
+    }
     g_iCancelSkillTarget = 0;
 
     PlayBuffer(SOUND_CLICK01);
@@ -1743,7 +1864,18 @@ CALLBACK_RESULT SEASON3B::CChaosCastleTimeCheckMsgBoxLayout::OkBtnDown(class CNe
     if (pItem)
     {
         int iSrcIndex = g_pMyInventory->GetStandbyItemIndex();
-        SocketClient->ToGameServer()->SendChaosCastleEnterRequest(pItem->Level, iSrcIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendChaosCastleEnterRequest(
+                SocketClient,
+                static_cast<std::uint8_t>(pItem->Level),
+                static_cast<std::uint8_t>(iSrcIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendChaosCastleEnterRequest(
+                pItem->Level, iSrcIndex);
+        }
     }
 
     PlayBuffer(SOUND_CLICK01);
@@ -1778,7 +1910,15 @@ bool SEASON3B::CHarvestEventLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CHarvestEventLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendLeoHelperItemRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendLeoHelperItemRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendLeoHelperItemRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1814,7 +1954,15 @@ bool SEASON3B::CWhiteAngelEventLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CWhiteAngelEventLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendWhiteAngelItemRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendWhiteAngelItemRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendWhiteAngelItemRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -1877,7 +2025,20 @@ bool  SEASON3B::CLuckyItemMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CLuckyItemMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendChaosMachineMixRequest(static_cast<ChaosMachineMixType>(g_pLuckyItemWnd->SetActAction()), 0);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendChaosMachineMixRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(g_pLuckyItemWnd->SetActAction()),
+            0);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendChaosMachineMixRequest(
+            static_cast<ChaosMachineMixType>(
+                g_pLuckyItemWnd->SetActAction()),
+            0);
+    }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -1930,9 +2091,19 @@ bool  SEASON3B::CMixCheckMsgBoxLayout::SetLayout()
 CALLBACK_RESULT SEASON3B::CMixCheckMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     g_pMixInventory->SetMixState(SEASON3B::CNewUIMixInventory::MIX_REQUESTED);
-    SocketClient->ToGameServer()->SendChaosMachineMixRequest(
-        static_cast<ChaosMachineMixType>(g_MixRecipeMgr.GetCurMixID()),
-        g_MixRecipeMgr.GetMixSubType());
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendChaosMachineMixRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(g_MixRecipeMgr.GetCurMixID()),
+            static_cast<std::uint8_t>(g_MixRecipeMgr.GetMixSubType()));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendChaosMachineMixRequest(
+            static_cast<ChaosMachineMixType>(g_MixRecipeMgr.GetCurMixID()),
+            g_MixRecipeMgr.GetMixSubType());
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2145,11 +2316,23 @@ CALLBACK_RESULT SEASON3B::CGuildRelationShipMsgBoxLayout::OkBtnDown(class CNewUI
 {
     const SEASON3B::ServerMessageInfo info = g_pGuildInfoWindow->GetServerMessage();
 
-    SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
-        info.s_byRelationShipType,
-        info.s_byRelationShipRequestType,
-        0x01,
-        MAKEWORD(info.s_byTargetUserIndexH, info.s_byTargetUserIndexL));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRelationshipResponse(
+            SocketClient,
+            static_cast<std::uint8_t>(info.s_byRelationShipType),
+            static_cast<std::uint8_t>(info.s_byRelationShipRequestType),
+            0x01,
+            MAKEWORD(info.s_byTargetUserIndexL, info.s_byTargetUserIndexH));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
+            info.s_byRelationShipType,
+            info.s_byRelationShipRequestType,
+            0x01,
+            MAKEWORD(info.s_byTargetUserIndexH, info.s_byTargetUserIndexL));
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2161,11 +2344,23 @@ CALLBACK_RESULT SEASON3B::CGuildRelationShipMsgBoxLayout::CancelBtnDown(class CN
 {
     const SEASON3B::ServerMessageInfo info = g_pGuildInfoWindow->GetServerMessage();
 
-    SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
-        info.s_byRelationShipType,
-        info.s_byRelationShipRequestType,
-        0x00,
-        MAKEWORD(info.s_byTargetUserIndexH, info.s_byTargetUserIndexL));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRelationshipResponse(
+            SocketClient,
+            static_cast<std::uint8_t>(info.s_byRelationShipType),
+            static_cast<std::uint8_t>(info.s_byRelationShipRequestType),
+            0x00,
+            MAKEWORD(info.s_byTargetUserIndexL, info.s_byTargetUserIndexH));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
+            info.s_byRelationShipType,
+            info.s_byRelationShipRequestType,
+            0x00,
+            MAKEWORD(info.s_byTargetUserIndexH, info.s_byTargetUserIndexL));
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2288,7 +2483,15 @@ bool SEASON3B::CSiegeGiveUpMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CSiegeGiveUpMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendCastleSiegeUnregisterRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCastleSiegeUnregisterRequest(
+            SocketClient, 0x01);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCastleSiegeUnregisterRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2375,7 +2578,17 @@ CALLBACK_RESULT SEASON3B::CQuestGiveUpMsgBoxLayout::OkBtnDown(class CNewUIMessag
     const DWORD dwSelectedQuest = g_pMyQuestInfoWindow->GetSelQuestIndex();
     const auto questNumber = static_cast<uint16_t>(LOWORD(dwSelectedQuest));
     const auto questGroup = static_cast<uint16_t>(HIWORD(dwSelectedQuest));
-    SocketClient->ToGameServer()->SendQuestCancelRequest(questNumber, questGroup);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendQuestCancelRequest(
+            SocketClient,
+            static_cast<std::uint32_t>(dwSelectedQuest));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendQuestCancelRequest(
+            questNumber, questGroup);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -2485,7 +2698,16 @@ CALLBACK_RESULT SEASON3B::CHighValueItemCheckMsgBoxLayout::OkBtnDown(class CNewU
 
     if (iSourceIndex >= MAX_EQUIPMENT_INDEX && iSourceIndex < MAX_MY_INVENTORY_EX_INDEX)
     {
-        SocketClient->ToGameServer()->SendSellItemToNpcRequest(iSourceIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendSellItem(
+                SocketClient,
+                static_cast<std::uint8_t>(iSourceIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendSellItemToNpcRequest(iSourceIndex);
+        }
         g_pNPCShop->SetSellingItem(true);
         // Note: picked item will be cleaned up by ReceiveSell when server responds
     }
@@ -2688,7 +2910,14 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueCheckMsgBoxLayout::OkBtnDown(cla
 
     if (g_pMyShopInventory->IsEnablePersonalShop() == true)
     {
-        SocketClient->ToGameServer()->SendPlayerShopClose();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendPlayerShopClose(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendPlayerShopClose();
+        }
     }
 
     CNewUIPickedItem* pPickedItem = CNewUIInventoryCtrl::GetPickedItem();
@@ -2704,14 +2933,36 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueCheckMsgBoxLayout::OkBtnDown(cla
         if (pPickedItem->GetOwnerInventory() == g_pMyInventory->GetInventoryCtrl())
         {
             int iItemPrice = pMsgBox->GetItemValue();
-            SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iItemPrice);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iItemPrice));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iItemPrice);
+            }
             SendRequestEquipmentItem(STORAGE_TYPE::INVENTORY, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
         }
         else if (pPickedItem->GetOwnerInventory() == NULL)
         {
             int iItemPrice = pMsgBox->GetItemValue();
             BYTE byIndex = iSourceIndex;
-            SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iItemPrice);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iItemPrice));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iItemPrice);
+            }
 
             SendRequestEquipmentItem(STORAGE_TYPE::INVENTORY, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
         }
@@ -2719,7 +2970,18 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueCheckMsgBoxLayout::OkBtnDown(cla
         {
             int iItemPrice = pMsgBox->GetItemValue();
             BYTE byIndex = MAX_MY_INVENTORY_EX_INDEX + iSourceIndex;
-            SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iItemPrice);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iItemPrice));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iItemPrice);
+            }
 
             SendRequestEquipmentItem(STORAGE_TYPE::MYSHOP, iSourceIndex, pItemObj, STORAGE_TYPE::MYSHOP, iTargetIndex);
         }
@@ -2735,7 +2997,18 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemValueCheckMsgBoxLayout::OkBtnDown(cla
             if (iSourceIndex >= 0)
             {
                 int iItemPrice = pMsgBox->GetItemValue();
-                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(iSourceIndex, iItemPrice);
+                if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopSetItemPrice(
+                    SocketClient,
+                    static_cast<std::uint8_t>(iSourceIndex),
+                    static_cast<std::uint32_t>(iItemPrice));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopSetItemPrice(
+                    iSourceIndex, iItemPrice);
+            }
                 AddPersonalItemPrice(iSourceIndex, iItemPrice, g_IsPurchaseShop);
             }
         }
@@ -2789,7 +3062,19 @@ CALLBACK_RESULT SEASON3B::CPersonalShopItemBuyMsgBoxLayout::OkBtnDown(class CNew
         int sourceIndex = g_pPurchaseShopInventory->GetItemInventoryIndex(pItem);
         if (sourceIndex >= 0)
         {
-            SocketClient->ToGameServer()->SendPlayerShopItemBuyRequest(pCha->Key, MU_C16(pCha->ID), sourceIndex);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendPlayerShopItemBuyRequest(
+                    SocketClient,
+                    static_cast<std::uint16_t>(pCha->Key),
+                    pCha->ID,
+                    static_cast<std::uint8_t>(sourceIndex));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendPlayerShopItemBuyRequest(
+                    pCha->Key, MU_C16(pCha->ID), sourceIndex);
+            }
         }
     }
 
@@ -2951,7 +3236,19 @@ bool SEASON3B::CGuildPerson_Cancel_Position_MsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT SEASON3B::CGuildPerson_Cancel_Position_MsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendGuildRoleAssignRequest(G_PERSON, MU_C16(GuildList[DeleteIndex].Name), 0x03);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRoleAssign(
+            SocketClient,
+            0x03,
+            static_cast<std::uint8_t>(G_PERSON),
+            GuildList[DeleteIndex].Name);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRoleAssignRequest(
+            G_PERSON, MU_C16(GuildList[DeleteIndex].Name), 0x03);
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -3225,7 +3522,16 @@ CALLBACK_RESULT SEASON3B::CMaster_Level_Interface::CancelBtnDown(class CNewUIMes
 CALLBACK_RESULT SEASON3B::CMaster_Level_Interface::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     auto In_Skill = g_pMasterLevelInterface->GetCurSkillID();
-    SocketClient->ToGameServer()->SendAddMasterSkillPoint(In_Skill);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendAddMasterSkillPoint(
+            SocketClient,
+            static_cast<std::uint32_t>(In_Skill));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendAddMasterSkillPoint(In_Skill);
+    }
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
 
@@ -3277,7 +3583,16 @@ CALLBACK_RESULT SEASON3B::CCry_Wolf_Get_Temple::OkBtnDown(class CNewUIMessageBox
     else
     {
         Button_Down = 2;
-        SocketClient->ToGameServer()->SendCrywolfContractRequest(BackUp_Key);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCrywolfContractRequest(
+                SocketClient,
+                static_cast<std::uint16_t>(BackUp_Key));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendCrywolfContractRequest(BackUp_Key);
+        }
     }
 
     PlayBuffer(SOUND_CLICK01);
@@ -3316,7 +3631,16 @@ CALLBACK_RESULT SEASON3B::CUnionGuild_Break_MsgBoxLayout::CancelBtnDown(class CN
 
 CALLBACK_RESULT SEASON3B::CUnionGuild_Break_MsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendRemoveAllianceGuildRequest(MU_C16(DeleteID));
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendAllianceGuildBan(
+            SocketClient, DeleteID);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendRemoveAllianceGuildRequest(
+            MU_C16(DeleteID));
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -3408,7 +3732,15 @@ bool CSantaTownLeaveMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT CSantaTownLeaveMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendMoveToDeviasBySnowmanRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendMoveToDeviasBySnowmanRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendMoveToDeviasBySnowmanRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -3441,7 +3773,15 @@ bool CSantaTownSantaMsgBoxLayout::SetLayout()
 
 CALLBACK_RESULT CSantaTownSantaMsgBoxLayout::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
-    SocketClient->ToGameServer()->SendSantaClausItemRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendSantaClausItemRequest(
+            SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendSantaClausItemRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -3578,7 +3918,17 @@ CALLBACK_RESULT SEASON3B::CGambleBuyMsgBoxLayout::OkBtnDown(class CNewUIMessageB
     if (gambleSys.IsGambleShop() && BuyCost != 0)
     {
         const auto& itemInfo = gambleSys.GetBuyItemInfoConst();
-        SocketClient->ToGameServer()->SendBuyItemFromNpcRequest(itemInfo.ItemIndex);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendBuyItem(
+                SocketClient,
+                static_cast<std::uint8_t>(itemInfo.ItemIndex));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendBuyItemFromNpcRequest(
+                itemInfo.ItemIndex);
+        }
         BuyCost = itemInfo.ItemCost;
         g_ConsoleDebug->Write(MCD_SEND, L"0x32 [SendRequestBuy(%d)]", itemInfo.ItemIndex);
     }

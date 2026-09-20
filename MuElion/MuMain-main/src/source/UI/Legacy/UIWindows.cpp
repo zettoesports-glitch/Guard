@@ -23,6 +23,7 @@
 #include "Camera/CameraProjection.h"
 #include "Core/Utilities/Log/ErrorReport.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 
 extern int	 g_iChatInputType;
@@ -31,6 +32,40 @@ extern DWORD g_dwMouseUseUIID;
 extern DWORD g_dwTopWindow;
 extern DWORD g_dwKeyFocusUIID;
 extern void ReceiveLetterText(std::span<const BYTE> ReceiveBuffer, bool isCached);
+extern void ReceiveLetterTextSeason52(
+    std::span<const BYTE> ReceiveBuffer, bool isCached);
+
+namespace
+{
+void OpenCachedOrRequestLetterText(DWORD letterId)
+{
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        const auto* cached =
+            g_pLetterList->GetLetterTextSeason52(letterId);
+        if (cached == nullptr)
+        {
+            mu::net::s52::DirectSession::Instance().SendLetterReadRequest(
+                SocketClient, static_cast<std::uint16_t>(letterId));
+            return;
+        }
+
+        ReceiveLetterTextSeason52(
+            std::span<const BYTE>(cached->data(), cached->size()), true);
+        return;
+    }
+
+    auto* cached = g_pLetterList->GetLetterText(letterId);
+    if (cached == nullptr)
+    {
+        SocketClient->ToGameServer()->SendLetterReadRequest(letterId);
+        return;
+    }
+
+    auto* data = reinterpret_cast<const BYTE*>(cached);
+    ReceiveLetterText(std::span(data, sizeof(FS_LETTER_TEXT)), true);
+}
+} // namespace
 
 int g_iLetterReadNextPos_x, g_iLetterReadNextPos_y;
 
@@ -94,7 +129,15 @@ void CUIWindowMgr::Reset()
     {
         // for OpenMU the following line is not required.
         // 2 probably means logging out.
-        SocketClient->ToGameServer()->SendSetFriendOnlineState(2);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendSetFriendOnlineState(
+                SocketClient, 2);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendSetFriendOnlineState(2);
+        }
     }
 }
 
@@ -134,7 +177,15 @@ DWORD CUIWindowMgr::AddWindow(int iWindowType, int iPos_x, int iPos_y, const wch
             g_pFriendMenu->SetNewMailAlert(FALSE);
             if (IsServerEnable() == FALSE)
             {
-                SocketClient->ToGameServer()->SendFriendListRequest();
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendFriendListRequest(
+                        SocketClient);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendFriendListRequest();
+                }
             }
         }
         else return 0;
@@ -1668,10 +1719,21 @@ BOOL CUIChatWindow::HandleMessage()
                 }
                 else
                 {
-                    SocketClient->ToGameServer()->SendChatRoomInvitationRequest(
-                        MU_C16(m_InvitePalListBox.GetSelectedText()->m_szID),
-                        m_dwRoomNumber,
-                        GetUIID());
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendChatRoomInvitationRequest(
+                            SocketClient,
+                            m_InvitePalListBox.GetSelectedText()->m_szID,
+                            static_cast<std::uint16_t>(m_dwRoomNumber),
+                            static_cast<std::uint32_t>(GetUIID()));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendChatRoomInvitationRequest(
+                            MU_C16(m_InvitePalListBox.GetSelectedText()->m_szID),
+                            m_dwRoomNumber,
+                            GetUIID());
+                    }
                 }
             }
             break;
@@ -2381,6 +2443,20 @@ void CUIPhotoViewer::SetEquipmentPacket(BYTE* pbyEquip)
         m_PhotoChar.SafeZone = false;
 }
 
+void CUIPhotoViewer::SetEquipmentPacketOld(BYTE* pbyEquip)
+{
+    if (m_bIsInitialized == FALSE || pbyEquip == nullptr) return;
+
+    ChangeCharacterExt(0, pbyEquip, &m_PhotoChar, &m_PhotoHelper);
+
+    m_fPhotoHelperScale = m_PhotoHelper.Scale * 0.7f / Hero->Object.Scale;
+
+    if (m_PhotoChar.Wing.Type != -1 && m_iSettingAnimation > AT_HEALING1)
+        m_PhotoChar.SafeZone = true;
+    else
+        m_PhotoChar.SafeZone = false;
+}
+
 void CUIPhotoViewer::SetAngle(float fDegree)
 {
     if (m_bIsInitialized == FALSE) return;
@@ -2887,7 +2963,23 @@ BOOL CUILetterWriteWindow::HandleMessage()
                 int iZoom = (m_Photo.GetCurrentZoom() * 100.0f - 80 + 5) / 10;
                 BYTE Data1 = (iZoom << 6) & 0xC0 | iAngle & 0x3F;
                 BYTE Data2 = m_Photo.GetCurrentAction() - AT_ATTACK1;
-                SocketClient->ToGameServer()->SendLetterSendRequest(GetUIID(), MU_C16(szMailto), MU_C16(szTitle), Data1, Data2, len, MU_C16(szText));
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendLetterSendRequest(
+                        SocketClient,
+                        static_cast<std::uint32_t>(GetUIID()),
+                        szMailto,
+                        szTitle,
+                        Data1,
+                        Data2,
+                        szText);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendLetterSendRequest(
+                        GetUIID(), MU_C16(szMailto), MU_C16(szTitle),
+                        Data1, Data2, len, MU_C16(szText));
+                }
             }
             break;
         case 2:
@@ -3171,15 +3263,7 @@ BOOL CUILetterReadWindow::HandleMessage()
                 g_iLetterReadNextPos_y = GetPosition_y();
                 if (g_pWindowMgr->LetterReadCheck(dwPrevID) == FALSE)
                 {
-                    if (g_pLetterList->GetLetterText(dwPrevID) == NULL)
-                    {
-                        SocketClient->ToGameServer()->SendLetterReadRequest(dwPrevID);
-                    }
-                    else
-                    {
-                        auto data = reinterpret_cast<const BYTE*>(g_pLetterList->GetLetterText(dwPrevID));
-                        ReceiveLetterText(std::span(data, sizeof(FS_LETTER_TEXT)), true);
-                    }
+                    OpenCachedOrRequestLetterText(dwPrevID);
                 }
                 else
                 {
@@ -3212,15 +3296,7 @@ BOOL CUILetterReadWindow::HandleMessage()
                 g_iLetterReadNextPos_y = GetPosition_y();
                 if (g_pWindowMgr->LetterReadCheck(dwNextID) == FALSE)
                 {
-                    if (g_pLetterList->GetLetterText(dwNextID) == NULL)
-                    {
-                        SocketClient->ToGameServer()->SendLetterReadRequest(dwNextID);
-                    }
-                    else
-                    {
-                        auto data = reinterpret_cast<const BYTE*>(g_pLetterList->GetLetterText(dwNextID));
-                        ReceiveLetterText(std::span(data, sizeof(FS_LETTER_TEXT)), true);
-                    }
+                    OpenCachedOrRequestLetterText(dwNextID);
                 }
                 else
                 {
@@ -3246,7 +3322,17 @@ BOOL CUILetterReadWindow::HandleMessage()
     case UI_MESSAGE_YNRETURN:
         if (m_WorkMessage.m_iParam2 == 1)
         {
-            SocketClient->ToGameServer()->SendLetterDeleteRequest(m_LetterHead.m_dwLetterID);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendLetterDeleteRequest(
+                    SocketClient,
+                    static_cast<std::uint16_t>(m_LetterHead.m_dwLetterID));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendLetterDeleteRequest(
+                    m_LetterHead.m_dwLetterID);
+            }
             g_pWindowMgr->SendUIMessage(UI_MESSAGE_CLOSE, GetUIID(), 0);
         }
         break;
@@ -3550,7 +3636,16 @@ BOOL CUIFriendListTabWindow::HandleMessage()
                     if (g_pWindowMgr->GetChatReject() == FALSE && g_pFriendMenu->IsRequestWindow(pszName) == FALSE)
                     {
                         g_pFriendMenu->AddRequestWindow(pszName);
-                        SocketClient->ToGameServer()->SendChatRoomCreateRequest(MU_C16(pszName));
+                        if (mu::net::s52::DirectProtocolEnabled())
+                        {
+                            mu::net::s52::DirectSession::Instance().SendChatRoomCreateRequest(
+                                SocketClient, pszName);
+                        }
+                        else
+                        {
+                            SocketClient->ToGameServer()->SendChatRoomCreateRequest(
+                                MU_C16(pszName));
+                        }
                     }
                 }
                 else if (dwDuplicationCheck == -1);
@@ -3593,14 +3688,32 @@ BOOL CUIFriendListTabWindow::HandleMessage()
             {
                 break;
             }
-            SocketClient->ToGameServer()->SendFriendAddRequest(MU_C16(text.c_str()));
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendFriendAddRequest(
+                    SocketClient, text.c_str());
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendFriendAddRequest(
+                    MU_C16(text.c_str()));
+            }
         }
         break;
     case UI_MESSAGE_YNRETURN:
         if (m_WorkMessage.m_iParam2 == 1)
         {
             if (GetCurrentSelectedFriend() == NULL) break;
-            SocketClient->ToGameServer()->SendFriendDelete(MU_C16(GetCurrentSelectedFriend()));
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendFriendDeleteRequest(
+                    SocketClient, GetCurrentSelectedFriend());
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendFriendDelete(
+                    MU_C16(GetCurrentSelectedFriend()));
+            }
         }
         break;
     default:
@@ -4259,6 +4372,29 @@ LPFS_LETTER_TEXT CLetterList::GetLetterText(DWORD dwIndex)
     return &m_LetterCacheIter->second;
 }
 
+void CLetterList::CacheLetterTextSeason52(
+    DWORD dwIndex, const BYTE* data, std::size_t size)
+{
+    if (data == nullptr || size == 0)
+    {
+        return;
+    }
+
+    m_LetterCacheSeason52[dwIndex] =
+        std::vector<BYTE>(data, data + size);
+}
+
+const std::vector<BYTE>* CLetterList::GetLetterTextSeason52(
+    DWORD dwIndex) const
+{
+    const auto it = m_LetterCacheSeason52.find(dwIndex);
+    if (it == m_LetterCacheSeason52.end())
+    {
+        return nullptr;
+    }
+    return &it->second;
+}
+
 void CLetterList::RemoveLetterTextCache(DWORD dwIndex)
 {
     m_LetterCacheIter = m_LetterCache.find(dwIndex);
@@ -4266,11 +4402,13 @@ void CLetterList::RemoveLetterTextCache(DWORD dwIndex)
     {
         m_LetterCache.erase(m_LetterCacheIter);
     }
+    m_LetterCacheSeason52.erase(dwIndex);
 }
 
 void CLetterList::ClearLetterTextCache()
 {
     m_LetterCache.clear();
+    m_LetterCacheSeason52.clear();
 }
 
 int CLetterList::GetLineNum(DWORD dwLetterID)
@@ -4488,15 +4626,7 @@ BOOL CUILetterBoxTabWindow::HandleMessage()
             if (g_pWindowMgr->LetterReadCheck(dwLetterID) == FALSE)
             {
                 // 캐시
-                if (g_pLetterList->GetLetterText(dwLetterID) == NULL)
-                {
-                    SocketClient->ToGameServer()->SendLetterReadRequest(dwLetterID);
-                }
-                else
-                {
-                    auto data = reinterpret_cast<const BYTE*>(g_pLetterList->GetLetterText(dwLetterID));
-                    ReceiveLetterText(std::span(data, sizeof(FS_LETTER_TEXT)), true);
-                }
+                OpenCachedOrRequestLetterText(dwLetterID);
             }
             else
             {
@@ -4533,7 +4663,15 @@ BOOL CUILetterBoxTabWindow::HandleMessage()
         break;
         case 5:
         {
-            SocketClient->ToGameServer()->SendLetterListRequest();
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendLetterListRequest(
+                    SocketClient);
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendLetterListRequest();
+            }
         }
         break;
         default:
@@ -4560,7 +4698,17 @@ BOOL CUILetterBoxTabWindow::HandleMessage()
                 if (m_LetterListBox.GetCheckedLines(&letterlist) == 0) break;
                 for (std::deque<LETTERLIST_TEXT*>::iterator iter = letterlist.begin(); iter != letterlist.end(); ++iter)
                 {
-                    SocketClient->ToGameServer()->SendLetterDeleteRequest((*iter)->m_dwLetterID);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendLetterDeleteRequest(
+                            SocketClient,
+                            static_cast<std::uint16_t>((*iter)->m_dwLetterID));
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendLetterDeleteRequest(
+                            (*iter)->m_dwLetterID);
+                    }
                 }
                 //m_LetterListBox.Scrolling(0);
             }
@@ -4864,7 +5012,15 @@ BOOL CUIFriendWindow::HandleMessage()
         {
             if (g_pWindowMgr->GetChatReject() == FALSE)
             {
-                SocketClient->ToGameServer()->SendSetFriendOnlineState(0);
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendSetFriendOnlineState(
+                        SocketClient, 0);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendSetFriendOnlineState(0);
+                }
                 g_pWindowMgr->SetChatReject(TRUE);
                 g_pFriendMenu->CloseAllChatWindow();
             }
@@ -4967,7 +5123,15 @@ void CUIFriendWindow::DoMouseActionSub()
                 PlayBuffer(SOUND_CLICK01);
                 if (g_pWindowMgr->GetChatReject() == TRUE)
                 {
-                    SocketClient->ToGameServer()->SendSetFriendOnlineState(1);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendSetFriendOnlineState(
+                            SocketClient, 1);
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendSetFriendOnlineState(1);
+                    }
                     g_pWindowMgr->SetChatReject(FALSE);
                 }
                 else
@@ -5198,7 +5362,16 @@ BOOL CUIQuestionWindow::HandleMessage()
         case 1:
             if (m_dwReturnWindowUIID == -1)
             {
-                SocketClient->ToGameServer()->SendFriendAddResponse(0x01, MU_C16(m_szSaveID));
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendFriendAddResponse(
+                        SocketClient, 0x01, m_szSaveID);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendFriendAddResponse(
+                        0x01, MU_C16(m_szSaveID));
+                }
             }
             else if (m_dwReturnWindowUIID != 0)
             {
@@ -5210,7 +5383,16 @@ BOOL CUIQuestionWindow::HandleMessage()
             if (m_iDialogType != 0) break;
             if (m_dwReturnWindowUIID == -1)
             {
-                SocketClient->ToGameServer()->SendFriendAddResponse(0x00, MU_C16(m_szSaveID));
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendFriendAddResponse(
+                        SocketClient, 0x00, m_szSaveID);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendFriendAddResponse(
+                        0x00, MU_C16(m_szSaveID));
+                }
             }
             else if (m_dwReturnWindowUIID != 0)
             {
