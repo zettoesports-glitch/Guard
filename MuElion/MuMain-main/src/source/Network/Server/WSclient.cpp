@@ -2307,7 +2307,14 @@ BOOL ReceiveTeleport(const BYTE* ReceiveBuffer, BOOL bEncrypted)
             }
         }
 
-        SocketClient->ToGameServer()->SendClientReadyAfterMapChange();
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendFinishLoading(SocketClient);
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendClientReadyAfterMapChange();
+        }
 
         g_dwLatestZoneMoving = GetTickCount();
         g_bWhileMovingZone = FALSE;
