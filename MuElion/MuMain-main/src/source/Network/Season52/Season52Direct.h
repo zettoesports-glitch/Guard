@@ -29,6 +29,15 @@ public:
     bool SendServerList(Connection* connection);
     bool SendServerAddress(Connection* connection, std::uint16_t serverId);
     bool SendCharacterList(Connection* connection, std::uint8_t language);
+    bool SendCreateCharacter(Connection* connection,
+                             const wchar_t* name,
+                             std::uint8_t classId,
+                             std::uint8_t skin);
+    bool SendDeleteCharacter(Connection* connection,
+                             const wchar_t* name,
+                             const wchar_t* personalCode);
+    bool SendSelectCharacter(Connection* connection, const wchar_t* name);
+    bool SendFinishLoading(Connection* connection);
     bool SendLogin(Connection* connection,
                    const wchar_t* account,
                    const wchar_t* password,
