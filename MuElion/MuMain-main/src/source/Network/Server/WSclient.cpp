@@ -7132,6 +7132,129 @@ void ReceiveGetItem(std::span<const BYTE> ReceiveBuffer)
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x22 [ReceiveGetItem(%d)]", Data->Value);
 }
 
+void ReceiveGetItemSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 4;
+    constexpr std::size_t kItemSize = 12;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x22 get-item packet too small ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE result = packet[3];
+
+    if (result == NOT_GET_ITEM)
+    {
+        SendGetItem = -1;
+        return;
+    }
+
+    if (packet.size() < kHeaderSize + kItemSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x22 get-item payload ({} bytes)", packet.size());
+        SendGetItem = -1;
+        return;
+    }
+
+    const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+
+    if (result == GET_ITEM_ZEN)
+    {
+        wchar_t message[128]{};
+        const int previousGold = CharacterMachine->Gold;
+        CharacterMachine->Gold =
+            (static_cast<int>(itemData[0]) << 24)
+            | (static_cast<int>(itemData[1]) << 16)
+            | (static_cast<int>(itemData[2]) << 8)
+            | static_cast<int>(itemData[3]);
+
+        const int receivedGold = CharacterMachine->Gold - previousGold;
+        if (receivedGold > 0)
+        {
+            mu_swprintf(
+                message,
+                L"%d %ls %ls",
+                receivedGold,
+                I18N::Game::Zen,
+                I18N::Game::Obtained);
+            g_pSystemLogBox->AddText(
+                message, SEASON3B::TYPE_SYSTEM_MESSAGE);
+        }
+
+        SendGetItem = -1;
+        return;
+    }
+
+    ITEM* pickedItem = nullptr;
+    if (ItemKey >= 0 && ItemKey < MAX_ITEMS)
+    {
+        pickedItem = &Items[ItemKey].Item;
+    }
+
+    if (result != GET_ITEM_MULTI)
+    {
+        if (IsMainInventorySlot(result))
+        {
+            if (!g_pMyInventory->InsertItemOld(result, itemData))
+            {
+                mu::log::Get("network")->warn(
+                    "S52: failed to insert picked item into slot {}", result);
+                SendGetItem = -1;
+                return;
+            }
+
+            pickedItem = g_pMyInventory->FindItem(result);
+        }
+        else
+        {
+            mu::log::Get("network")->warn(
+                "S52: picked item returned unsupported slot {}", result);
+        }
+    }
+
+    if (pickedItem != nullptr)
+    {
+        wchar_t itemName[64]{};
+        GetItemName(pickedItem->Type, pickedItem->Level, itemName);
+
+        wchar_t message[128]{};
+        mu_swprintf(
+            message, L"%ls %ls", itemName, I18N::Game::Obtained);
+        g_pSystemLogBox->AddText(
+            message, SEASON3B::TYPE_SYSTEM_MESSAGE);
+
+        const int type = pickedItem->Type;
+        if (type == ITEM_JEWEL_OF_BLESS
+            || type == ITEM_JEWEL_OF_SOUL
+            || type == ITEM_JEWEL_OF_LIFE
+            || type == ITEM_JEWEL_OF_CHAOS
+            || type == ITEM_JEWEL_OF_CREATION
+            || type == INDEX_COMPILED_CELE
+            || type == INDEX_COMPILED_SOUL
+            || type == ITEM_JEWEL_OF_GUARDIAN)
+        {
+            PlayBuffer(SOUND_JEWEL01, &Hero->Object);
+        }
+        else if (type == ITEM_GEMSTONE)
+        {
+            PlayBuffer(SOUND_JEWEL02, &Hero->Object);
+        }
+        else
+        {
+            PlayBuffer(SOUND_GET_ITEM01, &Hero->Object);
+        }
+    }
+
+    SendGetItem = -1;
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE, L"0x22 [ReceiveGetItemSeason52(%d)]", result);
+}
+
+
 void ReceiveDropItem(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPHEADER_DEFAULT_KEY)ReceiveBuffer;
@@ -7285,6 +7408,97 @@ BOOL ReceiveEquipmentItemExtended(std::span<const BYTE> ReceiveBuffer)
 
     return (TRUE);
 }
+
+BOOL ReceiveEquipmentItemSeason52(std::span<const BYTE> packet)
+{
+    constexpr std::size_t kHeaderSize = 5;
+    constexpr std::size_t kItemSize = 12;
+
+    EquipmentItem = false;
+
+    if (packet.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: 0x24 equipment-item packet too small ({} bytes)",
+            packet.size());
+        return FALSE;
+    }
+
+    const BYTE subCode = packet[3];
+    const BYTE itemIndex = packet[4];
+
+    if (subCode == 0xFF)
+    {
+        SEASON3B::CNewUIInventoryCtrl::BackupPickedItem();
+        g_pStorageInventory->ProcessStorageItemAutoMoveFailure();
+
+        if (g_bPacketAfter_EquipmentItem)
+        {
+            ReceiveTradeExit(g_byPacketAfter_EquipmentItem);
+            g_bPacketAfter_EquipmentItem = FALSE;
+        }
+
+        return TRUE;
+    }
+
+    if (packet.size() < kHeaderSize + kItemSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x24 equipment-item payload ({} bytes)",
+            packet.size());
+        return FALSE;
+    }
+
+    const auto itemData = packet.subspan(kHeaderSize, kItemSize);
+
+    if (subCode == 0)
+    {
+        SEASON3B::CNewUIInventoryCtrl::DeletePickedItem();
+
+        bool loaded = false;
+        if (itemIndex < MAX_EQUIPMENT_INDEX)
+        {
+            loaded = g_pMyInventory->EquipItemOld(itemIndex, itemData);
+        }
+        else if (IsMainInventorySlot(itemIndex))
+        {
+            g_pStorageInventory->ProcessStorageItemAutoMoveSuccess();
+            loaded = g_pMyInventory->InsertItemOld(itemIndex, itemData);
+        }
+
+        if (!loaded)
+        {
+            mu::log::Get("network")->warn(
+                "S52: unsupported/failed 0x24 inventory destination slot {}",
+                itemIndex);
+        }
+    }
+    else
+    {
+        // Trade, vault and mix windows still use their extended item readers.
+        // Keep the packet visible in logs instead of feeding incompatible
+        // 12-byte EX502 item data into those readers.
+        mu::log::Get("network")->warn(
+            "S52: 0x24 subcode {} not migrated yet (slot {})",
+            subCode,
+            itemIndex);
+    }
+
+    if (g_bPacketAfter_EquipmentItem)
+    {
+        ReceiveTradeExit(g_byPacketAfter_EquipmentItem);
+        g_bPacketAfter_EquipmentItem = FALSE;
+    }
+
+    PlayBuffer(SOUND_GET_ITEM01);
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0x24 [ReceiveEquipmentItemSeason52(%d %d)]",
+        subCode,
+        itemIndex);
+    return TRUE;
+}
+
 
 void ReceiveModifyItemExtended(std::span<const BYTE> ReceiveBuffer)
 {
@@ -14835,14 +15049,28 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveDeleteItemViewport(ReceiveBuffer);
         break;
     case 0x22: // get item
-        ReceiveGetItem(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveGetItemSeason52(received_span);
+        }
+        else
+        {
+            ReceiveGetItem(received_span);
+        }
         break;
     case 0x23: // drop item
         ReceiveDropItem(ReceiveBuffer);
         break;
     case 0x24: // equipment item
         AddDebugText(ReceiveBuffer, Size);
-        ReceiveEquipmentItemExtended(received_span);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveEquipmentItemSeason52(received_span);
+        }
+        else
+        {
+            ReceiveEquipmentItemExtended(received_span);
+        }
         break;
     case 0x25: // change character
         ReceiveChangePlayer(received_span);
