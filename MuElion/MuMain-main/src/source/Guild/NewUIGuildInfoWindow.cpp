@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "NewUIGuildInfoWindow.h"
 #include "UI/NewUI/NewUISystem.h"
 #include "UI/NewUI/Dialogs/NewUICommonMessageBox.h"
@@ -111,7 +112,14 @@ void SEASON3B::CNewUIGuildInfoWindow::OpenningProcess()
 {
     m_nCurrentTab = static_cast<int>(GuildConstants::GuildTab::MEMBERS);
 
-    SocketClient->ToGameServer()->SendGuildListRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildListRequest(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildListRequest();
+    }
 }
 
 void SEASON3B::CNewUIGuildInfoWindow::ClosingProcess()
@@ -319,7 +327,21 @@ bool SEASON3B::CNewUIGuildInfoWindow::Check_Btn()
                 }
                 else
                 {
-                    SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Alliance, GuildRequestType::Leave, Hero->Key);
+                    if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+                            SocketClient,
+                            static_cast<std::uint8_t>(GuildRelationshipType::Alliance),
+                            static_cast<std::uint8_t>(GuildRequestType::Leave),
+                            Hero->Key);
+                    }
+                    else
+                    {
+                        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+                            GuildRelationshipType::Alliance,
+                            GuildRequestType::Leave,
+                            Hero->Key);
+                    }
                 }
             }
         }
@@ -349,7 +371,14 @@ bool SEASON3B::CNewUIGuildInfoWindow::Check_Mouse(int mx, int my)
                     break;
                 case static_cast<int>(GuildConstants::GuildTab::MEMBERS):
                 {
-                    SocketClient->ToGameServer()->SendGuildListRequest();
+                    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildListRequest(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildListRequest();
+    }
                 }
                 break;
                 case static_cast<int>(GuildConstants::GuildTab::UNION):
@@ -357,7 +386,14 @@ bool SEASON3B::CNewUIGuildInfoWindow::Check_Mouse(int mx, int my)
                     if (m_bRequestUnionList == false
                         && GuildMark[Hero->GuildMarkIndex].UnionName[0] != 0)
                     {
+                        if (mu::net::s52::DirectProtocolEnabled())
+                    {
+                        mu::net::s52::DirectSession::Instance().SendAllianceListRequest(SocketClient);
+                    }
+                    else
+                    {
                         SocketClient->ToGameServer()->SendRequestAllianceList();
+                    }
                         m_bRequestUnionList = true;
                     }
                 }
@@ -948,11 +984,23 @@ void SEASON3B::CNewUIGuildInfoWindow::ReceiveGuildRelationShip(GuildRelationship
 {
     if (!g_MessageBox->IsEmpty())
     {
-        SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
-            byRelationShipType,
-            byRequestType,
-            0x00,
-            MAKEWORD(byTargetUserIndexH, byTargetUserIndexL));
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendGuildRelationshipResponse(
+                SocketClient,
+                static_cast<std::uint8_t>(byRelationShipType),
+                static_cast<std::uint8_t>(byRequestType),
+                0x00,
+                MAKEWORD(byTargetUserIndexL, byTargetUserIndexH));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendGuildRelationshipChangeResponse(
+                byRelationShipType,
+                byRequestType,
+                0x00,
+                MAKEWORD(byTargetUserIndexH, byTargetUserIndexL));
+        }
     }
     else
     {
