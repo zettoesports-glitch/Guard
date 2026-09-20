@@ -602,6 +602,22 @@ bool DirectSession::SendCrywolfInfoRequest(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x04, 0xBD, 0x00});
 }
 
+bool DirectSession::SendChecksumResponse(
+    Connection* connection, std::uint32_t checksum)
+{
+    // Louis Main 5.2 SendCheckSum():
+    // C1:03 + one reserved byte + DWORD checksum, Send(TRUE).
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1, 0x08, 0x03, 0x00,
+            static_cast<std::uint8_t>(checksum & 0xFFu),
+            static_cast<std::uint8_t>((checksum >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((checksum >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((checksum >> 24u) & 0xFFu)
+        });
+}
+
 bool DirectSession::SendItemMove(
     Connection* connection,
     std::uint8_t sourceStorage,
