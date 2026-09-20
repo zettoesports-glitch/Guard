@@ -131,6 +131,7 @@ public:
                            std::uint16_t requesterId);
     bool SendPartyList(Connection* connection);
     bool SendPartyLeave(Connection* connection, std::uint8_t partyIndex);
+    bool SendPing(Connection* connection);
 
     bool SendLogin(Connection* connection,
                    const wchar_t* account,
