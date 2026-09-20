@@ -25,6 +25,25 @@
 
 namespace SEASON3B
 {
+namespace
+{
+void SendMiniGameOpeningStateRequestCompat(
+    MiniGameType eventType, BYTE eventLevel)
+{
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendMiniGameOpeningStateRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(eventType),
+            static_cast<std::uint8_t>(eventLevel));
+    }
+    else
+    {
+        SendMiniGameOpeningStateRequestCompat(
+            eventType, eventLevel);
+    }
+}
+} // namespace
 
 CNewUIInventoryActionController::CNewUIInventoryActionController() : m_pContext(nullptr) {}
 
@@ -765,7 +784,7 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
             return false;
         }
 
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::ChaosCastle, pItem->Level);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::ChaosCastle, pItem->Level);
         g_pMyInventory->SetStandbyItemKey(pItem->Key);
         return true;
     }
@@ -773,14 +792,14 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
     if (pItem->Type == ITEM_HELPER + 46)
     {
         const BYTE byPossibleLevel = CaculateFreeTicketLevel(FREETICKET_TYPE_DEVILSQUARE);
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::DevilSquare, byPossibleLevel);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::DevilSquare, byPossibleLevel);
         return false;
     }
 
     if (pItem->Type == ITEM_HELPER + 47)
     {
         const BYTE byPossibleLevel = CaculateFreeTicketLevel(FREETICKET_TYPE_BLOODCASTLE);
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::BloodCastle, byPossibleLevel);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::BloodCastle, byPossibleLevel);
         return false;
     }
 
@@ -799,7 +818,7 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
     if (pItem->Type == ITEM_HELPER + 61)
     {
         const BYTE byPossibleLevel = CaculateFreeTicketLevel(FREETICKET_TYPE_CURSEDTEMPLE);
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::CursedTemple, byPossibleLevel);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::CursedTemple, byPossibleLevel);
         return true;
     }
 
@@ -811,20 +830,20 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
             return false;
         }
 
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::ChaosCastle, pItem->Level);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::ChaosCastle, pItem->Level);
         g_pMyInventory->SetStandbyItemKey(pItem->Key);
         return true;
     }
 
     if (pItem->Type == ITEM_SCROLL_OF_BLOOD)
     {
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::CursedTemple, pItem->Level);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::CursedTemple, pItem->Level);
         return true;
     }
 
     if (pItem->Type == ITEM_DEVILS_INVITATION)
     {
-        SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::DevilSquare, pItem->Level);
+        SendMiniGameOpeningStateRequestCompat(MiniGameType::DevilSquare, pItem->Level);
         return true;
     }
 
@@ -836,7 +855,7 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
         }
         else
         {
-            SocketClient->ToGameServer()->SendMiniGameOpeningStateRequest(MiniGameType::BloodCastle, pItem->Level - 1);
+            SendMiniGameOpeningStateRequestCompat(MiniGameType::BloodCastle, pItem->Level - 1);
         }
 
         return true;
