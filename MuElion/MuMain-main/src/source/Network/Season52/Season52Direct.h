@@ -140,6 +140,10 @@ public:
     bool SendPartyList(Connection* connection);
     bool SendPartyLeave(Connection* connection, std::uint8_t partyIndex);
     bool SendPing(Connection* connection);
+    bool SendQuestHistory(Connection* connection);
+    bool SendQuestState(Connection* connection,
+                        std::uint8_t questIndex,
+                        std::uint8_t questState);
     bool SendVaultMoveMoney(Connection* connection,
                             std::uint8_t direction,
                             std::uint32_t amount);
