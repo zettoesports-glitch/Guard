@@ -46,11 +46,16 @@ bool Season52Crypto::LoadServerToClientKey(const std::uint8_t* bytes,
     return SimpleModulus::LoadKeyFile(bytes, size, serverToClient_);
 }
 
-bool Season52Crypto::Encode(const std::uint8_t* packet,
-                            std::size_t size,
-                            std::vector<std::uint8_t>& encrypted) {
+namespace {
+
+bool EncodeSeason52Packet(SimpleModulusKey& clientToServer,
+                          std::uint8_t& sendSerial,
+                          const std::uint8_t* packet,
+                          std::size_t size,
+                          std::vector<std::uint8_t>& encrypted,
+                          bool forceWide) {
     encrypted.clear();
-    if (!clientToServer_.IsValid()) {
+    if (!clientToServer.IsValid()) {
         return false;
     }
 
@@ -73,13 +78,13 @@ bool Season52Crypto::Encode(const std::uint8_t* packet,
     const std::size_t headOffset = shortPacket ? 2u : 3u;
     std::vector<std::uint8_t> cryptoInput;
     cryptoInput.reserve(1u + (size - headOffset));
-    cryptoInput.push_back(sendSerial_++);
+    cryptoInput.push_back(sendSerial++);
     cryptoInput.insert(cryptoInput.end(),
                        prepared.begin() + static_cast<std::ptrdiff_t>(headOffset),
                        prepared.end());
 
     std::vector<std::uint8_t> cipher;
-    if (!SimpleModulus::Encrypt(clientToServer_,
+    if (!SimpleModulus::Encrypt(clientToServer,
                                 cryptoInput.data(),
                                 cryptoInput.size(),
                                 cipher)) {
@@ -87,7 +92,7 @@ bool Season52Crypto::Encode(const std::uint8_t* packet,
     }
 
     const std::size_t c3Size = cipher.size() + 2u;
-    if (c3Size < 256u) {
+    if (!forceWide && c3Size < 256u) {
         encrypted.resize(c3Size);
         encrypted[0] = 0xC3;
         encrypted[1] = static_cast<std::uint8_t>(c3Size);
@@ -106,6 +111,23 @@ bool Season52Crypto::Encode(const std::uint8_t* packet,
     encrypted[2] = static_cast<std::uint8_t>(c4Size & 0xFFu);
     std::copy(cipher.begin(), cipher.end(), encrypted.begin() + 3);
     return true;
+}
+
+} // namespace
+
+bool Season52Crypto::Encode(const std::uint8_t* packet,
+                            std::size_t size,
+                            std::vector<std::uint8_t>& encrypted) {
+    return EncodeSeason52Packet(
+        clientToServer_, sendSerial_, packet, size, encrypted, false);
+}
+
+bool Season52Crypto::EncodeForcedWide(
+    const std::uint8_t* packet,
+    std::size_t size,
+    std::vector<std::uint8_t>& encrypted) {
+    return EncodeSeason52Packet(
+        clientToServer_, sendSerial_, packet, size, encrypted, true);
 }
 
 bool Season52Crypto::Decode(const std::uint8_t* packet,
