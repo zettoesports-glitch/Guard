@@ -1002,7 +1002,16 @@ BOOL ReceiveLogOut(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 
         SceneFlag = CHARACTER_SCENE;
         CurrentProtocolState = REQUEST_CHARACTERS_LIST;
-        SocketClient->ToGameServer()->SendRequestCharacterList(g_pMultiLanguage->GetLanguage());
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendCharacterList(
+                SocketClient, g_pMultiLanguage->GetLanguage());
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendRequestCharacterList(
+                g_pMultiLanguage->GetLanguage());
+        }
 
         g_sceneInit.ResetForDisconnect();
         CurrentProtocolState = REQUEST_JOIN_SERVER;
