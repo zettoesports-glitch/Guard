@@ -12,6 +12,7 @@
 #include "GameLogic/Items/CSItemOption.h"
 #include "World/MapInfra/MapManager.h"
 #include "Network/Server/SocketSystem.h"
+#include "Network/Season52/Season52Direct.h"
 #include "GameLogic/Social/MonkSystem.h"
 #include "Character/CharacterManager.h"
 #include "Audio/DSPlaySound.h"
@@ -449,7 +450,19 @@ bool CNewUIInventoryActionController::TryDropItem(CNewUIInventoryCtrl* targetCon
     const int ty = Hero->PositionY;
     const int sourceIndex = pPickedItem->GetSourceLinealPos();
 
-    SocketClient->ToGameServer()->SendDropItemRequest(tx, ty, sourceIndex);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendDropItem(
+            SocketClient,
+            static_cast<std::uint8_t>(tx),
+            static_cast<std::uint8_t>(ty),
+            static_cast<std::uint8_t>(sourceIndex));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendDropItemRequest(
+            tx, ty, sourceIndex);
+    }
     SendDropItem = sourceIndex;
 
     return true;
