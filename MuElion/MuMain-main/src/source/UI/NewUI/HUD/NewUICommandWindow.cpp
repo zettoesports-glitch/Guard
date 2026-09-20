@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "I18N/All.h"
 
 #include "UI/NewUI/HUD/NewUICommandWindow.h"
@@ -523,7 +524,15 @@ bool SEASON3B::CNewUICommandWindow::CommandGuild(CHARACTER* pSelectedChar)
         return false;
     }
 
-    SocketClient->ToGameServer()->SendGuildJoinRequest(pSelectedChar->Key);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildJoinRequest(
+            SocketClient, pSelectedChar->Key);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildJoinRequest(pSelectedChar->Key);
+    }
 
     return true;
 }
@@ -547,7 +556,19 @@ bool SEASON3B::CNewUICommandWindow::CommandGuildUnion(CHARACTER* pSelectedCha)
     }
     if (pSelectedCha->GuildStatus == G_MASTER)
     {
-        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Alliance, GuildRequestType::Join, pSelectedCha->Key);
+        if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(GuildRelationshipType::Alliance),
+            static_cast<std::uint8_t>(GuildRequestType::Join),
+            pSelectedCha->Key);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+            GuildRelationshipType::Alliance, GuildRequestType::Join, pSelectedCha->Key);
+    }
         return true;
     }
 
@@ -568,7 +589,19 @@ bool SEASON3B::CNewUICommandWindow::CommandGuildRival(CHARACTER* pSelectedCha)
         return false;
     }
 
-    SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Join, pSelectedCha->Key);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+            static_cast<std::uint8_t>(GuildRequestType::Join),
+            pSelectedCha->Key);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+            GuildRelationshipType::Hostility, GuildRequestType::Join, pSelectedCha->Key);
+    }
 
     return true;
 }
@@ -588,7 +621,19 @@ bool SEASON3B::CNewUICommandWindow::CommandCancelGuildRival(CHARACTER* pSelected
 
     SetAction(&Hero->Object, PLAYER_RESPECT1);
     SendRequestAction(Hero->Object, AT_RESPECT1);
-    SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(GuildRelationshipType::Hostility, GuildRequestType::Leave, pSelectedCha->Key);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendGuildRelationshipRequest(
+            SocketClient,
+            static_cast<std::uint8_t>(GuildRelationshipType::Hostility),
+            static_cast<std::uint8_t>(GuildRequestType::Leave),
+            pSelectedCha->Key);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRelationshipChangeRequest(
+            GuildRelationshipType::Hostility, GuildRequestType::Leave, pSelectedCha->Key);
+    }
     return true;
 }
 
