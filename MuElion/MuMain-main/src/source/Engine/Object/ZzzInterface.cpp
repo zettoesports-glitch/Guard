@@ -1677,12 +1677,16 @@ void Action(CHARACTER* c, OBJECT* o, bool Now)
 				if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_MYQUEST))
 					g_pNewUISystem->Hide(SEASON3B::INTERFACE_MYQUEST);
 
-				if (g_csQuest.IsInit() && !mu::net::s52::DirectProtocolEnabled())
+				if (g_csQuest.IsInit())
 				{
-					// The OpenMU legacy-quest request is not wire-compatible with
-					// the Louis EX502 protocol. Keep it disabled in direct mode
-					// until its classic request is ported explicitly.
-					SocketClient->ToGameServer()->SendLegacyQuestStateRequest();
+					if (mu::net::s52::DirectProtocolEnabled())
+					{
+						mu::net::s52::DirectSession::Instance().SendQuestHistory(SocketClient);
+					}
+					else
+					{
+						SocketClient->ToGameServer()->SendLegacyQuestStateRequest();
+					}
 				}
 
 				// === Specjalne rozmowy ===
