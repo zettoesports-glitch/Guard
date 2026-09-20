@@ -746,6 +746,86 @@ bool DirectSession::SendWhisper(Connection* connection,
         BuildWhisperRequest(targetUtf8.data(), textUtf8.data()));
 }
 
+bool DirectSession::SendTradeRequest(Connection* connection,
+                                     std::uint16_t targetId)
+{
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1, 0x05, 0x36,
+            static_cast<std::uint8_t>((targetId >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>(targetId & 0xFFu)
+        });
+}
+
+bool DirectSession::SendTradeResponse(Connection* connection,
+                                      std::uint8_t accepted)
+{
+    return SendXorPacket(connection, {0xC1, 0x04, 0x37, accepted});
+}
+
+bool DirectSession::SendTradeMoney(Connection* connection,
+                                   std::uint32_t amount)
+{
+    std::vector<std::uint8_t> packet{
+        0xC1, 0x08, 0x3A, 0x00,
+        static_cast<std::uint8_t>(amount & 0xFFu),
+        static_cast<std::uint8_t>((amount >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>((amount >> 16u) & 0xFFu),
+        static_cast<std::uint8_t>((amount >> 24u) & 0xFFu)
+    };
+    return SendXorPacket(connection, std::move(packet));
+}
+
+bool DirectSession::SendTradeResult(Connection* connection,
+                                    std::uint8_t accepted)
+{
+    return SendEncryptedPacket(
+        connection, {0xC1, 0x04, 0x3C, accepted});
+}
+
+bool DirectSession::SendTradeExit(Connection* connection)
+{
+    return SendEncryptedPacket(connection, {0xC1, 0x03, 0x3D});
+}
+
+bool DirectSession::SendPartyInvite(Connection* connection,
+                                    std::uint16_t targetId)
+{
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1, 0x05, 0x40,
+            static_cast<std::uint8_t>((targetId >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>(targetId & 0xFFu)
+        });
+}
+
+bool DirectSession::SendPartyResponse(Connection* connection,
+                                      std::uint8_t accepted,
+                                      std::uint16_t requesterId)
+{
+    return SendEncryptedPacket(
+        connection,
+        {
+            0xC1, 0x06, 0x41, accepted,
+            static_cast<std::uint8_t>((requesterId >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>(requesterId & 0xFFu)
+        });
+}
+
+bool DirectSession::SendPartyList(Connection* connection)
+{
+    return SendXorPacket(connection, {0xC1, 0x03, 0x42});
+}
+
+bool DirectSession::SendPartyLeave(Connection* connection,
+                                   std::uint8_t partyIndex)
+{
+    return SendXorPacket(
+        connection, {0xC1, 0x04, 0x43, partyIndex});
+}
+
 bool DirectSession::SendLogin(Connection* connection,
                               const wchar_t* account,
                               const wchar_t* password,
