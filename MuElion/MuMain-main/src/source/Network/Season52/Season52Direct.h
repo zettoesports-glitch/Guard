@@ -177,6 +177,10 @@ public:
     bool SendQuestState(Connection* connection,
                         std::uint8_t questIndex,
                         std::uint8_t questState);
+    bool SendProgressQuestListRequest(Connection* connection);
+    bool SendQuestByEtcEPListRequest(Connection* connection);
+    bool SendQuestClientActionRequest(Connection* connection,
+                                      std::uint32_t questIndex);
     bool SendVaultMoveMoney(Connection* connection,
                             std::uint8_t direction,
                             std::uint32_t amount);
