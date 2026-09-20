@@ -501,6 +501,145 @@ void InitGuildWar()
 
 BOOL Util_CheckOption(std::wstring lpszCommandLine, wchar_t cOption, std::wstring& lpszString);
 
+void ReceiveServerListSeason52(std::span<const BYTE> packet)
+{
+    // EX502 ConnectServer PMSG_SERVER_LIST_SEND:
+    // C2 sizeH sizeL F4 06 countH countL = 7-byte header.
+    constexpr std::size_t kHeaderSize = 7;
+    constexpr std::size_t kEntrySize = 4; // WORD ServerCode + UserTotal + type
+
+    if (packet.size() < kHeaderSize || packet[0] != 0xC2
+        || packet[3] != 0xF4 || packet[4] != 0x06)
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid F4:06 server-list header ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    const std::size_t declaredSize =
+        (static_cast<std::size_t>(packet[1]) << 8u)
+        | static_cast<std::size_t>(packet[2]);
+    if (declaredSize != packet.size())
+    {
+        mu::log::Get("network")->error(
+            "S52: F4:06 size mismatch: declared={} received={}",
+            declaredSize, packet.size());
+        return;
+    }
+
+    const std::size_t count =
+        (static_cast<std::size_t>(packet[5]) << 8u)
+        | static_cast<std::size_t>(packet[6]);
+    const std::size_t required = kHeaderSize + count * kEntrySize;
+
+    if (required > packet.size())
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated F4:06 server list: count={} got={} expected>={}",
+            count, packet.size(), required);
+        return;
+    }
+
+    g_ServerListManager->Release();
+    g_ServerListManager->SetTotalServer(static_cast<int>(count));
+
+    std::size_t offset = kHeaderSize;
+    for (std::size_t i = 0; i < count; ++i, offset += kEntrySize)
+    {
+        // ServerCode is copied as a native WORD by the Windows ConnectServer,
+        // therefore it is little-endian on the wire.
+        const WORD serverCode = static_cast<WORD>(
+            static_cast<WORD>(packet[offset])
+            | (static_cast<WORD>(packet[offset + 1]) << 8u));
+        const BYTE userTotal = packet[offset + 2];
+        const BYTE type = packet[offset + 3];
+
+        g_ServerListManager->InsertServerGroup(serverCode, userTotal);
+
+        mu::log::Get("network")->debug(
+            "S52: server-list entry {} code={} load={} type=0x{:02X}",
+            i, serverCode, userTotal, type);
+    }
+
+    CUIMng& rUIMng = CUIMng::Instance();
+    if (!rUIMng.m_CreditWin.IsShow())
+    {
+        rUIMng.ShowWin(&rUIMng.m_ServerSelWin);
+        rUIMng.m_ServerSelWin.UpdateDisplay();
+        rUIMng.ShowWin(&rUIMng.m_LoginMainWin);
+    }
+
+    g_ErrorReport.Write(L"Success Receive Server List (S52 EX502).\r\n");
+    g_ConsoleDebug->Write(
+        MCD_RECEIVE,
+        L"0xF4 [ReceiveServerListSeason52 count=%d]",
+        static_cast<int>(count));
+}
+
+void ReceiveServerConnectSeason52(std::span<const BYTE> packet)
+{
+    // EX502 ConnectServer PMSG_SERVER_INFO_SEND:
+    // C1 size F4 03 + ServerAddress[16] + WORD ServerPort = 22 bytes.
+    constexpr std::size_t kPacketSize = 22;
+    constexpr std::size_t kAddressOffset = 4;
+    constexpr std::size_t kAddressSize = 16;
+    constexpr std::size_t kPortOffset = 20;
+
+    if (packet.size() < kPacketSize || packet[0] != 0xC1
+        || packet[2] != 0xF4 || packet[3] != 0x03)
+    {
+        mu::log::Get("network")->error(
+            "S52: invalid F4:03 server-info packet ({} bytes)",
+            packet.size());
+        return;
+    }
+
+    if (packet[1] != kPacketSize)
+    {
+        mu::log::Get("network")->warn(
+            "S52: F4:03 declared size={} expected={}",
+            packet[1], kPacketSize);
+    }
+
+    std::array<char, kAddressSize + 1> address{};
+    std::copy_n(
+        reinterpret_cast<const char*>(packet.data() + kAddressOffset),
+        kAddressSize,
+        address.data());
+    address[kAddressSize] = '\0';
+
+    const WORD port = static_cast<WORD>(
+        static_cast<WORD>(packet[kPortOffset])
+        | (static_cast<WORD>(packet[kPortOffset + 1]) << 8u));
+
+    std::array<wchar_t, kAddressSize + 1> ip{};
+    CMultiLanguage::ConvertFromUtf8(
+        ip.data(), address.data(), static_cast<int>(ip.size()));
+
+    mu::log::Get("network")->info(
+        "S52: F4:03 redirect to {}:{}",
+        address.data(), port);
+
+    DeleteSocket();
+
+    if (CreateSocket(
+            ip.data(),
+            port,
+            ServerEndpointRole::GameServer))
+    {
+        g_bGameServerConnected = TRUE;
+
+        wchar_t text[100];
+        mu_swprintf(
+            text,
+            I18N::Game::YouAreConnectedToTheServer,
+            ip.data(),
+            port);
+        g_pSystemLogBox->AddText(text, SEASON3B::TYPE_SYSTEM_MESSAGE);
+    }
+}
+
 void ReceiveServerList(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPHEADER_DEFAULT_SUBCODE_WORD)ReceiveBuffer;
@@ -15035,10 +15174,24 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         switch (subcode)
         {
         case 0x06:
-            ReceiveServerList(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveServerListSeason52(received_span);
+            }
+            else
+            {
+                ReceiveServerList(ReceiveBuffer);
+            }
             break;
         case 0x03:
-            ReceiveServerConnect(ReceiveBuffer);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                ReceiveServerConnectSeason52(received_span);
+            }
+            else
+            {
+                ReceiveServerConnect(ReceiveBuffer);
+            }
             break;
         case 0x05:
             ReceiveServerConnectBusy(ReceiveBuffer);
