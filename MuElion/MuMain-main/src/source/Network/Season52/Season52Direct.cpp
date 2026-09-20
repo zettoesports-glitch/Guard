@@ -1410,6 +1410,32 @@ bool DirectSession::SendNpcBuffRequest(Connection* connection)
     return SendXorPacket(connection, {0xC1, 0x04, 0xF6, 0x31});
 }
 
+bool DirectSession::SendGensJoinRequest(
+    Connection* connection, std::uint8_t influence)
+{
+    // Louis Main 5.2 SendRequestGensJoining(): C1:F8:01 + influence.
+    return SendXorPacket(connection, {0xC1, 0x05, 0xF8, 0x01, influence});
+}
+
+bool DirectSession::SendGensLeaveRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestGensSecession(): C1:F8:03.
+    return SendXorPacket(connection, {0xC1, 0x04, 0xF8, 0x03});
+}
+
+bool DirectSession::SendGensRewardRequest(
+    Connection* connection, std::uint8_t influence)
+{
+    // Louis Main 5.2 SendRequestGensReward(): C1:F8:09 + influence.
+    return SendXorPacket(connection, {0xC1, 0x05, 0xF8, 0x09, influence});
+}
+
+bool DirectSession::SendGensInfoOpenRequest(Connection* connection)
+{
+    // Louis Main 5.2 SendRequestGensInfo_Open(): C1:F8:0B.
+    return SendXorPacket(connection, {0xC1, 0x04, 0xF8, 0x0B});
+}
+
 bool DirectSession::SendQuestState(Connection* connection,
                                    std::uint8_t questIndex,
                                    std::uint8_t questState)
