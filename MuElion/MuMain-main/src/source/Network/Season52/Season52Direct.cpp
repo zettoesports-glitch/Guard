@@ -6,7 +6,8 @@
 #include "Dotnet/Connection.h"
 #include "Network/Season52/Packet/Season52PacketBuilder.hpp"
 
-#include <array>\n#include <algorithm>
+#include <array>
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
