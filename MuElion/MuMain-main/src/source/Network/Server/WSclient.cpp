@@ -4740,6 +4740,56 @@ void ReceiveAttackDamage(CHARACTER* c, OBJECT* o, const bool success, const int 
     g_ConsoleDebug->Write(MCD_RECEIVE, L"0x15 [ReceiveAttackDamage(%d %d)]", AttackPlayer, damage);
 }
 
+void ReceiveAttackDamageSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PRECEIVE_ATTACK:
+    // C1 size 15 keyH keyL damageH damageL type shieldH shieldL
+    constexpr std::size_t kPacketSize = 10;
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x15 attack-damage packet ({} bytes)", packet.size());
+        return;
+    }
+
+    int key = (static_cast<int>(packet[3]) << 8) | packet[4];
+    const bool success = (key >> 15) != 0;
+    key &= 0x7FFF;
+
+    const int index = FindCharacterIndex(key);
+    CHARACTER* character = &CharactersClient[index];
+    OBJECT* object = &character->Object;
+
+    const int damage =
+        (static_cast<int>(packet[5]) << 8) | packet[6];
+    const BYTE damageFlags = packet[7];
+    const int damageType = damageFlags & 0x0F;
+    const bool repeatedly = ((damageFlags >> 4) & 0x01) != 0;
+    const bool endRepeatedly = ((damageFlags >> 5) & 0x01) != 0;
+    const bool doubleDamage = ((damageFlags >> 6) & 0x01) != 0;
+    const bool comboDamage = ((damageFlags >> 7) & 0x01) != 0;
+    const int shieldDamage =
+        (static_cast<int>(packet[8]) << 8) | packet[9];
+
+    if (IsMonster(character))
+    {
+        MUHelper::g_MuHelper.AddTarget(key, true);
+    }
+
+    if (gMapManager.InChaosCastle())
+    {
+        ReceiveAttackDamageCastle(
+            character, object, success, key, damage, shieldDamage, damageType,
+            repeatedly, endRepeatedly, doubleDamage, comboDamage);
+    }
+    else
+    {
+        ReceiveAttackDamage(
+            character, object, success, key, damage, shieldDamage, damageType,
+            repeatedly, endRepeatedly, doubleDamage, comboDamage);
+    }
+}
+
 void ReceiveAttackDamageExtended(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPRECEIVE_ATTACK_EXTENDED)ReceiveBuffer;
@@ -15877,7 +15927,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         }
         break;
     case PACKET_ATTACK: // attack character
-        ReceiveAttackDamageExtended(ReceiveBuffer);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveAttackDamageSeason52(received_span);
+        }
+        else
+        {
+            ReceiveAttackDamageExtended(ReceiveBuffer);
+        }
         break;
     case 0x18: // action character
         ReceiveAction(ReceiveBuffer, Size);
