@@ -767,6 +767,14 @@ void CNewUITrade::ProcessToReceiveYourItemAdd(BYTE byYourInvenIndex, std::span<c
     ::PlayBuffer(SOUND_GET_ITEM01);
 }
 
+void CNewUITrade::ProcessToReceiveYourItemAddOld(
+    BYTE byYourInvenIndex, std::span<const BYTE> pbyItemPacket)
+{
+    m_pYourInvenCtrl->AddItemOld(byYourInvenIndex, pbyItemPacket);
+    AlertYourTradeInven();
+    ::PlayBuffer(SOUND_GET_ITEM01);
+}
+
 void CNewUITrade::AlertYourTradeInven()
 {
     int nCount = 0;
