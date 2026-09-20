@@ -503,6 +503,24 @@ bool DirectSession::SendEnterGate(Connection* connection,
         });
 }
 
+bool DirectSession::SendWarpCommand(Connection* connection,
+                                    std::uint32_t commandKey,
+                                    std::uint16_t mapIndex)
+{
+    // Louis Main SendRequestMoveMap(): C1:8E:02 + DWORD key + WORD map.
+    return SendXorPacket(
+        connection,
+        {
+            0xC1, 0x0A, 0x8E, 0x02,
+            static_cast<std::uint8_t>(commandKey & 0xFFu),
+            static_cast<std::uint8_t>((commandKey >> 8u) & 0xFFu),
+            static_cast<std::uint8_t>((commandKey >> 16u) & 0xFFu),
+            static_cast<std::uint8_t>((commandKey >> 24u) & 0xFFu),
+            static_cast<std::uint8_t>(mapIndex & 0xFFu),
+            static_cast<std::uint8_t>((mapIndex >> 8u) & 0xFFu)
+        });
+}
+
 bool DirectSession::SendAnimation(Connection* connection,
                                   std::uint8_t rotation,
                                   std::uint8_t animationNumber)
