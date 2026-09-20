@@ -64,6 +64,22 @@ bool BuildRepairItemRequest(std::uint8_t itemSlot,
                             Season52Crypto& crypto,
                             std::vector<std::uint8_t>& wirePacket);
 
+bool BuildItemMoveRequest(
+    std::uint8_t sourceStorage,
+    std::uint8_t sourceIndex,
+    std::uint8_t itemTypeLow,
+    std::uint8_t itemLevel,
+    std::uint8_t durability,
+    std::uint8_t option1,
+    std::uint8_t excellentOption,
+    std::uint8_t splitType,
+    std::uint8_t spareBits,
+    const std::array<std::uint8_t, 5>& socketOptions,
+    std::uint8_t targetStorage,
+    std::uint8_t targetIndex,
+    Season52Crypto& crypto,
+    std::vector<std::uint8_t>& wirePacket);
+
 bool BuildMapServerMoveAuthRequest(
                        std::string_view account,
                        std::string_view character,
