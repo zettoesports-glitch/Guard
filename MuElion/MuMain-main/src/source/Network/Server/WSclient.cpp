@@ -8529,6 +8529,161 @@ void ReceiveSetPointsExtended(const BYTE* ReceiveBuffer)
     gSkillManager.InvalidateSkillAttributeRequirementsCache();
 }
 
+void ReceiveLifeSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PMSG_LIFE_SEND:
+    // C1 size 26 type lifeH lifeL flag shieldH shieldL
+    constexpr std::size_t kPacketSize = 9;
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x26 life packet ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE type = packet[3];
+    const WORD life = static_cast<WORD>(
+        (static_cast<WORD>(packet[4]) << 8) | packet[5]);
+    const WORD shield = static_cast<WORD>(
+        (static_cast<WORD>(packet[7]) << 8) | packet[8]);
+
+    switch (type)
+    {
+    case 0xFF:
+        CharacterAttribute->Life = life;
+        CharacterAttribute->Shield = shield;
+        break;
+    case 0xFE:
+        if (gCharacterManager.IsMasterLevel(Hero->Class))
+        {
+            Master_Level_Data.wMaxLife = life;
+            Master_Level_Data.wMaxShield = shield;
+        }
+        else
+        {
+            CharacterAttribute->LifeMax = life;
+            CharacterAttribute->ShieldMax = shield;
+        }
+        break;
+    case 0xFD:
+        EnableUse = 0;
+        break;
+    default:
+    {
+        ITEM* item = nullptr;
+        int modernIndex = type;
+        if (IsMainInventorySlot(type))
+        {
+            item = g_pMyInventory->FindItem(type);
+        }
+        else if (IsSeason52ClassicPersonalShopSlot(type)
+                 && g_pMyShopInventory != nullptr)
+        {
+            modernIndex = Season52ClassicToModernPersonalShopSlot(type);
+            item = g_pMyShopInventory->FindItem(modernIndex);
+        }
+
+        if (item != nullptr)
+        {
+            if (item->Durability > 0)
+            {
+                --item->Durability;
+            }
+
+            if (item->Durability <= 0)
+            {
+                if (IsMainInventorySlot(type))
+                {
+                    g_pMyInventory->DeleteItem(type);
+                }
+                else
+                {
+                    g_pMyShopInventory->DeleteItem(modernIndex);
+                }
+            }
+        }
+        break;
+    }
+    }
+}
+
+void ReceiveManaSeason52(std::span<const BYTE> packet)
+{
+    // EX502 PMSG_MANA_SEND:
+    // C1 size 27 type manaH manaL bpH bpL
+    constexpr std::size_t kPacketSize = 8;
+    if (packet.size() < kPacketSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated 0x27 mana packet ({} bytes)", packet.size());
+        return;
+    }
+
+    const BYTE type = packet[3];
+    const WORD mana = static_cast<WORD>(
+        (static_cast<WORD>(packet[4]) << 8) | packet[5]);
+    const WORD bp = static_cast<WORD>(
+        (static_cast<WORD>(packet[6]) << 8) | packet[7]);
+
+    switch (type)
+    {
+    case 0xFF:
+        CharacterAttribute->Mana = mana;
+        CharacterAttribute->SkillMana = bp;
+        break;
+    case 0xFE:
+        if (gCharacterManager.IsMasterLevel(Hero->Class))
+        {
+            Master_Level_Data.wMaxMana = mana;
+            Master_Level_Data.wMaxBP = bp;
+        }
+        else
+        {
+            CharacterAttribute->ManaMax = mana;
+            CharacterAttribute->SkillManaMax = bp;
+        }
+        break;
+    default:
+    {
+        CharacterAttribute->Mana = mana;
+
+        ITEM* item = nullptr;
+        int modernIndex = type;
+        if (IsMainInventorySlot(type))
+        {
+            item = g_pMyInventory->FindItem(type);
+        }
+        else if (IsSeason52ClassicPersonalShopSlot(type)
+                 && g_pMyShopInventory != nullptr)
+        {
+            modernIndex = Season52ClassicToModernPersonalShopSlot(type);
+            item = g_pMyShopInventory->FindItem(modernIndex);
+        }
+
+        if (item != nullptr)
+        {
+            if (item->Durability > 0)
+            {
+                --item->Durability;
+            }
+
+            if (item->Durability <= 0)
+            {
+                if (IsMainInventorySlot(type))
+                {
+                    g_pMyInventory->DeleteItem(type);
+                }
+                else
+                {
+                    g_pMyShopInventory->DeleteItem(modernIndex);
+                }
+            }
+        }
+        break;
+    }
+    }
+}
+
 void ReceiveStatsExtended(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPRECEIVE_STATS_EXTENDED)ReceiveBuffer;
@@ -15600,7 +15755,20 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveDurability(ReceiveBuffer);
         break;
     case 0x26:
-        ReceiveStatsExtended(ReceiveBuffer);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveLifeSeason52(received_span);
+        }
+        else
+        {
+            ReceiveStatsExtended(ReceiveBuffer);
+        }
+        break;
+    case 0x27:
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveManaSeason52(received_span);
+        }
         break;
     case 0x28:
         ReceiveDeleteInventory(ReceiveBuffer);
