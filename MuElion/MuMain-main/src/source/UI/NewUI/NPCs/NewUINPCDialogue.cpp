@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "UI/NewUI/NPCs/NewUINPCDialogue.h"
 #include "I18N/All.h"
+#include "Network/Season52/Season52Direct.h"
 
 #include "Core/Platform/CrtDbg.h"
 #include "Audio/DSPlaySound.h"
@@ -381,7 +382,14 @@ bool CNewUINPCDialogue::ProcessClosing()
     m_dwCurDlgIndex = 0;
     m_dwContributePoint = 0;
     m_bQuestListMode = false;
-    SocketClient->ToGameServer()->SendCloseNpcRequest();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendCloseNpc(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendCloseNpcRequest();
+    }
     ::PlayBuffer(SOUND_CLICK01);
     return true;
 }
@@ -554,10 +562,24 @@ void CNewUINPCDialogue::ProcessSelTextResult()
         }
         else
         {
-            const DWORD dwSelectedQuest = m_adwQuestIndex[m_nSelSelText - 1];
-            const auto questNumber = static_cast<uint16_t>(LOWORD(dwSelectedQuest));
-            const auto questGroup = static_cast<uint16_t>(HIWORD(dwSelectedQuest));
-            SocketClient->ToGameServer()->SendQuestSelectRequest(questNumber, questGroup, (BYTE)m_nSelSelText);
+            const DWORD dwSelectedQuest =
+                m_adwQuestIndex[m_nSelSelText - 1];
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendQuestSelection(
+                    SocketClient,
+                    static_cast<std::uint32_t>(dwSelectedQuest),
+                    static_cast<std::uint8_t>(m_nSelSelText));
+            }
+            else
+            {
+                const auto questNumber =
+                    static_cast<uint16_t>(LOWORD(dwSelectedQuest));
+                const auto questGroup =
+                    static_cast<uint16_t>(HIWORD(dwSelectedQuest));
+                SocketClient->ToGameServer()->SendQuestSelectRequest(
+                    questNumber, questGroup, (BYTE)m_nSelSelText);
+            }
         }
     }
     else
@@ -572,11 +594,27 @@ void CNewUINPCDialogue::ProcessSelTextResult()
             switch (nAnswerResult)
             {
             case 901:
-                SocketClient->ToGameServer()->SendAvailableQuestsRequest();
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendAvailableQuestsRequest(
+                        SocketClient);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendAvailableQuestsRequest();
+                }
                 break;
 
             case 902:
-                SocketClient->ToGameServer()->SendNpcBuffRequest();
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendNpcBuffRequest(
+                        SocketClient);
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendNpcBuffRequest();
+                }
                 g_pNewUISystem->Hide(SEASON3B::INTERFACE_NPC_DIALOGUE);
                 break;
             case 903:
