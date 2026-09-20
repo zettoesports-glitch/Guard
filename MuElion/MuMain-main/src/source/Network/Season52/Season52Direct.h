@@ -99,6 +99,9 @@ public:
     bool SendPublicChat(Connection* connection,
                         const wchar_t* character,
                         const wchar_t* text);
+    bool SendWhisper(Connection* connection,
+                     const wchar_t* target,
+                     const wchar_t* text);
 
     bool SendLogin(Connection* connection,
                    const wchar_t* account,
