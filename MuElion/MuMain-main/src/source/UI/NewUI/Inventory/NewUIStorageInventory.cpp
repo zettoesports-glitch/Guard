@@ -3,6 +3,7 @@
 //*****************************************************************************
 
 #include "stdafx.h"
+#include "Network/Season52/Season52Direct.h"
 #include "UI/NewUI/Inventory/NewUIStorageInventory.h"
 #include "I18N/All.h"
 
@@ -300,7 +301,14 @@ bool CNewUIStorageInventory::ProcessClosing()
 
     CNewUIInventoryCtrl::BackupPickedItem();
     DeleteAllItems();
-    SocketClient->ToGameServer()->SendVaultClosed();
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendVaultClosed(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendVaultClosed();
+    }
     return true;
 }
 
@@ -599,7 +607,19 @@ void CNewUIStorageInventory::ProcessToReceiveStorageStatus(BYTE byStatus)
         {
             if (m_bTakeZen)
             {
-                SocketClient->ToGameServer()->SendVaultMoveMoneyRequest(VaultMoneyMoveDirection::VaultToInventory, GetBackupTakeZen());
+                if (mu::net::s52::DirectProtocolEnabled())
+                {
+                    mu::net::s52::DirectSession::Instance().SendVaultMoveMoney(
+                        SocketClient,
+                        static_cast<std::uint8_t>(VaultMoneyMoveDirection::VaultToInventory),
+                        static_cast<std::uint32_t>(GetBackupTakeZen()));
+                }
+                else
+                {
+                    SocketClient->ToGameServer()->SendVaultMoveMoneyRequest(
+                        VaultMoneyMoveDirection::VaultToInventory,
+                        GetBackupTakeZen());
+                }
                 InitBackupItemInfo();
             }
             else
