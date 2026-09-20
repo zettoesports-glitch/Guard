@@ -90,6 +90,12 @@ public:
     bool SendCastleSiegeStatusRequest(Connection* connection);
     bool SendCastleSiegeRegistrationStateRequest(Connection* connection);
     bool SendCastleSiegeRegisteredGuildsListRequest(Connection* connection);
+    bool SendPlayerShopSetItemPrice(Connection* connection, std::uint8_t itemSlot, std::uint32_t price);
+    bool SendPlayerShopOpen(Connection* connection, const wchar_t* shopTitle);
+    bool SendPlayerShopClose(Connection* connection);
+    bool SendPlayerShopItemListRequest(Connection* connection, std::uint16_t playerId, const wchar_t* playerName);
+    bool SendPlayerShopItemBuyRequest(Connection* connection, std::uint16_t playerId, const wchar_t* playerName, std::uint8_t itemSlot);
+    bool SendPlayerShopCloseOther(Connection* connection, std::uint16_t playerId, const wchar_t* playerName);
 
     bool SendItemMove(
         Connection* connection,
