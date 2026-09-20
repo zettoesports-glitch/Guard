@@ -12357,6 +12357,136 @@ void ReceiveLetter(const BYTE* ReceiveBuffer)
 
 extern int g_iLetterReadNextPos_x, g_iLetterReadNextPos_y;
 
+void ReceiveLetterTextSeason52(
+    std::span<const BYTE> ReceiveBuffer, bool isCached)
+{
+    // EX502 FS_LETTER_TEXT:
+    // C2 sizeH sizeL C7 | WORD index | WORD memoSize | BYTE class
+    // | Equipment[17] | photoDir | photoAction | memo[memoSize]
+    constexpr std::size_t kHeaderSize = 28;
+    constexpr std::size_t kEquipmentOffset = 9;
+    constexpr std::size_t kEquipmentSize = 17;
+    constexpr std::size_t kPhotoDirOffset = 26;
+    constexpr std::size_t kPhotoActionOffset = 27;
+    constexpr std::size_t kMemoOffset = 28;
+
+    if (ReceiveBuffer.size() < kHeaderSize)
+    {
+        mu::log::Get("network")->error(
+            "S52: C7 letter-text packet too small ({} bytes)",
+            ReceiveBuffer.size());
+        return;
+    }
+
+    const WORD index = ReadSeason52Word(ReceiveBuffer.data() + 4);
+    const WORD memoSize = ReadSeason52Word(ReceiveBuffer.data() + 6);
+    const BYTE serverClass = ReceiveBuffer[8];
+    const BYTE photoDir = ReceiveBuffer[kPhotoDirOffset];
+    const BYTE photoAction = ReceiveBuffer[kPhotoActionOffset];
+
+    const std::size_t required =
+        kMemoOffset + static_cast<std::size_t>(memoSize);
+    if (ReceiveBuffer.size() < required)
+    {
+        mu::log::Get("network")->error(
+            "S52: truncated C7 letter text: got={} expected>={} memoSize={}",
+            ReceiveBuffer.size(), required, memoSize);
+        return;
+    }
+
+    if (!isCached)
+    {
+        g_pLetterList->CacheLetterTextSeason52(
+            index, ReceiveBuffer.data(), required);
+    }
+
+    auto* pLetterHead = g_pLetterList->GetLetter(index);
+    if (pLetterHead == nullptr)
+    {
+        return;
+    }
+
+    pLetterHead->m_bIsRead = TRUE;
+    g_pWindowMgr->RefreshMainWndLetterList();
+
+    wchar_t tempTxt[MAX_TEXT_LENGTH + 1]{};
+    mu_swprintf(tempTxt, I18N::Game::ReadLetterS, pLetterHead->m_szText);
+
+    DWORD dwUIID = 0;
+    if (g_iLetterReadNextPos_x == UIWND_DEFAULT)
+    {
+        dwUIID = g_pWindowMgr->AddWindow(
+            UIWNDTYPE_READLETTER, 100, 100, tempTxt);
+    }
+    else
+    {
+        dwUIID = g_pWindowMgr->AddWindow(
+            UIWNDTYPE_READLETTER,
+            g_iLetterReadNextPos_x,
+            g_iLetterReadNextPos_y,
+            tempTxt,
+            0,
+            UIADDWND_FORCEPOSITION);
+        g_iLetterReadNextPos_x = UIWND_DEFAULT;
+    }
+
+    auto* pWindow =
+        (CUILetterReadWindow*)g_pWindowMgr->GetWindow(dwUIID);
+    if (pWindow == nullptr)
+    {
+        return;
+    }
+
+    std::vector<char> memoUtf8(
+        static_cast<std::size_t>(memoSize) + 1u, '\0');
+    if (memoSize > 0)
+    {
+        memcpy(
+            memoUtf8.data(),
+            ReceiveBuffer.data() + kMemoOffset,
+            memoSize);
+    }
+
+    wchar_t letterText[MAX_LETTERTEXT_LENGTH + 1]{};
+    CMultiLanguage::ConvertFromUtf8(
+        letterText,
+        memoUtf8.data(),
+        std::min<int>(memoSize, MAX_LETTERTEXT_LENGTH));
+    letterText[MAX_LETTERTEXT_LENGTH] = '\0';
+
+    pWindow->SetLetter(pLetterHead, letterText);
+    g_pWindowMgr->SetLetterReadWindow(
+        pLetterHead->m_dwLetterID, dwUIID);
+
+    if (wcsnicmp(
+            pLetterHead->m_szID, L"webzen", MAX_USERNAME_SIZE) == 0)
+    {
+        pWindow->m_Photo.SetWebzenMail(TRUE);
+    }
+    else
+    {
+        pWindow->m_Photo.SetClass(
+            gCharacterManager.ChangeServerClassTypeToClientClassType(
+                static_cast<SERVER_CLASS_TYPE>(serverClass)));
+
+        std::array<BYTE, kEquipmentSize> equipment{};
+        memcpy(
+            equipment.data(),
+            ReceiveBuffer.data() + kEquipmentOffset,
+            kEquipmentSize);
+        pWindow->m_Photo.SetEquipmentPacketOld(equipment.data());
+
+        pWindow->m_Photo.SetAnimation(photoAction + AT_ATTACK1);
+        const int iAngle = photoDir & 0x3F;
+        const int iZoom = (photoDir & 0xC0) >> 6;
+        pWindow->m_Photo.SetAngle(iAngle * 6);
+        pWindow->m_Photo.SetZoom((iZoom * 10 + 80) / 100.0f);
+    }
+
+    pWindow->SendUIMessageDirect(
+        UI_MESSAGE_LISTSCRLTOP, 0, 0);
+}
+
 void ReceiveLetterText(std::span<const BYTE> ReceiveBuffer, bool isCached)
 {
     auto Data = safe_cast<FS_LETTER_TEXT_HEADER>(ReceiveBuffer);
@@ -17415,7 +17545,14 @@ static void ProcessPacket(const BYTE* ReceiveBuffer, int32_t Size)
         ReceiveLetter(ReceiveBuffer);
         break;
     case 0xC7:
-        ReceiveLetterText(received_span, false);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            ReceiveLetterTextSeason52(received_span, false);
+        }
+        else
+        {
+            ReceiveLetterText(received_span, false);
+        }
         break;
     case 0xC8:
         ReceiveLetterDeleteResult(ReceiveBuffer);
