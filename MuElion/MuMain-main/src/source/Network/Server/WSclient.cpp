@@ -7236,7 +7236,16 @@ namespace
 {
 void RequestInventorySync()
 {
-    if (SocketClient != nullptr && SocketClient->ToGameServer() != nullptr)
+    if (SocketClient == nullptr)
+    {
+        return;
+    }
+
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendInventoryRequest(SocketClient);
+    }
+    else if (SocketClient->ToGameServer() != nullptr)
     {
         SocketClient->ToGameServer()->SendInventoryRequest();
     }
@@ -10738,7 +10747,7 @@ void ReceiveSetPriceResult(const BYTE* ReceiveBuffer)
 
         RemovePersonalItemPrice(g_pMyShopInventory->GetTargetIndex(), PSHOPWNDTYPE_SALE);
 
-        SocketClient->ToGameServer()->SendInventoryRequest();
+        RequestInventorySync();
 
         g_ErrorReport.Write(L"@ [Fault] ReceiveSetPriceResult (result : %d)\n", Header->byResult);
     }
