@@ -3488,7 +3488,17 @@ CALLBACK_RESULT SEASON3B::CCursedTempleProgressMsgBox::CompleteProcess(class CNe
         return CALLBACK_CONTINUE;
     }
 
-    SocketClient->ToGameServer()->SendTalkToNpcRequest(pMsgBox->GetNpcIndex());
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        mu::net::s52::DirectSession::Instance().SendTalkNpc(
+            SocketClient,
+            static_cast<std::uint16_t>(pMsgBox->GetNpcIndex()));
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendTalkToNpcRequest(
+            pMsgBox->GetNpcIndex());
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
@@ -4251,7 +4261,19 @@ CALLBACK_RESULT SEASON3B::CZenReceiptMsgBoxLayout::ProcessOk(class CNewUIMessage
 
     if (iInputZen <= (int)CharacterMachine->Gold)
     {
-        SocketClient->ToGameServer()->SendVaultMoveMoneyRequest(VaultMoneyMoveDirection::InventoryToVault, iInputZen);
+        if (mu::net::s52::DirectProtocolEnabled())
+        {
+            mu::net::s52::DirectSession::Instance().SendVaultMoveMoney(
+                SocketClient,
+                static_cast<std::uint8_t>(
+                    VaultMoneyMoveDirection::InventoryToVault),
+                static_cast<std::uint32_t>(iInputZen));
+        }
+        else
+        {
+            SocketClient->ToGameServer()->SendVaultMoveMoneyRequest(
+                VaultMoneyMoveDirection::InventoryToVault, iInputZen);
+        }
     }
     else
     {
@@ -4323,7 +4345,19 @@ CALLBACK_RESULT SEASON3B::CZenPaymentMsgBoxLayout::ProcessOk(class CNewUIMessage
         if (!g_pStorageInventory->IsStorageLocked()
             || g_pStorageInventory->IsCorrectPassword())
         {
-            SocketClient->ToGameServer()->SendVaultMoveMoneyRequest(VaultMoneyMoveDirection::VaultToInventory, iInputZen);
+            if (mu::net::s52::DirectProtocolEnabled())
+            {
+                mu::net::s52::DirectSession::Instance().SendVaultMoveMoney(
+                    SocketClient,
+                    static_cast<std::uint8_t>(
+                        VaultMoneyMoveDirection::VaultToInventory),
+                    static_cast<std::uint32_t>(iInputZen));
+            }
+            else
+            {
+                SocketClient->ToGameServer()->SendVaultMoveMoneyRequest(
+                    VaultMoneyMoveDirection::VaultToInventory, iInputZen);
+            }
         }
         else
         {
@@ -7295,12 +7329,26 @@ CALLBACK_RESULT SEASON3B::CGuild_ToPerson_Position::SoulBtnDown(class CNewUIMess
 CALLBACK_RESULT SEASON3B::CGuild_ToPerson_Position::OkBtnDown(class CNewUIMessageBoxBase* pOwner, const leaf::xstreambuf& xParam)
 {
     COMGEM::Exit();
-    SocketClient->ToGameServer()->SendGuildRoleAssignRequest(
-        AppointType,
-        MU_C16(GuildList[DeleteIndex].Name),
-        AppointType == G_PERSON ? 0x01 : 0x02);
+    if (mu::net::s52::DirectProtocolEnabled())
+    {
+        auto& direct = mu::net::s52::DirectSession::Instance();
+        direct.SendGuildRoleAssign(
+            SocketClient,
+            static_cast<std::uint8_t>(AppointType),
+            static_cast<std::uint8_t>(
+                AppointType == G_PERSON ? 0x01 : 0x02),
+            GuildList[DeleteIndex].Name);
+        direct.SendGuildListRequest(SocketClient);
+    }
+    else
+    {
+        SocketClient->ToGameServer()->SendGuildRoleAssignRequest(
+            AppointType,
+            MU_C16(GuildList[DeleteIndex].Name),
+            AppointType == G_PERSON ? 0x01 : 0x02);
 
-    SocketClient->ToGameServer()->SendGuildListRequest();
+        SocketClient->ToGameServer()->SendGuildListRequest();
+    }
 
     PlayBuffer(SOUND_CLICK01);
     g_MessageBox->SendEvent(pOwner, MSGBOX_EVENT_DESTROY);
